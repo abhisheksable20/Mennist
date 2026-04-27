@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Post</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+
+    <link rel="icon" href="/assets/mennistFavicon.svg" type="image/svg+xml">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #FAFAFA;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header,
+        footer {
+            background: #D6CCC8;
+            color: #4B352A;
+            padding: 10px;
+            text-align: center;
+            font-family: "Funnel Display", sans-serif;
+            font-weight: 400;
+        }
+
+        footer {
+            background-color: #FAFAFA;
+            color: #222222;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .post-form-container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            font-family: "Roboto", sans-serif;
+            margin-top: 0;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 32px;
+            color: #222222;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        input[type="text"],
+        textarea {
+            font-family: "Roboto", sans-serif;
+            padding: 16px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            width: 100%;
+            resize: vertical;
+        }
+
+        textarea {
+            min-height: 300px;
+            max-height: 700px;
+        }
+
+        button {
+            font-family: "Roboto", sans-serif;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            background-color: #4B352A;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #D6CCC8;
+        }
+
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            max-width: 80%;
+            margin: 0 auto;
+            background-color: #4caf50;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 🔽 Mobile Responsive Styles */
+        @media (max-width: 600px) {
+            .post-form-container {
+                padding: 20px;
+                border-radius: 12px;
+            }
+
+            h2 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            input[type="text"],
+            textarea {
+                font-size: 16px;
+                padding: 12px;
+            }
+
+            button {
+                font-size: 16px;
+                padding: 12px;
+            }
+
+            textarea {
+                min-height: 200px;
+            }
+
+            main {
+                padding: 20px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Mennist</h1>
+    </header>
+
+    <main>
+        <div class="post-form-container">
+            <h2>Create a Post</h2>
+            <form id="postForm">
+                <input type="text" name="title" placeholder="Enter a title (max 10 words)" maxlength="100" required>
+
+                <textarea name="description" placeholder="Write your feelings (max 2000 words)" maxlength="16000"
+                    required></textarea>
+
+                <button type="submit">Submit Post</button>
+            </form>
+        </div>
+    </main>
+
+    <div id="toast" class="toast">Post uploaded successfully!</div>
+
+    <footer>
+     <p>Write from the heart and rest easy — your data remains untouched.</p>
+    </footer>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="/auth.js"></script>
+    <script type="module" src="/upload.js"></script>
+</body>
+
+</html>

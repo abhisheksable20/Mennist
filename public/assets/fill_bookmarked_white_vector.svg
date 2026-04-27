@@ -1,0 +1,13 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    id="vector">
+    <path
+        id="path"
+        d="M 4.531 3.006 L 19.516 3.006 L 19.469 20.994 L 11.953 15.354 L 4.484 20.938 Z"
+        fill="#ffffff"
+        stroke="#ffffff"
+        stroke-width="2.1"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

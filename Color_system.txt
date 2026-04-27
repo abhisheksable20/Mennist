@@ -1,0 +1,19 @@
+Background System
+Main Background Color: #0D0D0D
+Secondary Background: #171717
+Cards / Surfaces: #262626
+
+Text Colors
+Primary text: #FAFAFA
+Secondary text: #D4D4D4
+Muted text: #A3A3A3
+
+Borders & UI Elements
+Borders: #2E2E2E
+Hover States: #3A3A3A
+Active states: #404040
+
+Buttons Colors
+Background: #22C55E
+Text: #FFFFFF
+Hover: #16A34A

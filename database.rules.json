@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "posts": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": [
+        "timestamp"
+      ]
+    },
+    "userPosts": {
+      "$uid": {
+        ".indexOn": [
+          "timestamp"
+        ]
+      }
+    }
+  }
+}

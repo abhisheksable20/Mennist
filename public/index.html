@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+
+    <link rel="icon" href="/assets/mennistFavicon.svg" type="image/svg+xml">
+    <title>Mennist.com</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #FAFAFA;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header,
+        footer {
+            background: #D6CCC8;
+            color: #4B352A;
+            padding: 10px;
+            text-align: center;
+            font-family: "Funnel Display", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        footer {
+            background-color: #FAFAFA;
+            color: #222222;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        ul.grid-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        ul.grid-list li {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            text-align: left;
+            cursor: pointer;
+            position: relative;
+        }
+
+        ul.grid-list li:hover {
+            transform: translateY(-5px);
+        }
+
+        .tile-title {
+            font-family: "Roboto", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: bold;
+            color: #222222;
+            margin-bottom: 10px;
+            font-size: 16px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        .tile-description {
+            font-family: "Roboto", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: normal;
+            font-size: 14px;
+            color: #555555;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 6;
+            /* Approx. 100 words */
+            -webkit-box-orient: vertical;
+        }
+
+        .floating-btn {
+            position: fixed;
+            bottom: 100px;
+            /* adjust to place it just above footer */
+            right: 70px;
+            width: 60px;
+            height: 60px;
+            background-color: #4B352A;
+            color: white;
+            border-radius: 50%;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 60px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            transition: background 0.3s ease;
+            z-index: 999;
+        }
+
+        .floating-btn:hover {
+            background-color: #D6CCC8;
+        }
+
+        .load-more-wrapper {
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .load-more-btn {
+            background-color: #FFFFFF;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            /* ensures centering inside flex wrapper */
+        }
+
+        .load-more-btn img {
+            width: 28px;
+            height: 28px;
+        }
+
+        .load-more-btn:hover {
+            background-color: #D6CCC8;
+            transform: scale(1.05);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        }
+
+
+        .tile-time {
+            font-size: 12px;
+            color: #838383;
+            margin-top: auto;
+            align-self: flex-end;
+            padding-top: 10px;
+        }
+
+        /* Bookmark Style */
+        .bookmark-btn {
+            bottom: 180px;
+            /* positions it above the Add button */
+            right: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bookmark-btn img {
+            width: 28px;
+            height: 28px;
+        }
+
+        /* Responsive adjustments for mobile screens */
+        @media (max-width: 600px) {
+            ul.grid-list {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 12px;
+                padding: 10px;
+            }
+
+            ul.grid-list li {
+                padding: 12px;
+                border-radius: 8px;
+            }
+
+            .tile-title {
+                font-size: 14px;
+            }
+
+            .tile-description {
+                font-size: 12px;
+                -webkit-line-clamp: 5;
+            }
+
+            .floating-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 26px;
+                line-height: 50px;
+                bottom: 90px;
+                right: 30px;
+            }
+
+            .load-more-btn {
+                width: 56px;
+                height: 56px;
+            }
+
+            .load-more-btn img {
+                width: 24px;
+                height: 24px;
+            }
+
+            .tile-time {
+                font-size: 11px;
+                padding-top: 6px;
+            }
+
+            .floating-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 26px;
+                line-height: 50px;
+                bottom: 90px;
+                /* upload button */
+                right: 20px;
+            }
+
+            .bookmark-btn {
+                bottom: 160px;
+                /* give more gap above upload button */
+                right: 20px;
+            }
+
+            .bookmark-btn img {
+                width: 24px;
+                height: 24px;
+            }
+
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <header>
+        <h1>Mennist</h1>
+    </header>
+
+    <main>
+        <ul class="grid-list" id="gridList">
+            <!-- More <li> items can be added dynamically -->
+        </ul>
+    </main>
+    <div id="loadingIndicator" style="text-align: center; padding: 10px; display: none;">
+        <em>Loading...</em>
+    </div>
+    <div id="loadMoreContainer" class="load-more-wrapper">
+        <button id="loadMoreBtn" class="load-more-btn">
+            <img src="/assets/load_more_vector_v2.svg" alt="Load More" />
+        </button>
+    </div>
+
+    <footer>
+        <p>No Terms. No Conditions. Just Pure Sharing</p>
+    </footer>
+
+    <a href="/upload" class="floating-btn" aria-label="Create Post">＋</a>
+
+    <a href="/bookmark" class="floating-btn bookmark-btn" aria-label="Bookmarks">
+        <img src="/assets/fill_bookmarked_white_vector.svg" alt="Bookmarks" />
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="/index.js"></script>
+
+</body>
+
+</html>
