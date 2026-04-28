@@ -54,6 +54,12 @@ body {
   color: #22C55E;
 }
 
+/* Handle submit post page styles */
+.custom-primary-text {
+  font-family: "Open Sans", sans-serif;
+  color: #FAFAFA;
+}
+
 /* Special text color */
 .special-text {
   color: #22C55E;
@@ -82,7 +88,7 @@ body {
 
 .card-accent {
   width: 30px;
-  height: 2.5px;
+  height: 3px;
   border-radius: 99px;
   /* makes the ends rounded */
   background: #22c55e;

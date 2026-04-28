@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useContext } from 'react'
+import PostContext from '../context/posts/postContext';
 import PostItem from './PostItem';
 import axios from "axios";
 import useInfiniteScroll from "react-infinite-scroll-hook";
@@ -7,26 +8,17 @@ import Spinner from './Spinner';
 const PAGE_SIZE = 10;
 
 function Posts() {
-    const [posts, setPosts] = useState([]);
-    const [hasNext, setHasNext] = useState(true);
+    const {posts, hasNext,getAllPosts} = useContext(PostContext)
     const [loading, setLoading] = useState(false);
-    const [lastTimestamp, setLastTimestamp] = useState(Date.now());
 
     const loadMore = async () => {
         setLoading(true);
 
         try {
-            const data = (await axios.get(`${process.env.REACT_APP_API_URL}/posts?endAt=${lastTimestamp - 1}`)).data;
-            setPosts((prev) => [...prev, ...data.postsData]);
-            setLastTimestamp(data.lastTimestamp);
-
-            if(data.postsData.length < PAGE_SIZE){
-                setHasNext(false);
-            }
-
+            await getAllPosts();
         } 
         catch (apiError) {
-            console.log("API Error: ", apiError)
+            console.log("API Error: ", apiError);
         }
         finally{
             setLoading(false);
