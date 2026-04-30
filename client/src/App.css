@@ -28,6 +28,12 @@ body {
   color: white;
 }
 
+.btn:disabled{
+  background-color: #16A34A;
+  color: #FAFAFA;
+  border-color: #16A34A;
+}
+
 /* Handle navbar styles */
 .navbar {
   background-color: #171717;
@@ -119,6 +125,80 @@ body {
 .svg_icons:hover {
   cursor: pointer;
 
+}
+
+/* Handle Submit Form Styles */
+/* Handle Custom label */
+.custom-label {
+  color: #A3A3A3;
+  font-family: "Open Sans", sans-serif;
+}
+
+/* Handle input styles */
+.custom-input {
+  font-family: "Open Sans", sans-serif;
+  color: #FAFAFA;
+  background-color: #262626;
+  border: 2px solid #2E2E2E;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.custom-textarea {
+  padding-bottom: 60px;
+}
+
+/* Divider line */
+.textarea-divider {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 85%;
+  height: 1px;
+  background: linear-gradient(to right,
+      transparent,
+      #A3A3A3,
+      transparent);
+}
+
+.custom-submit-span {
+  font-family: "Open Sans", sans-serif;
+  color: #A3A3A3;
+}
+
+/* Footer stats */
+.textarea-footer {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  font-size: 12px;
+  color: #A3A3A3;
+  pointer-events: none;
+  /* prevents blocking typing */
+}
+
+/* Placeholder */
+.custom-input::placeholder {
+  font-family: "Open Sans", sans-serif;
+  color: #A3A3A3;
+}
+
+.custom-input:focus {
+  font-family: "Open Sans", sans-serif;
+  background-color: #262626;
+  color: #FAFAFA;
+  border-color: #22C55E;
+}
+
+.form-control:focus {
+  box-shadow: none;
+}
+
+.form-label {
+  letter-spacing: 1px;
 }
 
 .App-link {

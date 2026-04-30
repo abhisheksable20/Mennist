@@ -9,7 +9,7 @@ function App() {
   return (
     <>
       <PostState>
-        <Navbar />
+        <Navbar/>
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/submitSecret' element={<SubmitSecret />} />

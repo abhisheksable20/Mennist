@@ -18,7 +18,7 @@ function Navbar() {
                     <span className="navbar-brand navbar-title mb-0 h1 px-2 py-3" onClick={navigateToHome}>Mennist</span>
 
                     {/* Submit Secret Button */}
-                    <SubmitButton />
+                    <SubmitButton/>
                 </div>
             </nav>
         </div>
