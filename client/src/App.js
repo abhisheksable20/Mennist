@@ -4,6 +4,7 @@ import Home from './components/Home';
 import SubmitSecret from './components/SubmitSecret';
 import PostState from './context/posts/PostState';
 import { Routes, Route } from "react-router-dom";
+import PostContent from './components/PostContent';
 
 function App() {
   return (
@@ -12,7 +13,8 @@ function App() {
         <Navbar/>
         <Routes>
           <Route path='/' element={<Home />} />
-          <Route path='/submitSecret' element={<SubmitSecret />} />
+          <Route path='/submit-secret' element={<SubmitSecret />} />
+          <Route path='/post/:id' element={<PostContent />}/>
         </Routes>
       </PostState>
     </>

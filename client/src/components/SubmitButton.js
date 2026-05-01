@@ -10,12 +10,12 @@ function SubmitButton(props) {
     const { content, submitPost } = useContext(PostContext);
 
     // The user is submit post page change the button to submit to submit post
-    const currentPath = location.pathname === "/submitSecret";
+    const currentPath = location.pathname === "/submit-secret";
 
     // Navigate to submit secret component
     const navigateToSubmitSecret = () => {
         if (!currentPath) {
-            navigate("/submitSecret");
+            navigate("/submit-secret");
         }
 
         // Submit post we are in submit secret page
