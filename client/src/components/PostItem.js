@@ -1,8 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
+import { convertTimestampToReadable } from '../dataProcessing/dataProcessing';
 
 function PostItem(props) {
-  const { id, title, content } = props.post;
+  const { id, title, content, timestamp } = props.post;
 
   return (
     <div className="col-12 col-md-6 col-lg-4">
@@ -18,7 +19,7 @@ function PostItem(props) {
           {/* Footer */}
           <div className='d-flex justify-content-between mt-auto'>
             {/* Display date when the post was uploaded */}
-            <p className="card-text my-1"><small className="text-body-secondary">June 1, 2026</small></p>
+            <p className="card-text my-1"><small className="text-body-secondary">{convertTimestampToReadable(timestamp)}</small></p>
             {/* Read more link with icon animation */}
             <Link className="icon-link icon-link-hover" to={`/post/${id}`}>
               Read More

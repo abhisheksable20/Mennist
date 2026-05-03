@@ -11,6 +11,7 @@ const PostState = (props) => {
 
     const PAGE_SIZE = 10;
 
+    // Fetch all the post from the server for home page
     const getAllPosts = async () => {
         try {
             const data = (await axios.get(`${process.env.REACT_APP_API_URL}/posts?endAt=${lastTimestamp - 1}`)).data;
@@ -46,6 +47,9 @@ const PostState = (props) => {
             console.log("Submitting error: ",submitError)
         }
     }
+
+    // Get like count from the server
+    
 
     return (
         <PostContext.Provider value={{posts, hasNext, content, setContent, getAllPosts, submitPost}}>

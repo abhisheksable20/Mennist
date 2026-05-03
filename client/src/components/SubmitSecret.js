@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react'
 import SubmitButton from './SubmitButton'
 import PostContext from '../context/posts/postContext'
+import { totalWords } from '../dataProcessing/dataProcessing';
 
 function SubmitSecret() {
   const { content, setContent } = useContext(PostContext);
@@ -61,7 +62,7 @@ function SubmitSecret() {
           {/* Bottom stats */}
           <div className="textarea-footer d-flex justify-content-between px-4">
             <span className='custom-submit-span'>{`Characters: ${totalCharacters()}`}</span>
-            <span className='custom-submit-span'>{`Words: ${totalWords()}`}</span>
+            <span className='custom-submit-span'>{content && `Words: ${totalWords(content.content)}`}</span>
           </div>
         </div>
       </div>
