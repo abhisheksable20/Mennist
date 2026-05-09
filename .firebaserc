@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "mennist-4dda7"
-  }
+    "default": "mennist-4dda7",
+    "dev": "drumkit-5b886",
+    "prod": "mennist-4dda7"
+  },
+  "targets": {},
+  "etags": {}
 }

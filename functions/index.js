@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const { ValidationError } = require("express-validation");
+const {ValidationError} = require("express-validation");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -11,9 +11,14 @@ if (!admin.apps.length) {
 
 const app = express();
 
-const allowedOrigins = ["https://mennist-4dda7.web.app", "https://mennist.com", "https://www.mennist.com", "http://localhost:3000"];
+const allowedOrigins = [
+  "https://mennist-4dda7.web.app",
+  "https://drumkit-5b886.web.app",
+  "https://mennist.com",
+  "https://www.mennist.com",
+  "http://localhost:3000"];
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -40,7 +45,7 @@ app.use((err, req, res, next) => {
   return res.status(500).json({
     message: "Internal server error",
   });
-})
+});
 
 // Post CRUD operation route
 app.use("/", require("./routes/posts"));
