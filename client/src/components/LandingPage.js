@@ -14,7 +14,7 @@ function LandingPage(props) {
     setDisablility(true);
     props.alert("Preparing your safe space...", "primary");
     try {
-      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`);
+      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`, {withCredentials:true});
       props.alert("You're now anonymous.", "success");
       navigate("/");
     } 
