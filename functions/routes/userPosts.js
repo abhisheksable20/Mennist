@@ -1,18 +1,24 @@
 const express = require("express");
 const admin = require("firebase-admin");
-const authUser = require("../middleware/authenticUser");
+const { authUser, isLoggedIn } = require("../middleware/authenticUser");
 const fetchPosts = require("../dataProcessing/postsProcessing");
-const {globalLimiter} = require("../middleware/rateLimiter");
+const { globalLimiter } = require("../middleware/rateLimiter");
 
 const router = express.Router();
 const db = admin.database();
 
 const retrieveLimit = 10;
 
+router.get("/create-user", authUser, globalLimiter, async (req, res) => {
+    res.status(200).send("User created successfully!");
+});
+
 // Fetch user specific posts
-router.get("/posts",authUser,globalLimiter,async (req, res) => {
+router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
     const userId = req.user.uid;
     const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
+
+    console.log("Session ID: ", userId);
 
     try {
         const ref = db.ref(`/userPosts/${userId}`);
@@ -22,17 +28,17 @@ router.get("/posts",authUser,globalLimiter,async (req, res) => {
     }
     catch (userPostError) {
         console.log("User post fetching error: ", userPostError);
-        return res.status(500).send("Internal server error!");
+        return res.status(500).send({ error: "Internal server error!" });
     }
 });
 
 
 // Delete user specific posts
-router.delete("/posts/:postId", authUser, async (req, res) => {
+router.delete("/posts/:postId", isLoggedIn, async (req, res) => {
     const userId = req.user.uid;
     const postId = req.params.postId;
 
-    if(!postId){
+    if (!postId) {
         return res.status(400).send({ error: "Failed to delete your post!" });
     }
 
@@ -42,16 +48,14 @@ router.delete("/posts/:postId", authUser, async (req, res) => {
         updates[`userPosts/${userId}/${postId}`] = null;
 
         await db.ref().update(updates);
-        return res.status(200).send("Post deleted successfully!");
+        return res.status(200).send({ success: "Post deleted successfully!" });
 
-    } 
+    }
     catch (delError) {
         console.log("Post deletion error: ", delError);
-        return res.status(500).send("Internal server error!");
+        return res.status(500).send({ error: "Internal server error!" });
     }
 
 });
-
-
 
 module.exports = router;

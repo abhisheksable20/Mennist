@@ -16,8 +16,35 @@ function generateUserId(req) {
     return uniqueId;
 }
 
+// Check wheather the user has sessionId or not
+const isLoggedIn = async (req, res, next) => {
+    let sessionId = req.cookies.sessionId;
+    if (!sessionId) {
+        return res.status(401).send({ error: `Session expired` });
+    }
+
+    const snap = await db.ref(`sessions/${sessionId}`).once('value');
+    const data = snap.val();
+
+    if (!data) {
+        res.clearCookie("sessionId");
+        return res.status(401).send({ error: "Session expired" });
+    }
+
+    if (Date.now() > data.expiresAt) {
+        res.clearCookie("sessionId");
+        return res.status(401).send({ error: "Session expired" });
+    }
+
+    req.user = { uid: data.userId };
+    next();
+}
+
+
+
 // Authenticating the user
-const authenticateUser = async (req, res, next) => {
+// This functions will be only used to create new account
+const authUser = async (req, res, next) => {
     let sessionId = req.cookies.sessionId;
 
     // Create a new user
@@ -32,12 +59,11 @@ const authenticateUser = async (req, res, next) => {
             expiresAt
         });
 
-
         // Make it Secure: true in production
         res.cookie("sessionId", sessionId, {
             httpOnly: true,
             secure: false,
-            sameSite: "Strict",
+            sameSite: "lax",
             maxAge: 30 * 24 * 60 * 60 * 1000
         });
 
@@ -50,7 +76,7 @@ const authenticateUser = async (req, res, next) => {
     // This will trigger if we delete the session manually
     if (!snap.exists()) {
         res.clearCookie("sessionId");
-        res.status(401).send({error:"Session is deleted"});
+        res.status(401).send({ error: "Session expired" });
         return;
     }
 
@@ -60,13 +86,13 @@ const authenticateUser = async (req, res, next) => {
     if (Date.now() > data.expiresAt) {
         await db.ref(`sessions/${sessionId}`).remove();
         res.clearCookie("sessionId");
-        return res.status(401).send("Session expired");
+        return res.status(401).send({error: "Session expired"});
     }
 
     req.user = { uid: data.userId }
     next();
 }
 
-module.exports = authenticateUser;
+module.exports = { authUser, isLoggedIn };
 
 

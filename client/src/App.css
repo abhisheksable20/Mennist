@@ -275,6 +275,25 @@ body {
   overflow: visible !important;
 }
 
+/* Alert Toast Styles */
+.custom-toast {
+  color: #FAFAFA;
+  font-family: "Open Sans", sans-serif;
+  font-weight: normal;
+}
+
+.custom-toast-primary {
+  background-color: #4F46E5;
+}
+
+.custom-toast-success {
+  background-color: #22C55E;
+}
+
+.custom-toast-alert {
+  background-color: #D0342C;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

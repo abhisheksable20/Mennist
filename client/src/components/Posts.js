@@ -4,12 +4,15 @@ import PostItem from './PostItem';
 import axios from "axios";
 import useInfiniteScroll from "react-infinite-scroll-hook";
 import Spinner from './Spinner';
+import { useNavigate } from 'react-router-dom';
 
 const PAGE_SIZE = 10;
 
-function Posts() {
+function Posts(props) {
     const {posts, hasNext,getAllPosts} = useContext(PostContext)
     const [loading, setLoading] = useState(false);
+
+    const navigate = useNavigate();
 
     const loadMore = async () => {
         setLoading(true);
@@ -18,7 +21,14 @@ function Posts() {
             await getAllPosts();
         } 
         catch (apiError) {
-            console.log("API Error: ", apiError);
+            // Check wheather the session is expired
+            if(apiError.response && apiError.response.status === 401){
+                props.alert("Session expired", "alert");
+                navigate("/setup-user");
+                return;
+            }
+
+            props.alert("Something went wrong!", "alert");
         }
         finally{
             setLoading(false);

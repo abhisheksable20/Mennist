@@ -25,6 +25,7 @@ const PostState = (props) => {
 
         }
         catch (fetchError) {
+            setHasNext(false);
             throw fetchError
         }
     }

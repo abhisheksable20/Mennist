@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
-const authUser = require("../middleware/authenticUser");
+const { authUser, isLoggedIn } = require("../middleware/authenticUser");
 const { globalLimiter, postLimiter } = require("../middleware/rateLimiter")
 const { validate } = require("express-validation");
 const { postValidation } = require("../validators/postValidator");
@@ -12,7 +12,7 @@ const db = admin.database();
 const retrieveLimit = 10;
 
 // Get all the database posts
-router.get("/posts", globalLimiter, async (req, res) => {
+router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
     const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
     try {
         const ref = db.ref("posts");
@@ -24,11 +24,10 @@ router.get("/posts", globalLimiter, async (req, res) => {
         console.log(getError);
         return res.status(500).send("Something went wrong!");
     }
-
 });
 
 // Get a specific post
-router.get("/posts/:postId", globalLimiter, async (req, res) => {
+router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
     const postId = req.params.postId;
     if (!postId) {
         res.status(400).send({
@@ -51,13 +50,13 @@ router.get("/posts/:postId", globalLimiter, async (req, res) => {
         ...data
     };
 
-    return res.status(200).send(post)
+    return res.status(200).send(post);
 
 });
 
 
 // Submit the post in database
-router.post("/posts", authUser, postLimiter, validate(postValidation), async (req, res) => {
+router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (req, res) => {
     try {
         const userUniqueId = req.user.uid;
 
@@ -87,7 +86,7 @@ router.post("/posts", authUser, postLimiter, validate(postValidation), async (re
 
 
 // Post like counter functions
-router.put("/relatable/:postId", authUser, globalLimiter, async (req, res) => {
+router.put("/relatable/:postId", isLoggedIn, globalLimiter, async (req, res) => {
     const user = req.user.uid;
     const postId = req.params.postId;
 
@@ -118,7 +117,7 @@ router.put("/relatable/:postId", authUser, globalLimiter, async (req, res) => {
 });
 
 // Get relatable count
-router.get("/relatable/:postId", authUser, async (req, res) => {
+router.get("/relatable/:postId", async (req, res) => {
     const postId = req.params.postId;
     if (!postId) {
         return res.status(400).send({ error: "No data found" });

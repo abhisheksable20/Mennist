@@ -17,3 +17,8 @@ Buttons Colors
 Background: #22C55E
 Text: #FFFFFF
 Hover: #16A34A
+
+Toast Color
+Alert : #D0342C
+Success: #22C55E
+Primary: #4F46E5

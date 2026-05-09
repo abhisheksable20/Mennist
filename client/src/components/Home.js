@@ -1,11 +1,11 @@
 import React from 'react'
 import Posts from './Posts'
 
-function Home() {
+function Home(props) {
   return (
     <>
       <div>
-        <Posts/>
+        <Posts alert={props.alert}/>
       </div>
     </>
   )
