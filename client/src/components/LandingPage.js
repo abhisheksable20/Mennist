@@ -8,25 +8,27 @@ import { useState } from 'react'
 function LandingPage(props) {
   const [btnDisabled, setDisablility] = useState(false);
   const navigate = useNavigate();
-  
+
   // Setup the user
   const setupUser = async () => {
     setDisablility(true);
     props.alert("Preparing your safe space...", "primary");
     try {
-      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`, {withCredentials:true});
+      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`, { withCredentials: true });
       props.alert("You're now anonymous.", "success");
-      navigate("/");
-    } 
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    }
     catch (setupErr) {
-      if(setupErr.response && setupErr.response.status===401){
+      if (setupErr.response && setupErr.response.status === 401) {
         props.alert("Please try again.", "alert");
         return;
       }
 
       props.alert("Internal server error", "alert");
     }
-    finally{
+    finally {
       setDisablility(false);
     }
   }
