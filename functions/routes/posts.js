@@ -27,29 +27,35 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
 
 // Get a specific post
 router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
-  const postId = req.params.postId;
-  if (!postId) {
-    res.status(400).send({
-      error: "Something went wrong!",
+  try {
+    const postId = req.params.postId;
+    if (!postId) {
+      res.status(400).send({
+        error: "Something went wrong!",
+      });
+
+      return;
+    }
+
+    const snapshot = await db.ref(`posts/${postId}`).once("value");
+    if (!snapshot.exists()) {
+      return res.status(404).send({error: "No post found!"});
+    }
+
+    const data = snapshot.val();
+    delete data.userUniqueId;
+
+    const post = {
+      id: snapshot.key,
+      ...data,
+    };
+
+    return res.status(200).send(post);
+  } catch (fetchErr) {
+    return res.status(500).send({
+      error: "Internal server error",
     });
-
-    return;
   }
-
-  const snapshot = await db.ref(`posts/${postId}`).once("value");
-  if (!snapshot.exists()) {
-    return res.status(404).send({error: "No post found!"});
-  }
-
-  const data = snapshot.val();
-  delete data.userUniqueId;
-
-  const post = {
-    id: data.key,
-    ...data,
-  };
-
-  return res.status(200).send(post);
 });
 
 
@@ -83,7 +89,7 @@ router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (
 
 
 // Post like counter functions
-router.put("/relatable/:postId", isLoggedIn, globalLimiter, async (req, res) => {
+router.put("/vibes/:postId", isLoggedIn, globalLimiter, async (req, res) => {
   const user = req.user.uid;
   const postId = req.params.postId;
 
@@ -92,40 +98,40 @@ router.put("/relatable/:postId", isLoggedIn, globalLimiter, async (req, res) => 
   }
 
   try {
-    const userRef = db.ref(`relatable/${postId}/userId/${user}`);
+    const userRef = db.ref(`vibes/${postId}/userId/${user}`);
     const userSnapshot = await userRef.once("value");
 
     if (userSnapshot.exists()) {
-      return res.status(403).send({error: "Already marked as relatable"});
+      return res.status(403).send({error: "You already matched the vibe"});
     }
 
-    // Marking as relatable
+    // Marking as vibes
     await userRef.set(true);
-    const countRef = db.ref(`relatable/${postId}/count`);
+    const countRef = db.ref(`vibes/${postId}/count`);
     await countRef.transaction((current) => (current || 0) + 1);
 
-    return res.status(200).send("Marked as relatable");
+    return res.status(200).send("Vibe Matched!");
   } catch (relError) {
-    console.log("Relatable marking error: ", relError);
+    console.log("vibe marking error: ", relError);
     return res.status(500).send({error: "Internal server error"});
   }
 });
 
-// Get relatable count
-router.get("/relatable/:postId", async (req, res) => {
+// Get vibes count
+router.get("/vibes/:postId", async (req, res) => {
   const postId = req.params.postId;
   if (!postId) {
     return res.status(400).send({error: "No data found"});
   }
 
   try {
-    // Getting relatable count
-    const countVal = (await db.ref(`relatable/${postId}/count`).once("value")).val();
+    // Getting vibes count
+    const countVal = (await db.ref(`vibes/${postId}/count`).once("value")).val();
     const count = countVal || 0;
 
     return res.status(200).send({count});
   } catch (relError) {
-    console.log("Relatable marking error: ", relError);
+    console.log("vibe marking error: ", relError);
     return res.status(500).send({error: "Internal server error"});
   }
 });

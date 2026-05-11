@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "deploy-hosting": "cd client && npm run build && cd .. && firebase deploy --only hosting",
+    "deploy": "cd client && npm run build && cd .. && firebase deploy --only hosting,functions",
+    "firebase-emulator": "firebase emulators:start --only functions,database && cd client && npm start"
+  },
   "dependencies": {
     "openai": "^6.8.1"
   }

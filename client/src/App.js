@@ -62,7 +62,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path='/' element={<Home alert={showAlert} />} />
             <Route path='/submit-secret' element={<SubmitSecret />} />
-            <Route path='/post/:id' element={<PostContent />} />
+            <Route path='/post/:id' element={<PostContent alert={showAlert}/>} />
           </Route>
         </Routes>
       </PostState>

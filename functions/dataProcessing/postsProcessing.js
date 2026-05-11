@@ -23,6 +23,10 @@ const postFetching = async (ref, endAt, limitToLast) => {
     data.push({
       id: child.key,
       ...post,
+      content:
+        post.content && post.content.length > 100 ?
+          post.content.substring(0, 100) + "..." :
+          post.content,
     });
   });
 
