@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords } from '../dataProcessing/dataProcessing'
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing'
@@ -11,11 +11,19 @@ import removeSave from '../assets/remove_save_svg.svg'
 import Spinner from './Spinner'
 
 function PostContent(props) {
+    const [searchParams] = useSearchParams();
     const { id } = useParams();
+    const sTitle = searchParams.get("title");
+    const sContent = searchParams.get("content");
+    const timestamp = searchParams.get("timestamp");
+
     const [postData, setPostData] = useState({ id: id, title: "", content: "", timestamp: 0 });
     const [isLoading, setIsLoading] = useState(false);
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
+    const [isSaved, setIsSaved] = useState(false);
+
+    const MAX_SAVING_CAPACITY = 20;
 
     // Fetching the post from the server
     const fetchPost = async () => {
@@ -46,6 +54,7 @@ function PostContent(props) {
             fetchPost();
             getTotalVibeCount();
             isAlreadyVibed();
+            isPostSaved();
         }
 
     }, [id]);
@@ -91,10 +100,60 @@ function PostContent(props) {
     }
 
     // save the posts to local storage
-    const savePost = () => {
-        
+    const savePostBtn = () => {
+        if (postData.title.length <= 2 || postData.content.length <= 2) {
+            props.alert("Failed to save post!", "alert");
+            return;
+        }
+
+        const savedPosts = JSON.parse(localStorage.getItem("savedPosts")) || [];
+
+        const alreadySavedIndex = savedPosts.findIndex((post) => post.id === id);
+
+        if (alreadySavedIndex !== -1) {
+            savedPosts.splice(alreadySavedIndex, 1);
+
+            localStorage.setItem(
+                "savedPosts",
+                JSON.stringify(savedPosts)
+            );
+
+            setIsSaved(false);
+            props.alert("Post removed from saved.", "alert");
+            return;
+        }
+
+        if (savedPosts.length >= MAX_SAVING_CAPACITY) {
+            props.alert("Only 20 posts can be saved", "alert");
+        }
+
+        const postToSave = {
+            id: id,
+            title: sTitle,
+            content: sContent,
+            timestamp: timestamp
+        }
+        savedPosts.push(postToSave);
+
+        localStorage.setItem("savedPosts", JSON.stringify(savedPosts));
+        setIsSaved(true);
+        props.alert("Post saved successfully!", "success");
     }
 
+    const isPostSaved = () => {
+        const savedPosts = JSON.parse(localStorage.getItem("savedPosts")) || [];
+        const index = savedPosts.findIndex(post => post.id === id);
+
+        if(index === -1){
+            setIsSaved(false);
+            return;
+        }
+
+        setIsSaved(true);
+    }
+
+
+    // Set the vibe to local storage
     const setVibeToLocalStorage = () => {
         const vibesPost = JSON.parse(localStorage.getItem("vibes")) || [];
         vibesPost.push(id);
@@ -118,7 +177,7 @@ function PostContent(props) {
 
     return (
         <>
-            {isLoading && <Spinner isCenter={true}/>}
+            {isLoading && <Spinner isCenter={true} />}
             <div className='container mt-5'>
                 {/* Post header section */}
                 <div>
@@ -159,9 +218,9 @@ function PostContent(props) {
                             <div className="vertical-divider"></div>
 
                             {/* Save Post Btn */}
-                            <div className="d-flex align-items-center gap-2 icon-svg">
-                                <img src={saveSVG} width="24px" height='24px' />
-                                <span>Save</span>
+                            <div className="d-flex align-items-center gap-2 icon-svg" onClick={savePostBtn}>
+                                <img src={isSaved ? removeSave : saveSVG} width="24px" height='24px' />
+                                <span>{isSaved ? "Saved" : "Save"}</span>
                             </div>
 
                         </div>
