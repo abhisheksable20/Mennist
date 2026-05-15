@@ -7,4 +7,11 @@ const postValidation = {
   }),
 };
 
-module.exports = {postValidation};
+const reportValidation = {
+  body: Joi.object({
+    postId: Joi.string().max(100).required(),
+    reason: Joi.string().min(3).max(500).required(),
+  }),
+};
+
+module.exports = {postValidation, reportValidation};

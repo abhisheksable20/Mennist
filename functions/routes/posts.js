@@ -4,7 +4,7 @@ const admin = require("firebase-admin");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
-const {postValidation} = require("../validators/postValidator");
+const {postValidation, reportValidation} = require("../validators/postValidator");
 const postFetching = require("../dataProcessing/postsProcessing");
 
 const db = admin.database();
@@ -116,6 +116,38 @@ router.put("/vibes/:postId", isLoggedIn, globalLimiter, async (req, res) => {
     return res.status(500).send({error: "Internal server error"});
   }
 });
+
+// Report the post
+router.post("/report", isLoggedIn, validate(reportValidation), async (req, res) => {
+  const user = req.user.uid;
+  const {postId, reason} = req.body;
+
+  if (!postId) {
+    return res.status(400).send({error: "Something went wrong!"});
+  }
+
+  try {
+    const postRef = await db.ref(`posts/${postId}`).once("value");
+    if (!postRef.exists()) {
+      return res.status(404).send({error: "Sorry, post not found"});
+    }
+
+    const data = postRef.val();
+
+    const reportData = {
+      reason: reason,
+      timestamp: Date.now(),
+      userUniqueId: data.userUniqueId,
+    };
+
+    await db.ref(`reports/posts/${postId}/${user}`).set(reportData);
+    return res.status(200).send({message: "Post reported successfully!"});
+  } catch (reportError) {
+    console.log("Failed to report post: ", reportError);
+    res.status(500).send({error: "Internal server error."});
+  }
+});
+
 
 // Get vibes count
 router.get("/vibes/:postId", async (req, res) => {

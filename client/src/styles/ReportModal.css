@@ -1,0 +1,57 @@
+.modal-content {
+    background-color: #171717;
+    color: #FAFAFA;
+    border-color: rgba(255,255,255,0.2);
+    font-family: "Open Sans", sans-serif;
+}
+
+.modal-header {
+    border-color: rgba(255,255,255,0.2);
+}
+
+.modal-footer {
+    border-color: rgba(255,255,255,0.2);
+}
+
+.report-icon {
+    background-color: rgba(208, 52, 44, 0.2);
+    border-radius: 25%;
+    padding: 5px;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
+.form-check-input {
+    background-color: #171717;
+    border-color: rgba(255,255,255,0.2);
+}
+
+.form-check-input:checked {
+    background-color: #D0342C;
+    border-color: #D0342C;
+}
+
+.form-check-input:focus {
+    border-color: #B52B24;
+    box-shadow: 0 0 0 0.25rem rgba(208, 52, 44, 0.25);
+}
+
+.form-check-label {
+    color: #D4D4D4;
+    transition: color 0.2s ease;
+}
+
+.form-check-input:checked + .form-check-label {
+    color: #FAFAFA;
+}
+
+.report-msg {
+    color: #D4D4D4;
+}
+
+.modal-footer {
+    flex-wrap: nowrap;
+    gap: 10px;
+}

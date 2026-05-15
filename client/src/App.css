@@ -212,7 +212,6 @@ body {
   font-family: "Open Sans", sans-serif;
   line-height: 1.8;
   color: #D4D4D4;
-  margin-bottom: 100px;
 }
 
 .post-divider {
@@ -245,6 +244,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   min-width: 280px;
+}
+
+.report-btn {
+  color: #FAFAFA;
+  font-family: 'Poppins', sans-serif;
+  font-weight: normal;
+  background: #D0342C;
+}
+
+.report-btn:hover {
+  color: #FAFAFA;
+  background: #B52B24;
 }
 
 .icon-svg {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords } from '../dataProcessing/dataProcessing'
@@ -9,6 +9,8 @@ import fullLikeSVG from '../assets/heart_fullsvg.svg'
 import saveSVG from '../assets/save_svg.svg'
 import removeSave from '../assets/remove_save_svg.svg'
 import Spinner from './Spinner'
+import reportPost from "../assets/report_svg.svg"
+import ReportPostComponent from './ReportPostComponent'
 
 function PostContent(props) {
     const [searchParams] = useSearchParams();
@@ -22,6 +24,8 @@ function PostContent(props) {
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
+
+    const reportBtnRef = useRef(null);
 
     const MAX_SAVING_CAPACITY = 20;
 
@@ -144,7 +148,7 @@ function PostContent(props) {
         const savedPosts = JSON.parse(localStorage.getItem("savedPosts")) || [];
         const index = savedPosts.findIndex(post => post.id === id);
 
-        if(index === -1){
+        if (index === -1) {
             setIsSaved(false);
             return;
         }
@@ -175,6 +179,10 @@ function PostContent(props) {
         return false;
     }
 
+    const reportPostBtn = () => {
+        reportBtnRef.current.click();
+    }
+
     return (
         <>
             {isLoading && <Spinner isCenter={true} />}
@@ -196,6 +204,17 @@ function PostContent(props) {
                 <div className='my-5'>
                     <p className='post-content fs-5'>{postData.content}</p>
                 </div>
+                {/* Divider */}
+                <div className="post-divider"></div>
+                {/* Report Post section */}
+                <div className='d-flex justify-content-between align-items-center mt-4' style={{marginBottom:"150px"}}>
+                    <p className='text-body-secondary'>Report this post</p>
+                    <button type="button" className="btn report-btn d-flex align-items-center justify-content-center gap-2" onClick={reportPostBtn}>
+                        <img src={reportPost} alt="Report Posts Icon" width="24px" height="24px"/>
+                        Report
+                    </button>
+                </div>
+                <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} alert={props.alert}/>
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">
