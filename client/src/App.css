@@ -84,6 +84,26 @@ body {
   background: #16A34A;
 }
 
+.nav-pills .nav-link {
+  background: transparent;
+  color: #D4D4D4;
+  border: 1px solid #2E2E2E;
+}
+
+.nav-pills .nav-link.active {
+  background: #22c55e;
+  color: #FAFAFA;
+  border-color: #22c55e;
+  font-weight: bold;
+}
+
+.nav-link:hover {
+  background: #16A34A;
+  color: #FAFAFA;
+  cursor: pointer;
+}
+
+
 /* Handle card styles */
 .card {
   font-family: 'Poppins', sans-serif;

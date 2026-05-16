@@ -2,7 +2,7 @@ import React from 'react'
 import SubmitButton from './SubmitButton'
 import { useNavigate, useLocation } from 'react-router-dom';
 
-function Navbar() {
+function Navbar(props) {
     const navigate = useNavigate();
 
     const navigateToHome = ()=>{
@@ -17,7 +17,7 @@ function Navbar() {
                     <span className="navbar-brand navbar-title mb-0 h1 px-2 py-3" onClick={navigateToHome}>Mennist</span>
 
                     {/* Submit Secret Button */}
-                    <SubmitButton/>
+                    <SubmitButton alert={props.alert}/>
                 </div>
             </nav>
         </div>

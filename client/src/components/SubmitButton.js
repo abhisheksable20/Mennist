@@ -13,14 +13,26 @@ function SubmitButton(props) {
     const currentPath = location.pathname === "/submit-secret";
 
     // Navigate to submit secret component
-    const navigateToSubmitSecret = () => {
+    const navigateToSubmitSecret = async () => {
         if (!currentPath) {
             navigate("/submit-secret");
         }
 
         // Submit post we are in submit secret page
         else {
-            submitPost();
+            setDisability(true);
+            try {
+                props.alert("Shhh... your secret is on its way", "primary");
+                await submitPost();
+                props.alert("Confession delivered successfully", "success");
+                navigate("/")
+            } 
+            catch (submitErr) {
+                props.alert("Something went wrong!", "alert");
+            }
+            finally {
+                setDisability(false);
+            }
         }
     }
 

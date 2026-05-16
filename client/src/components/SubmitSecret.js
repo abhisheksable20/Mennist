@@ -3,7 +3,7 @@ import SubmitButton from './SubmitButton'
 import PostContext from '../context/posts/postContext'
 import { totalWords } from '../dataProcessing/dataProcessing';
 
-function SubmitSecret() {
+function SubmitSecret(props) {
   const { content, setContent } = useContext(PostContext);
   
   // Handle imput changing its texts
@@ -67,7 +67,7 @@ function SubmitSecret() {
         </div>
       </div>
 
-      <SubmitButton />
+      <SubmitButton alert={props.alert}/>
     </div>
   )
 }

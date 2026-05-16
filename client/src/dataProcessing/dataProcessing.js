@@ -4,7 +4,7 @@ export function convertTimestampToReadable(timestamp) {
         return "NO DATE";
     }
 
-    const formattedDate = new Date(timestamp).toLocaleDateString("en-US", {
+    const formattedDate = new Date(+timestamp).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric"

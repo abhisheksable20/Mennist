@@ -11,10 +11,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Toast as BSToast } from 'bootstrap'
 
 
-function Layout() {
+function Layout(props) {
   return (
     <>
-      <Navbar />
+      <Navbar alert={props.alert}/>
       <Outlet />
     </>
   );
@@ -48,7 +48,7 @@ function App() {
   return (
     <>
       <PostState>
-        <div className="position-fixed bottom-0 end-0 p-3">
+        <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
           {
             alerts.map((alert) => {
               return <ToastComponent key={alert.id} toastRef={toastRef} alert={alert} />
@@ -59,9 +59,9 @@ function App() {
           {/* This is landing page */}
           <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
 
-          <Route element={<Layout />}>
+          <Route element={<Layout alert={showAlert}/>}>
             <Route path='/' element={<Home alert={showAlert} />} />
-            <Route path='/submit-secret' element={<SubmitSecret />} />
+            <Route path='/submit-secret' element={<SubmitSecret alert={showAlert}/>} />
             <Route path='/post/:id' element={<PostContent alert={showAlert}/>} />
           </Route>
         </Routes>

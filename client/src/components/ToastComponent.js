@@ -3,7 +3,11 @@ import React from 'react'
 function ToastComponent(props) {
     return (
         props.alert &&
-        <div ref={props.toastRef} className={`toast align-items-center custom-toast custom-toast-${props.alert.type} border-0 mb-2`} role="alert" aria-live="assertive" aria-atomic="true">
+        <div ref={props.toastRef}
+            className={`toast align-items-center custom-toast custom-toast-${props.alert.type} border-0 mb-2`}
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true">
             <div className="d-flex">
                 <div className="toast-body">
                     {props.alert.msg}
