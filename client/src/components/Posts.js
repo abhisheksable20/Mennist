@@ -38,7 +38,11 @@ function Posts(props) {
                 await resetPostFetching(activeBtn);
             }
             catch (resetErr) {
-                console.log("Resseting Error", resetErr)
+                if (resetErr.response?.status === 401) {
+                    props.alert("Session expired", "alert");
+                    navigate("/setup-user", { replace: true });
+                    return;
+                }
             }
         }
 
@@ -94,12 +98,12 @@ function Posts(props) {
                     ))
                 )}
             </div>
-            
+
 
             {/* Sentinel — always render this at the bottom */}
             {loading && <Spinner />}
             {hasNext && <div ref={sentryRef} />}
-            
+
         </div>
     )
 }

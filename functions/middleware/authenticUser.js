@@ -6,8 +6,8 @@ const db = admin.database();
 // Generate user id using ip and user agent
 function generateUserId(req) {
   const ip = req.headers["x-forwarded-for"] ||
-        req.socket.remoteAddress ||
-        "0.0.0.0";
+    req.socket.remoteAddress ||
+    "0.0.0.0";
   const userAgent = req.headers["user-agent"] || "unknown";
   const rawId = `${ip}_${userAgent}`;
   const uniqueId = crypto.createHash("sha256")
@@ -44,29 +44,13 @@ const isLoggedIn = async (req, res, next) => {
 // Authenticating the user
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
-  let sessionId = req.cookies.sessionId;
+  const sessionId = req.cookies.sessionId;
 
   // Create a new user
   if (!sessionId) {
-    const userId = generateUserId(req);
-    sessionId = crypto.randomBytes(8).toString("hex");
+    const session = await createSession(req, res);
 
-    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
-
-    await db.ref(`sessions/${sessionId}`).set({
-      userId,
-      expiresAt,
-    });
-
-    // Make it Secure: true in production
-    res.cookie("sessionId", sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
-
-    req.user = {uid: userId};
+    req.user = {uid: session.userId};
     return next();
   }
 
@@ -74,9 +58,15 @@ const authUser = async (req, res, next) => {
 
   // This will trigger if we delete the session manually
   if (!snap.exists()) {
-    res.clearCookie("sessionId");
-    res.status(401).send({error: "Session expired"});
-    return;
+    res.clearCookie("sessionId", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    const session = await createSession(req, res);
+    req.user = {uid: session.userId};
+    return next();
   }
 
   const data = snap.val();
@@ -90,6 +80,28 @@ const authUser = async (req, res, next) => {
 
   req.user = {uid: data.userId};
   next();
+};
+
+const createSession = async (req, res) => {
+  const userId = generateUserId(req);
+  const sessionId = crypto.randomBytes(8).toString("hex");
+
+  const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+
+  await db.ref(`sessions/${sessionId}`).set({
+    userId,
+    expiresAt,
+  });
+
+  // Make it Secure: true in production
+  res.cookie("sessionId", sessionId, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  return {userId, sessionId};
 };
 
 module.exports = {authUser, isLoggedIn};

@@ -44,9 +44,10 @@ const PostState = (props) => {
         catch (fetchError) {
             // Ignore intentional cancellations (AbortController)
             if (axios.isCancel(fetchError)) return;
-
+            console.log("Fetching error: ", fetchError)
             setHasNext(false);
             throw fetchError
+
         } finally {
             isFetchingRef.current = false;
             setLoading(false);
