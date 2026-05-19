@@ -66,7 +66,7 @@ function SubmitSecret(props) {
           </div>
         </div>
       </div>
-
+      <p className='condition-text'>Share freely, but stay respectful — avoid posting any misleading, harmful, self-harming, hateful, or threatening content toward others.</p>
       <SubmitButton alert={props.alert}/>
     </div>
   )
