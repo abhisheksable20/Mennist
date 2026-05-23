@@ -18,8 +18,6 @@ const postFetching = async (ref, endAt, limitToLast) => {
   snapshot.forEach((child) => {
     const post = child.val();
 
-    delete post.userUniqueId;
-
     data.push({
       id: child.key,
       ...post,

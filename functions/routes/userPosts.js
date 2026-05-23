@@ -21,7 +21,7 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
   console.log("Session ID: ", userId);
 
   try {
-    const ref = db.ref(`/userPosts/${userId}`);
+    const ref = db.ref(`/users/${userId}/posts`);
     const data = await fetchPosts(ref, endAt, retrieveLimit);
 
     return res.status(200).send(data);

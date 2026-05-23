@@ -45,10 +45,15 @@ const isLoggedIn = async (req, res, next) => {
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
   const sessionId = req.cookies.sessionId;
+  const publicKey = req.query.publicKey;
+
+  if (!publicKey) {
+    return res.status(400).send({error: "Public key not found"});
+  }
 
   // Create a new user
   if (!sessionId) {
-    const session = await createSession(req, res);
+    const session = await createSession(req, res, publicKey);
 
     req.user = {uid: session.userId};
     return next();
@@ -64,7 +69,7 @@ const authUser = async (req, res, next) => {
       sameSite: "none",
     });
 
-    const session = await createSession(req, res);
+    const session = await createSession(req, res, publicKey);
     req.user = {uid: session.userId};
     return next();
   }
@@ -82,7 +87,7 @@ const authUser = async (req, res, next) => {
   next();
 };
 
-const createSession = async (req, res) => {
+const createSession = async (req, res, publicKey) => {
   const userId = generateUserId(req);
   const sessionId = crypto.randomBytes(8).toString("hex");
 
@@ -91,6 +96,11 @@ const createSession = async (req, res) => {
   await db.ref(`sessions/${sessionId}`).set({
     userId,
     expiresAt,
+  });
+
+  // Creating user database for storing publicKey
+  await db.ref(`users/${userId}`).set({
+    publicKey: publicKey,
   });
 
   // Make it Secure: true in production

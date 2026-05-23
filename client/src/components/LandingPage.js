@@ -4,6 +4,8 @@ import creatAcc from "../assets/anonymous_svg_icon.svg"
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useState } from 'react'
+import { generateKeyPair } from '../crypto/keyManager'
+import { db } from '../internalDatabase/db'
 
 function LandingPage(props) {
   const [btnDisabled, setDisablility] = useState(false);
@@ -14,7 +16,12 @@ function LandingPage(props) {
     setDisablility(true);
     props.alert("Preparing your safe space...", "primary");
     try {
-      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`, { withCredentials: true });
+      const publicKey = await generateKeys();
+      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`, {
+        params: {
+          publicKey
+        }
+      },{ withCredentials: true });
       props.alert("You're now anonymous.", "success");
       setTimeout(() => {
         navigate("/");
@@ -31,6 +38,18 @@ function LandingPage(props) {
     finally {
       setDisablility(false);
     }
+  }
+
+  // Generating Private Key and Public Key
+  const generateKeys = async () => {
+    const userKeys = await generateKeyPair();
+    await db.keys.put({
+      id: "user-keypair",
+      privateKey: userKeys.privateKey,
+      publicKey: userKeys.publicKey
+    });
+
+    return userKeys.publicKey;
   }
 
   return (

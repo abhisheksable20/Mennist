@@ -71,14 +71,13 @@ router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (
       title,
       content,
       timestamp,
-      userUniqueId,
     };
 
     const dbRef = db.ref("posts").push();
     await dbRef.set(postData);
 
     // Setting user post data
-    await db.ref(`userPosts/${userUniqueId}/${dbRef.key}`).set({title, content, timestamp});
+    await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp});
 
     return res.status(200).send("Post submitted successfully.");
   } catch (submitError) {
