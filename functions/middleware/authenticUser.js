@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 
 const db = admin.database();
 
@@ -36,7 +37,9 @@ const isLoggedIn = async (req, res, next) => {
     return res.status(401).send({error: "Session expired"});
   }
 
-  req.user = {uid: data.userId};
+  const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
+
+  req.user = {uid: data.userId, chatId};
   next();
 };
 

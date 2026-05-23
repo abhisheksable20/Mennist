@@ -71,6 +71,7 @@ router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (
       title,
       content,
       timestamp,
+      chatId: req.user.chatId,
     };
 
     const dbRef = db.ref("posts").push();

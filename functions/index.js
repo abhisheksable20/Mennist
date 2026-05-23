@@ -5,6 +5,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const {ValidationError} = require("express-validation");
 
+require("dotenv").config();
+
 if (!admin.apps.length) {
   admin.initializeApp();
 }
