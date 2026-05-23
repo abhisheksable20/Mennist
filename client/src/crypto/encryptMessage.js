@@ -13,7 +13,7 @@ export async function encryptMessage(message, receiverPublicKey, senderPrivateKe
 
     return {
         encryptedMessage: sodium.to_base64(encrypted),
-        nounce: sodium.to_base64(nonce)
+        nounce: sodium.to_base64(nounce)
     }
 }
 
