@@ -9,7 +9,7 @@ const db = admin.database();
 
 const retrieveLimit = 10;
 
-router.get("/create-user", authUser, globalLimiter, async (req, res) => {
+router.post("/create-user", authUser, globalLimiter, async (req, res) => {
   return res.status(200).send("User created successfully!");
 });
 

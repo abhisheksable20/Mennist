@@ -55,4 +55,7 @@ app.use("/", require("./routes/posts"));
 // Post CRUD operation route for user
 app.use("/user", require("./routes/userPosts"));
 
+// Chats operation route
+app.use("/chats", require("./routes/chats"));
+
 exports.api = functions.https.onRequest(app);

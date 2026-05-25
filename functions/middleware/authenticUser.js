@@ -48,7 +48,7 @@ const isLoggedIn = async (req, res, next) => {
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
   const sessionId = req.cookies.sessionId;
-  const publicKey = req.query.publicKey;
+  const publicKey = req.body.publicKey;
 
   if (!publicKey) {
     return res.status(400).send({error: "Public key not found"});

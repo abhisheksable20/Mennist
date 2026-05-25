@@ -17,11 +17,7 @@ function LandingPage(props) {
     props.alert("Preparing your safe space...", "primary");
     try {
       const publicKey = await generateKeys();
-      await axios.get(`${process.env.REACT_APP_API_URL}/user/create-user`, {
-        params: {
-          publicKey
-        }
-      },{ withCredentials: true });
+      await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, { publicKey }, { withCredentials: true });
       props.alert("You're now anonymous.", "success");
       setTimeout(() => {
         navigate("/");
