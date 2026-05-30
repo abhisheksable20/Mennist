@@ -12,3 +12,16 @@
     color: #FAFAFA;
     background: #16A34A;
 }
+
+.chat-item {
+    font-family: 'Poppins', sans-serif;
+    background: #262626;
+    color: #FAFAFA;
+    border: 2px solid #2E2E2E;
+    transition: background-color 0.3s ease;
+}
+
+.chat-item:hover {
+    background: #22C55E;
+    color: #FAFAFA;
+}

@@ -9,6 +9,7 @@ import LandingPage from './components/LandingPage';
 import ToastComponent from './components/ToastComponent';
 import { useEffect, useRef, useState } from 'react';
 import { Toast as BSToast } from 'bootstrap'
+import ChatsPage from './components/ChatsPage';
 
 
 function Layout(props) {
@@ -63,6 +64,7 @@ function App() {
             <Route path='/' element={<Home alert={showAlert} />} />
             <Route path='/submit-secret' element={<SubmitSecret alert={showAlert}/>} />
             <Route path='/post/:id' element={<PostContent alert={showAlert}/>} />
+            <Route path='/my-chats' element={<ChatsPage />}/>
           </Route>
         </Routes>
       </PostState>
