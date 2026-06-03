@@ -9,5 +9,5 @@ db.version(1).stores({
 db.version(2).stores({
   keys: "id",
   chatUser: "++chatId, username, publicKey",
-  chats: "++id, chatId, encryptedMsg, timestamp"
+  chats: "++id, chatId, encryptedMsg, timestamp, status"
 });
