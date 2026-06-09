@@ -75,6 +75,70 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 
 });
 
+// Get user specific chat
+router.get("/user-chat", isLoggedIn, async (req, res) => {
+  const { chatId } = req.body;
+  const userId = req.user.uid;
+  
+  if(!chatId){
+    return res.status(406).send({error:"Cannot get chats"})
+  }
+
+  
+
+})
+
+// ------------------------------------------------------------------
+router.get("/testing-post", async (req, res) => {
+  const data = {
+    msg: "encryptedMesg",
+    timestamp: Date.now()
+  }
+
+  const data_two = {
+    msg: "encryptedMesg",
+    timestamp: Date.now()
+  }
+
+  const metaData = {
+    chatId: "chatID",
+    senderPublicKey: "senderPublicKey"
+  }
+
+  const snapshot = await db.ref(`chats/dfkj9837u8fjkdfi/kjsdf8ijweklfj348793/messages`)
+  const snapshot_two = await db.ref(`chats/dfkj9837u8fjkdfi/kjsdf8ijweklfj348793`)
+
+  await snapshot.push(data);
+  await snapshot.push(data_two);
+  await snapshot_two.update(metaData);
+
+  return res.status(200).send("Success")
+
+});
+
+router.get("/get-testing", async (req, res) => {
+  const snapshot = await db.ref("chats/dfkj9837u8fjkdfi/kjsdf8ijweklfj348793").once("value");
+  const rawData = snapshot.val();
+
+  let messages = [];
+
+  messages = Object.entries(rawData.messages).map(([id, msg]) => ({
+    id: id,
+    ...msg
+  }));
+
+  const data = {
+    messages: messages,
+    chatId: rawData.chatId,
+    senderPublicKey: rawData.senderPublicKey
+  }
+
+  res.status(200).send(data);
+})
+
+
+// ---------------------------------------------------------------------------------------
+
 // Get user all chats
 router.get("/my-chats", isLoggedIn, async (req, res) => {
   const userId = req.user.uid;
@@ -106,7 +170,7 @@ router.get("/my-chats", isLoggedIn, async (req, res) => {
     });
 
     return res.status(200).send(chatsData);
-    
+
   }
   catch (error) {
     return res.status(500).send({ error: "Something went wrong!" });

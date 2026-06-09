@@ -88,7 +88,7 @@ const ChatsState = (props) => {
     }
 
     return (
-        <ChatsContext.Provider value={{ createNewUser }}>
+        <ChatsContext.Provider value={{ createNewUser, sendChat }}>
             {props.children}
         </ChatsContext.Provider>
     )
