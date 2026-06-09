@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const {ValidationError} = require("express-validation");
+const { ValidationError } = require("express-validation");
 
 require("dotenv").config();
 
@@ -20,14 +20,14 @@ const allowedOrigins = [
   "https://www.mennist.com",
   "http://localhost:3000"];
 const corsOptions = {
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
 };
 

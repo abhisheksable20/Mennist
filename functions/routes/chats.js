@@ -75,69 +75,90 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 
 });
 
-// Get user specific chat
+// Delete the fetched chats
+router.delete("/user-chat", isLoggedIn, async (req, res) => {
+  /**
+   * The delete data body structure should be
+   * [
+   *    {
+   *        chatId: "Chat Id of the post", String Data
+   *        messagesKeys: "This are messages firebase generated keys", Array Data
+   *    }  
+   * ]
+   */
+
+  const { delData } = req.body;
+  const userId = req.user.uid;
+
+  if(!delData) {
+    return res.status(406).send({error: "Cannot process your request!"})
+  }
+
+  try {
+    delData.forEach(async (data) => {
+      const chatId = data.chatId;
+      const messagesKeys = data.messagesKeys; // This is an array data structure
+
+      const delChatUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+
+      const updates = {}
+
+      // Messages firebase generated keys
+      messagesKeys.forEach((keys) => {
+        updates[`chats/${userId}/${delChatUserId}/messages/${keys}`] = null;
+      });
+
+      await db.ref().update(updates);
+      return res.status(200).send("Deleted Successfully!");
+    })
+
+  }
+  catch (delError) {
+    console.log("Error: ", delError)
+    return res.status(500).send({ error: "Something went wrong!" })
+  }
+})
+
+
+// Get user chat from database - specific user chat
 router.get("/user-chat", isLoggedIn, async (req, res) => {
   const { chatId } = req.body;
-  const userId = req.user.uid;
-  
-  if(!chatId){
-    return res.status(406).send({error:"Cannot get chats"})
+  if (!chatId) {
+    return res.status(406).send({ error: "Cannot process request." });
   }
 
-  
+  const senderUserId = req.user.uid;
 
+  try {
+    const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+    const snapshot = await db.ref(`chats/${senderUserId}/${recieverUserId}`).once("value");
+
+    if (!snapshot.exists()) {
+      return res.status(200).send([]);
+    }
+
+    const rawData = snapshot.val();
+
+    let chatData = [];
+
+    chatData = Object.entries(rawData.messages).map(([messageId, chat]) => ({
+      id: messageId,
+      ...chat
+    }
+    ));
+
+    const data = {
+      senderChatId: rawData.senderChatId,
+      senderPublicKey: rawData.senderPublicKey,
+      chat: chatData
+    }
+
+    return res.status(200).send(data);
+  }
+  catch (fetchError) {
+    return res.status(500).send({ error: "Something went wrong!" })
+  }
 })
-
-// ------------------------------------------------------------------
-router.get("/testing-post", async (req, res) => {
-  const data = {
-    msg: "encryptedMesg",
-    timestamp: Date.now()
-  }
-
-  const data_two = {
-    msg: "encryptedMesg",
-    timestamp: Date.now()
-  }
-
-  const metaData = {
-    chatId: "chatID",
-    senderPublicKey: "senderPublicKey"
-  }
-
-  const snapshot = await db.ref(`chats/dfkj9837u8fjkdfi/kjsdf8ijweklfj348793/messages`)
-  const snapshot_two = await db.ref(`chats/dfkj9837u8fjkdfi/kjsdf8ijweklfj348793`)
-
-  await snapshot.push(data);
-  await snapshot.push(data_two);
-  await snapshot_two.update(metaData);
-
-  return res.status(200).send("Success")
-
-});
-
-router.get("/get-testing", async (req, res) => {
-  const snapshot = await db.ref("chats/dfkj9837u8fjkdfi/kjsdf8ijweklfj348793").once("value");
-  const rawData = snapshot.val();
-
-  let messages = [];
-
-  messages = Object.entries(rawData.messages).map(([id, msg]) => ({
-    id: id,
-    ...msg
-  }));
-
-  const data = {
-    messages: messages,
-    chatId: rawData.chatId,
-    senderPublicKey: rawData.senderPublicKey
-  }
-
-  res.status(200).send(data);
-})
-
-
-// ---------------------------------------------------------------------------------------
 
 // Get user all chats
 router.get("/my-chats", isLoggedIn, async (req, res) => {
