@@ -11,3 +11,9 @@ db.version(2).stores({
   chatUser: "++chatId, username, publicKey",
   chats: "++id, chatId, encryptedMsg, timestamp, fromMe"
 });
+
+db.version(3).stores({
+  keys: "id",
+  chatUser: "++chatId, username publicKey, lastMsg",
+  chats: "++id, chatId, plainMsg, timestamp, fromMe"
+});

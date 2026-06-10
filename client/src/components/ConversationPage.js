@@ -8,7 +8,7 @@ function ConversationPage() {
   const { chatId } = useParams();
 
   useEffect(() => {
-
+    
 
   }, []);
 
@@ -18,7 +18,7 @@ function ConversationPage() {
       <div className='content-wrapper'>
         {/* Converation Header */}
         <div className='mb-4'>
-          <h2 className='card-text'>killer_two</h2>
+          <h2 className='card-text'>Stiffler</h2>
           <h6 className='text-body-secondary mb-4'>Hope it's the opposite of your gender.</h6>
         </div>
 
