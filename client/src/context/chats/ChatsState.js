@@ -4,13 +4,59 @@ import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
 import { useState } from "react";
 import { encryptMessage } from "../../crypto/encryptMessage";
+import { decryptMessage } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
     const [inputMessage, setInputMessage] = useState({ message: "" });
     const [messages, setMessages] = useState([]);
+    const [userMessages, setUserMessages] = useState([])
 
     const fetchAllChats = async () => {
-        
+
+    }
+
+    // Only fetch single user chat from local Index Database Using Dexie
+    const userChatIndexDB = async (chatId) => {
+        try {
+            const chats = await db.chats
+                .where("chatId")
+                .equals(chatId)
+                .sortBy("timestamp");
+
+            if (chats) {
+                setUserMessages((prev) => [...prev, ...chats]);
+            }
+        }
+        catch (error) {
+            throw "Something went wrong!"
+        }
+
+    }
+
+    // Fetch Single user chats from the server database in firebase
+    const userChatServer = async (chatId) => {
+        if (!chatId)
+            return;
+
+        try {
+            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data
+            if (rawData.chats) {
+                const chatsToDel = [];
+                rawData.chats.forEact(async (chat) => {
+                    chatsToDel.push(chat.id);
+                    decryptedMsg = decryptMessage()
+                })
+            }
+
+        }
+        catch (fetchError) {
+            throw "Somthing went wrong!"
+        }
+
+    }
+
+    const saveChatsToLocalDB = async () => {
+
     }
 
     // Send message to the server
@@ -40,9 +86,9 @@ const ChatsState = (props) => {
             // Storing chat blob on client side
             const indexDBData = {
                 chatId,
-                encryptedMsg: encryptedData,
-                timestamp:Date.now(),
-                fromMe:true
+                plainMsg: inputMessage,
+                timestamp: Date.now(),
+                fromMe: true
             }
 
             await db.chats.add(indexDBData);
@@ -67,7 +113,7 @@ const ChatsState = (props) => {
             const bodyData = { chatId };
             const userData = await db.chatUser.get(chatId);
             if (userData)
-                return true;
+                return userData;
 
             const username = generateUsername();
             const data = (await axios.post(`${process.env.REACT_APP_API_URL}/chats/get-publicKey`, bodyData)).data
@@ -76,11 +122,12 @@ const ChatsState = (props) => {
             const chatMetaData = {
                 chatId,
                 username,
-                publicKey
+                publicKey,
+                lastMsg: null
             }
 
             await db.chatUser.add(chatMetaData);
-            return true;
+            return chatMetaData;
         }
         catch (error) {
             throw error

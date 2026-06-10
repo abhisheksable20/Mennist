@@ -122,7 +122,7 @@ router.delete("/user-chat", isLoggedIn, async (req, res) => {
 
 // Get user chat from database - specific user chat
 router.get("/user-chat", isLoggedIn, async (req, res) => {
-  const { chatId } = req.body;
+  const { chatId } = req.query;
   if (!chatId) {
     return res.status(406).send({ error: "Cannot process request." });
   }
@@ -148,9 +148,9 @@ router.get("/user-chat", isLoggedIn, async (req, res) => {
     ));
 
     const data = {
-      senderChatId: rawData.senderChatId,
+      chatId: rawData.senderChatId,
       senderPublicKey: rawData.senderPublicKey,
-      chat: chatData
+      messages: chatData
     }
 
     return res.status(200).send(data);
