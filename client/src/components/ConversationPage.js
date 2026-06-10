@@ -13,6 +13,18 @@ function ConversationPage() {
   }, []);
 
 
+  // Fetching latest chats from the server if they are available
+  const chatsFromServer = () => {
+    try {
+      
+
+    } 
+    catch (error) {
+      
+    }
+  }
+
+
   return (
     <div className='conversation-page'>
       <div className='content-wrapper'>
