@@ -42,7 +42,7 @@ const ChatsState = (props) => {
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data
             if (rawData.chats) {
                 const chatsToDel = [];
-                rawData.chats.forEact(async (chat) => {
+                rawData.chats.forEach(async (chat) => {
                     chatsToDel.push(chat.id);
                     decryptedMsg = decryptMessage()
                 })
@@ -56,7 +56,7 @@ const ChatsState = (props) => {
     }
 
     const saveChatsToLocalDB = async () => {
-
+        
     }
 
     // Send message to the server

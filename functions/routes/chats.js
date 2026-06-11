@@ -51,16 +51,20 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
   }
 
   const senderChatId = jwt.sign(req.user.uid, process.env.JWT_SECRET_KEY)
-  console.log("senderID: ", senderChatId)
+  const timestamp = Date.now();
+
   const chatBlob = {
     encryptedMsg,
-    timeStamp: Date.now(),
+    timestamp,
     nounce
   }
 
   const chatMetaData = {
     senderChatId,
-    senderPublicKey
+    senderPublicKey,
+    encryptedMsg,
+    timestamp,
+    nounce
   }
 
   try {
@@ -174,19 +178,12 @@ router.get("/my-chats", isLoggedIn, async (req, res) => {
     let chatsData = [];
 
     chatsData = Object.entries(data).map((chat) => {
-      let messages = [];
-
-      if (chat.messages) {
-        messages = Object.entries(chat.messages).map(([messageId, msg]) => ({
-          id: messageId,
-          ...msg
-        }));
-      }
-
       return {
         chatId: chat.senderChatId,
         senderPublicKey: chat.senderPublicKey,
-        messages: messages
+        encryptedMsg: chat.encryptedMsg,
+        timestamp: chat.timestamp,
+        nounce: chat.nounce
       };
     });
 

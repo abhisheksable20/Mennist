@@ -8,29 +8,16 @@ function ConversationPage() {
   const { chatId } = useParams();
 
   useEffect(() => {
+
     
-
   }, []);
-
-
-  // Fetching latest chats from the server if they are available
-  const chatsFromServer = () => {
-    try {
-      
-
-    } 
-    catch (error) {
-      
-    }
-  }
-
 
   return (
     <div className='conversation-page'>
       <div className='content-wrapper'>
         {/* Converation Header */}
         <div className='mb-4'>
-          <h2 className='card-text'>Stiffler</h2>
+          <h2 className='card-text'>killer_two</h2>
           <h6 className='text-body-secondary mb-4'>Hope it's the opposite of your gender.</h6>
         </div>
 
