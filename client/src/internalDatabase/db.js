@@ -14,6 +14,6 @@ db.version(2).stores({
 
 db.version(3).stores({
   keys: "id",
-  chatUser: "++chatId, username publicKey, lastMsg",
+  chatUser: "++chatId, username publicKey, lastMsg, timestamp",
   chats: "++id, chatId, plainMsg, timestamp, fromMe"
 });

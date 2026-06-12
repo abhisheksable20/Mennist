@@ -9,10 +9,52 @@ import { decryptMessage } from "../../crypto/decryptMessage";
 const ChatsState = (props) => {
     const [inputMessage, setInputMessage] = useState({ message: "" });
     const [messages, setMessages] = useState([]);
-    const [userMessages, setUserMessages] = useState([])
+    const [userMessages, setUserMessages] = useState([]);
+    const[allMessages, setAllMessages] = useState([]);
 
-    const fetchAllChats = async () => {
+    // Fetch all the chats from the server
+    const fetchAllChats = async (chatId) => {
+        try {
+            if(!chatId)
+                throw "Cannot process this request";
 
+            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, {withCredentials:true})).data;
+            if(!rawData)
+                return
+
+            const privateKey = (await db.keys.get("user-keypair")).privateKey;
+            
+            rawData.forEach(async (chat) => {
+                const chatId = chat.chatId;
+                const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
+                const chatUser = await db.chatUser.get(chatId);
+                if(!chatUser){
+                    const username = generateUsername();
+                    const data = {
+                        chatId: chat.chatId,
+                        username: username,
+                        publicKey: chat.senderPublicKey,
+                        lastMsg: decryptedMsg,
+                        timestamp: chat.timestamp
+                    }
+
+                    await db.chatUser.add(data);
+                    return;
+                }
+
+                const updatedData = {
+                    lastMsg: decryptMessage,
+                    timestamp: chat.timestamp
+                }
+
+                await db.chatUser.update(chatId, updatedData); 
+
+            });
+
+        } 
+        catch (error) {
+            throw error
+        }
     }
 
     // Only fetch single user chat from local Index Database Using Dexie
