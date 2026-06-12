@@ -11,12 +11,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Toast as BSToast } from 'bootstrap'
 import ChatsPage from './components/ChatsPage';
 import ConversationPage from './components/ConversationPage';
+import ChatsState from './context/chats/ChatsState';
 
 
 function Layout(props) {
   return (
     <>
-      <Navbar alert={props.alert}/>
+      <Navbar alert={props.alert} />
       <Outlet />
     </>
   );
@@ -50,25 +51,27 @@ function App() {
   return (
     <>
       <PostState>
-        <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
-          {
-            alerts.map((alert) => {
-              return <ToastComponent key={alert.id} toastRef={toastRef} alert={alert} />
-            })
-          }
-        </div>
-        <Routes>
-          {/* This is landing page */}
-          <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
+        <ChatsState>
+          <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
+            {
+              alerts.map((alert) => {
+                return <ToastComponent key={alert.id} toastRef={toastRef} alert={alert} />
+              })
+            }
+          </div>
+          <Routes>
+            {/* This is landing page */}
+            <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
 
-          <Route element={<Layout alert={showAlert}/>}>
-            <Route path='/' element={<Home alert={showAlert} />} />
-            <Route path='/submit-secret' element={<SubmitSecret alert={showAlert}/>} />
-            <Route path='/post/:id' element={<PostContent alert={showAlert}/>} />
-            <Route path='/my-chats' element={<ChatsPage />}/>
-            <Route path='/user-chat/:chatId' element={<ConversationPage />}/>
-          </Route>
-        </Routes>
+            <Route element={<Layout alert={showAlert} />}>
+              <Route path='/' element={<Home alert={showAlert} />} />
+              <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
+              <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
+              <Route path='/my-chats' element={<ChatsPage />} />
+              <Route path='/user-chat/:chatId' element={<ConversationPage />} />
+            </Route>
+          </Routes>
+        </ChatsState>
       </PostState>
     </>
   );

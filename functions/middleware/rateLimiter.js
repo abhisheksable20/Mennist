@@ -40,6 +40,6 @@ const chatLimiter = rateLimit({
       message: "Too many request,try after some time.",
     });
   },
-})
+});
 
-module.exports = { globalLimiter, postLimiter, chatLimiter };
+module.exports = {globalLimiter, postLimiter, chatLimiter};

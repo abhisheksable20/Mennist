@@ -1,8 +1,15 @@
-import React from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import "../styles/ChatPage.css"
 import ChatItem from './ChatItem'
+import ChatsContext from '../context/chats/chatsContext'
 
 function ChatsPage() {
+  const { fetchAllChats, allMessages } = useContext(ChatsContext);
+
+  useEffect(() => {
+    fetchAllChats();
+  }, [])
+
   return (
     <div className='container my-5'>
       <h6 className='special-text'>PRIVATE CHATS</h6>
@@ -11,12 +18,11 @@ function ChatsPage() {
 
       {/* Display my all chats */}
       <div className='list-group mt-4'>
-        <ChatItem />
-        <ChatItem />
-        <ChatItem />
-        <ChatItem />
-        <ChatItem />
-        <ChatItem />
+        {
+          allMessages.map((msg) => {
+            return <ChatItem key={msg.chatId} username={msg.username} timestamp={msg.timestamp} lastMsg={msg.lastMsg}/>
+          })
+        }
       </div>
 
     </div>

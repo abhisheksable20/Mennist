@@ -2,7 +2,7 @@ import ChatsContext from "./chatsContext";
 import axios from "axios";
 import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { encryptMessage } from "../../crypto/encryptMessage";
 import { decryptMessage } from "../../crypto/decryptMessage";
 
@@ -10,59 +10,90 @@ const ChatsState = (props) => {
     const [inputMessage, setInputMessage] = useState({ message: "" });
     const [messages, setMessages] = useState([]);
     const [userMessages, setUserMessages] = useState([]);
-    const[allMessages, setAllMessages] = useState([]);
+    const [allMessages, setAllMessages] = useState([]);
+
+    const chatIdRef = useRef(null);
 
     // Fetch all the chats from the server
-    const fetchAllChats = async (chatId) => {
+    const fetchAllChats = async () => {
         try {
-            if(!chatId)
-                throw "Cannot process this request";
+            await allChatsFromLocalStorage();
 
-            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, {withCredentials:true})).data;
-            if(!rawData)
-                return
+            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, { withCredentials: true })).data;
+            if (!rawData)
+                return;
 
-            const privateKey = (await db.keys.get("user-keypair")).privateKey;
-            
-            rawData.forEach(async (chat) => {
-                const chatId = chat.chatId;
-                const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
-                const chatUser = await db.chatUser.get(chatId);
-                if(!chatUser){
-                    const username = generateUsername();
-                    const data = {
-                        chatId: chat.chatId,
-                        username: username,
-                        publicKey: chat.senderPublicKey,
-                        lastMsg: decryptedMsg,
-                        timestamp: chat.timestamp
-                    }
+            await Promise.all(
+                rawData.map(chat => saveAndUpdateDB(chat))
+            )
 
-                    await db.chatUser.add(data);
-                    return;
-                }
-
-                const updatedData = {
-                    lastMsg: decryptMessage,
-                    timestamp: chat.timestamp
-                }
-
-                await db.chatUser.update(chatId, updatedData); 
-
-            });
-
-        } 
+            allChatsFromLocalStorage();
+        }
         catch (error) {
             throw error
         }
     }
 
+    // Fetch all the chats from local storage IndexDatabase to show all the chats in ChatsPage.js
+    const allChatsFromLocalStorage = async () => {
+        try {
+            const data = await db.chatUser
+                .orderBy("timestamp")
+                .toArray();
+
+            if(data)
+                setAllMessages(data);
+        }
+        catch (error) {
+            throw error
+        }
+    }
+
+
+    // Update the index database to show it all messages in allChats pages
+    const saveAndUpdateDB = async (chat) => {
+        try {
+            const chatId = chat.chatId;
+            const privateKey = (await db.keys.get("user-keypair")).privateKey;
+            const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
+            const chatUser = await db.chatUser.get(chatId);
+
+            if (!chatUser) {
+                const username = generateUsername();
+                const data = {
+                    chatId,
+                    username: username,
+                    publicKey: chat.senderPublicKey,
+                    lastMsg: decryptedMsg,
+                    timestamp: chat.timestamp
+                }
+
+                await db.chatUser.add(data);
+                return;
+            }
+
+            if (chatUser.timestamp < chat.timestamp) {
+                const updatedData = {
+                    lastMsg: decryptedMsg,
+                    timestamp: chat.timestamp
+                }
+
+                await db.chatUser.update(chatId, updatedData);
+            }
+
+        }
+        catch (error) {
+            throw error;
+        }
+    }
+
+
     // Only fetch single user chat from local Index Database Using Dexie
-    const userChatIndexDB = async (chatId) => {
+    const userChatIndexDB = async () => {
         try {
             const chats = await db.chats
                 .where("chatId")
-                .equals(chatId)
+                .equals(chatIdRef.current)
                 .sortBy("timestamp");
 
             if (chats) {
@@ -76,17 +107,18 @@ const ChatsState = (props) => {
     }
 
     // Fetch Single user chats from the server database in firebase
-    const userChatServer = async (chatId) => {
-        if (!chatId)
+    const userChatServer = async () => {
+        if (!chatIdRef.current)
             return;
 
+        const chatId = chatIdRef.current
         try {
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data
             if (rawData.chats) {
                 const chatsToDel = [];
                 rawData.chats.forEach(async (chat) => {
                     chatsToDel.push(chat.id);
-                    decryptedMsg = decryptMessage()
+                    // decryptedMsg = decryptMessage()
                 })
             }
 
@@ -97,14 +129,10 @@ const ChatsState = (props) => {
 
     }
 
-    const saveChatsToLocalDB = async () => {
-        
-    }
-
     // Send message to the server
-    const sendChat = async (receiverPublicKey, chatId) => {
+    const sendChat = async (receiverPublicKey) => {
         try {
-            if (!chatId)
+            if (!chatIdRef.current)
                 return false;
 
             const cleanMessage = inputMessage.message.trim();
@@ -117,7 +145,7 @@ const ChatsState = (props) => {
 
             // This is chat body which will be sent to the server
             const chatBody = {
-                chatId,
+                chatId:chatIdRef.current,
                 encryptedMsg: encryptedData.encryptedMessage,
                 senderPublicKey: keys.publicKey,
                 nounce: encryptedData.nounce
@@ -127,7 +155,7 @@ const ChatsState = (props) => {
 
             // Storing chat blob on client side
             const indexDBData = {
-                chatId,
+                chatId:chatIdRef.current,
                 plainMsg: inputMessage,
                 timestamp: Date.now(),
                 fromMe: true
@@ -147,13 +175,13 @@ const ChatsState = (props) => {
     }
 
     // Generate new username and set user to start conversation
-    const createNewUser = async (chatId) => {
-        if (!chatId)
-            return false;
+    const createNewUser = async () => {
+        if (!chatIdRef.current)
+            return;
 
         try {
-            const bodyData = { chatId };
-            const userData = await db.chatUser.get(chatId);
+            const bodyData = { chatId:chatIdRef.current };
+            const userData = await db.chatUser.get(chatIdRef.current);
             if (userData)
                 return userData;
 
@@ -162,10 +190,11 @@ const ChatsState = (props) => {
             const publicKey = data.publicKey;
 
             const chatMetaData = {
-                chatId,
+                chatId:chatIdRef.current,
                 username,
                 publicKey,
-                lastMsg: null
+                lastMsg: null,
+                timestamp: null
             }
 
             await db.chatUser.add(chatMetaData);
@@ -177,8 +206,10 @@ const ChatsState = (props) => {
     }
 
     return (
-        <ChatsContext.Provider value={{ createNewUser, sendChat }}>
+        <ChatsContext.Provider value={{ createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages }}>
             {props.children}
         </ChatsContext.Provider>
     )
 }
+
+export default ChatsState
