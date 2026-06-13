@@ -81,38 +81,32 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 router.delete("/user-chat", isLoggedIn, async (req, res) => {
   /**
    * The delete data body structure should be
-   * [
    *    {
    *        chatId: "Chat Id of the post", String Data
-   *        messagesKeys: "This are messages firebase generated keys", Array Data
+   *        messagesKeys: "This are messages firebase generated keys", Array Data []
    *    }
-   * ]
    */
 
-  const {delData} = req.body;
+  const {chatId, messagesKeys} = req.body;
   const userId = req.user.uid;
 
-  if (!delData) {
+  if (!chatId || !messagesKeys) {
     return res.status(406).send({error: "Cannot process your request!"});
   }
 
   try {
-    delData.forEach(async (data) => {
-      const chatId = data.chatId;
-      const messagesKeys = data.messagesKeys; // This is an array data structure
+    const delChatUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
 
-      const delChatUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+    const updates = {};
 
-      const updates = {};
-
-      // Messages firebase generated keys
-      messagesKeys.forEach((keys) => {
-        updates[`chats/${userId}/${delChatUserId}/messages/${keys}`] = null;
-      });
-
-      await db.ref().update(updates);
-      return res.status(200).send("Deleted Successfully!");
+    // Messages firebase generated keys
+    messagesKeys.forEach((keys) => {
+      updates[`chats/${userId}/${delChatUserId}/messages/${keys}`] = null;
     });
+
+    await db.ref().update(updates);
+
+    return res.status(200).send("Deleted Successfully!");
   } catch (delError) {
     console.log("Error: ", delError);
     return res.status(500).send({error: "Something went wrong!"});
@@ -124,7 +118,7 @@ router.delete("/user-chat", isLoggedIn, async (req, res) => {
 router.get("/user-chat", isLoggedIn, async (req, res) => {
   const {chatId} = req.query;
   if (!chatId) {
-    return res.status(406).send({error: "Cannot process request."});
+    return res.status(406).send({error: "Cannot process your request."});
   }
 
   const senderUserId = req.user.uid;

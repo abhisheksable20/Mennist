@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords } from '../dataProcessing/dataProcessing'
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing'
@@ -19,7 +19,8 @@ function PostContent(props) {
     const sContent = searchParams.get("content");
     const timestamp = searchParams.get("timestamp");
 
-    const [postData, setPostData] = useState({ id: id, title: "", content: "", timestamp: 0 });
+    const navigate = useNavigate();
+    const [postData, setPostData] = useState({ id: id, title: "", content: "", timestamp: 0, chatId: null});
     const [isLoading, setIsLoading] = useState(false);
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
@@ -179,6 +180,13 @@ function PostContent(props) {
         return false;
     }
 
+    // Start the chat session with this user
+    const startChatSesssion = () => {
+        if(postData.chatId){
+            navigate(`/user-chat/${postData.chatId}`)
+        }
+    }
+
     const reportPostBtn = () => {
         reportBtnRef.current.click();
     }
@@ -229,7 +237,7 @@ function PostContent(props) {
                             <div className="vertical-divider"></div>
 
                             {/* Chat Btn */}
-                            <div className="d-flex align-items-center gap-2 icon-svg">
+                            <div className="d-flex align-items-center gap-2 icon-svg" onClick={startChatSesssion}>
                                 <img src={chatSVG} width="24px" height='24px' />
                                 <span>Chat</span>
                             </div>
