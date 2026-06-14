@@ -147,7 +147,10 @@ const ChatsState = (props) => {
         try {
             await userChatIndexDB(chatId);
 
-            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data
+            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data;
+            if(!rawData.messages)
+                return;
+
             const delChatsKeys = [];
             const newChats = [];
 
@@ -165,7 +168,7 @@ const ChatsState = (props) => {
                               }]
                 } 
             **/
-
+            console.log(rawData);
             rawData.messages.forEach(async (chat) => {
                 const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey)
                 const data = {
@@ -189,7 +192,7 @@ const ChatsState = (props) => {
             userChatIndexDB(chatId);
         }
         catch (fetchError) {
-            throw "Somthing went wrong!"
+            throw fetchError
         }
 
     }
