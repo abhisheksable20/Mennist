@@ -23,6 +23,7 @@ const ChatsState = (props) => {
             if (!rawData)
                 return;
 
+            console.log("Raw Data: ", rawData)
             const privateKey = (await db.keys.get("user-keypair")).privateKey;
 
             await Promise.all(
