@@ -5,6 +5,10 @@ import { useEffect, useContext, useRef } from 'react'
 import { useParams } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
+import { db } from '../internalDatabase/db';
+import { generateUsername } from "unique-username-generator";
+import axios from "axios";
+
 
 function ConversationPage() {
   const { chatId } = useParams();
