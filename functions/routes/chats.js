@@ -176,6 +176,7 @@ router.get("/my-chats", isLoggedIn, async (req, res) => {
       };
     });
 
+
     return res.status(200).send(chatsData);
   } catch (error) {
     return res.status(500).send({error: "Something went wrong!"});
