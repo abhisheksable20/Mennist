@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import "../styles/ChatPage.css"
 import sendSVG from "../assets/send_svg.svg"
 import { useEffect, useContext, useRef } from 'react'
@@ -9,36 +9,53 @@ import { db } from '../internalDatabase/db';
 import { generateUsername } from "unique-username-generator";
 import axios from "axios";
 
-
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef, userChatServer, sendChat, userMessages } = useContext(ChatsContext);
   const userData = useRef(null);
+  const [userName, setUsername] = useState("");
 
   useEffect(() => {
-    if (!chatId)
+    if (!chatId) {
       return
+    }
 
     chatIdRef.current = chatId;
-    const user = async () => {return await getUserData()};
-    if(user){
-      userData.current = {
-        username: user.username,
-        recieverPublicKey: user.publicKey
-      }
 
-      userChatServer()
+    const initializeChat = async () => {
+      try {
+        const user = await getUserData();
+        if (!user) {
+          return;
+        }
+
+        userData.current = {
+          username: user.username,
+          recieverPublicKey: user.publicKey
+        };
+
+        setUsername(user.username);
+        userChatServer();
+      }
+      catch (error) {
+        console.error(error);
+      }
     }
+
+
+    initializeChat();
 
   }, []);
 
   const getUserData = async () => {
+    console.log("userData 1");
     if (!chatIdRef.current)
       return null;
 
     try {
       const bodyData = { chatId: chatIdRef.current };
       const userData = await db.chatUser.get(chatIdRef.current);
+      console.log(userData);
       if (userData)
         return userData;
 
@@ -68,12 +85,12 @@ function ConversationPage() {
 
   const sendMsg = async () => {
     try {
-      if(!chatIdRef || !userData.current){
+      if (!chatIdRef || !userData.current) {
         return;
       }
 
       await sendChat(userData.current.recieverPublicKey);
-    } 
+    }
     catch (error) {
       console.log(error);
     }
@@ -84,15 +101,14 @@ function ConversationPage() {
       <div className='content-wrapper'>
         {/* Converation Header */}
         <div className='mb-4'>
-          <h2 className='card-text'>killer_two</h2>
+          <h2 className='card-text'>{userName}</h2>
           <h6 className='text-body-secondary mb-5'>Hope it's the opposite of your gender.</h6>
         </div>
         {
           userMessages.map((chat) => {
-            return <ConversationItem key={chat.id} chat={chat}/>
+            return <ConversationItem key={chat.id} chat={chat} />
           })
         }
-        <ConversationItem />
       </div>
 
       {/* Input component to take msg from the user */}
@@ -106,7 +122,7 @@ function ConversationPage() {
             rows={1}
             placeholder="Type something..."
             onChange={handleInputOnChange} />
-          <button className="send-btn">
+          <button className="send-btn" onClick={sendMsg}>
             <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
           </button>
         </div>

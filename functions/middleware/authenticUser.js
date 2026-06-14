@@ -5,16 +5,11 @@ const jwt = require("jsonwebtoken");
 const db = admin.database();
 
 // Generate user id using ip and user agent
-function generateUserId(req) {
-  const ip = req.headers["x-forwarded-for"] ||
-    req.socket.remoteAddress ||
-    "0.0.0.0";
-  const userAgent = req.headers["user-agent"] || "unknown";
-  const rawId = `${ip}_${userAgent}`;
-  const uniqueId = crypto.createHash("sha256")
-      .update(rawId).digest("hex").slice(0, 16);
-
-  return uniqueId;
+function generateUserId(publicKey) {
+  return crypto
+      .createHmac("sha256", process.env.JWT_SECRET_KEY)
+      .update(publicKey)
+      .digest("hex");
 }
 
 // Check wheather the user has sessionId or not
@@ -91,7 +86,7 @@ const authUser = async (req, res, next) => {
 };
 
 const createSession = async (req, res, publicKey) => {
-  const userId = generateUserId(req);
+  const userId = generateUserId(publicKey);
   const sessionId = crypto.randomBytes(8).toString("hex");
 
   const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;

@@ -1,7 +1,7 @@
 import React from 'react'
 
 function ConversationItem(props) {
-  const { fromMe, plainMsg, timestamp } = props;
+  const { fromMe, plainMsg, timestamp } = props.chat;
 
   return (
     <div className={`d-flex flex-column align-items-${fromMe ? "end" : "start"} mb-4`}>
