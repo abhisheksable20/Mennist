@@ -53,7 +53,8 @@ const authUser = async (req, res, next) => {
   if (!sessionId) {
     const session = await createSession(req, res, publicKey);
 
-    req.user = {uid: session.userId};
+    const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
+    req.user = {uid: session.userId, chatId};
     return next();
   }
 
@@ -68,7 +69,9 @@ const authUser = async (req, res, next) => {
     });
 
     const session = await createSession(req, res, publicKey);
-    req.user = {uid: session.userId};
+
+    const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
+    req.user = {uid: session.userId, chatId};
     return next();
   }
 
@@ -81,7 +84,8 @@ const authUser = async (req, res, next) => {
     return res.status(401).send({error: "Session expired"});
   }
 
-  req.user = {uid: data.userId};
+  const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
+  req.user = {uid: data.userId, chatId};
   next();
 };
 

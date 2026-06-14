@@ -166,7 +166,7 @@ router.get("/my-chats", isLoggedIn, async (req, res) => {
     const data = chatSnapshot.val();
     let chatsData = [];
 
-    chatsData = Object.entries(data).map((chat) => {
+    chatsData = Object.values(data).map((chat) => {
       return {
         chatId: chat.senderChatId,
         senderPublicKey: chat.senderPublicKey,

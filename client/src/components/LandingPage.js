@@ -16,8 +16,17 @@ function LandingPage(props) {
     setDisablility(true);
     props.alert("Preparing your safe space...", "primary");
     try {
-      const publicKey = await generateKeys();
-      await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, { publicKey }, { withCredentials: true });
+      const keys = await generateKeys();
+      const publicKey = keys.publicKey
+
+      const data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, { publicKey }, { withCredentials: true })).data;
+      await db.keys.put({
+        id: "user-keypair",
+        privateKey: keys.privateKey,
+        publicKey: keys.publicKey,
+        chatId: data.chatId
+      });
+
       props.alert("You're now anonymous.", "success");
       setTimeout(() => {
         navigate("/");
@@ -39,13 +48,7 @@ function LandingPage(props) {
   // Generating Private Key and Public Key
   const generateKeys = async () => {
     const userKeys = await generateKeyPair();
-    await db.keys.put({
-      id: "user-keypair",
-      privateKey: userKeys.privateKey,
-      publicKey: userKeys.publicKey
-    });
-
-    return userKeys.publicKey;
+    return userKeys;
   }
 
   return (
