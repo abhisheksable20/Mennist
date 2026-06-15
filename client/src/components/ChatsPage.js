@@ -23,7 +23,7 @@ function ChatsPage() {
         <div className='list-group mt-4'>
           {
             allMessages.map((msg) => {
-              return <ChatItem key={msg.chatId} username={msg.username} timestamp={msg.timestamp} lastMsg={msg.lastMsg} />
+              return <ChatItem key={msg.chatId} chatId={msg.chatId} username={msg.username} timestamp={msg.timestamp} lastMsg={msg.lastMsg} />
             })
           }
         </div>

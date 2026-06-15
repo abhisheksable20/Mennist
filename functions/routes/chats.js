@@ -125,6 +125,10 @@ router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
 
   try {
     const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+    if (!recieverUserId) {
+      return res.status(406).send({error: "Token not matched!"});
+    }
+
     const snapshot = await db.ref(`chats/${senderUserId}/${recieverUserId}`).once("value");
 
     if (!snapshot.exists()) {
@@ -134,6 +138,10 @@ router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
     const rawData = snapshot.val();
 
     let chatData = [];
+
+    if (!rawData.messages) {
+      return res.status(200).send([]);
+    }
 
     chatData = Object.entries(rawData.messages).map(([messageId, chat]) => ({
       id: messageId,
@@ -149,7 +157,7 @@ router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
 
     return res.status(200).send(data);
   } catch (fetchError) {
-    return res.status(500).send({error: "Something went wrong!"});
+    return res.status(500).send({error: fetchError});
   }
 });
 
@@ -179,7 +187,7 @@ router.get("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
 
     return res.status(200).send(chatsData);
   } catch (error) {
-    return res.status(500).send({error: "Something went wrong!"});
+    return res.status(500).send({error: error});
   }
 });
 
