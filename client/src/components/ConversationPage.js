@@ -14,6 +14,7 @@ function ConversationPage() {
   const { inputMessage, setInputMessage, chatIdRef, userChatServer, sendChat, userMessages } = useContext(ChatsContext);
   const userData = useRef(null);
   const [userName, setUsername] = useState("");
+  const [isSendBtnDisabled, setSendBtnDisability] = useState(false)
 
   useEffect(() => {
     if (!chatId) {
@@ -47,15 +48,22 @@ function ConversationPage() {
 
   }, []);
 
+  useEffect(() => {
+    if(inputMessage.trim().length <= 0){
+      setSendBtnDisability(true);
+    }else{
+      setSendBtnDisability(false);
+    }
+
+  }, [inputMessage])
+
   const getUserData = async () => {
-    console.log("userData 1");
     if (!chatIdRef.current)
       return null;
 
     try {
       const bodyData = { chatId: chatIdRef.current };
       const userData = await db.chatUser.get(chatIdRef.current);
-      console.log(userData);
       if (userData)
         return userData;
 
@@ -84,15 +92,18 @@ function ConversationPage() {
   }
 
   const sendMsg = async () => {
+    setSendBtnDisability(true);
     try {
       if (!chatIdRef || !userData.current) {
         return;
       }
 
       await sendChat(userData.current.recieverPublicKey);
+      setSendBtnDisability(false);
+      setInputMessage("");
     }
     catch (error) {
-      console.log(error);
+      setSendBtnDisability(false);
     }
   }
 
@@ -122,7 +133,7 @@ function ConversationPage() {
             rows={1}
             placeholder="Type something..."
             onChange={handleInputOnChange} />
-          <button className="send-btn" onClick={sendMsg}>
+          <button className="send-btn" onClick={sendMsg} disabled={isSendBtnDisabled}>
             <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
           </button>
         </div>

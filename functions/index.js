@@ -18,7 +18,8 @@ const allowedOrigins = [
   "https://drumkit-5b886.web.app",
   "https://mennist.com",
   "https://www.mennist.com",
-  "http://localhost:3000"];
+  "http://localhost:3000",
+  "http://localhost:3001"];
 const corsOptions = {
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {

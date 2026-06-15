@@ -78,7 +78,7 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 });
 
 // Delete the fetched chats
-router.delete("/user-chat", isLoggedIn, async (req, res) => {
+router.delete("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
   /**
    * The delete data body structure should be
    *    {
@@ -115,7 +115,7 @@ router.delete("/user-chat", isLoggedIn, async (req, res) => {
 
 
 // Get user chat from database - specific user chat
-router.get("/user-chat", isLoggedIn, async (req, res) => {
+router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
   const {chatId} = req.query;
   if (!chatId) {
     return res.status(406).send({error: "Cannot process your request."});
@@ -154,7 +154,7 @@ router.get("/user-chat", isLoggedIn, async (req, res) => {
 });
 
 // Get user all chats
-router.get("/my-chats", isLoggedIn, async (req, res) => {
+router.get("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
   const userId = req.user.uid;
 
   try {

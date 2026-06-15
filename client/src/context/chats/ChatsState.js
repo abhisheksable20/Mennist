@@ -11,17 +11,21 @@ const ChatsState = (props) => {
     const [messages, setMessages] = useState([]);
     const [userMessages, setUserMessages] = useState([]);
     const [allMessages, setAllMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const chatIdRef = useRef(null);
 
     // Fetch all the chats from the server
     const fetchAllChats = async () => {
         try {
+            setLoading(true);
             await allChatsFromLocalStorage();
 
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, { withCredentials: true })).data;
-            if (!rawData)
+            if (!rawData){
+                setLoading(false);
                 return;
+            }
 
             console.log("Raw Data: ", rawData)
             const privateKey = (await db.keys.get("user-keypair")).privateKey;
@@ -39,10 +43,12 @@ const ChatsState = (props) => {
                     await saveAndUpdateDBV2(DBData);
                 })
             )
-
+            
+            setLoading(false);
             allChatsFromLocalStorage();
         }
         catch (error) {
+            setLoading(false);
             throw error
         }
     }
@@ -56,6 +62,8 @@ const ChatsState = (props) => {
 
             if (data)
                 setAllMessages(data);
+
+            setLoading(false);
         }
         catch (error) {
             throw error
@@ -99,58 +107,22 @@ const ChatsState = (props) => {
 
     }
 
-
-    // Update the index database to show it all messages in allChats pages
-    // Function is deprecated will be deleted later
-    const saveAndUpdateDB = async (chat) => {
-        try {
-            const chatId = chat.chatId;
-            const privateKey = (await db.keys.get("user-keypair")).privateKey;
-            const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
-            const chatUser = await db.chatUser.get(chatId);
-
-            if (!chatUser) {
-                const username = generateUsername();
-                const data = {
-                    chatId,
-                    username: username,
-                    publicKey: chat.senderPublicKey,
-                    lastMsg: decryptedMsg,
-                    timestamp: chat.timestamp
-                }
-
-                await db.chatUser.add(data);
-                return;
-            }
-
-            if (chatUser.timestamp < chat.timestamp) {
-                const updatedData = {
-                    lastMsg: decryptedMsg,
-                    timestamp: chat.timestamp
-                }
-
-                await db.chatUser.update(chatId, updatedData);
-            }
-
-        }
-        catch (error) {
-            throw error;
-        }
-    }
-
     // Fetch Single user chats from the server database in firebase
     const userChatServer = async () => {
         if (!chatIdRef.current)
             return;
 
         const chatId = chatIdRef.current;
+        setLoading(true);
 
         try {
             await userChatIndexDB(chatId);
 
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data;
-            if(!rawData.messages)
+            if(!rawData.messages){
+                setLoading(false);
                 return;
+            }
 
             const delChatsKeys = [];
             const newChats = [];
@@ -169,7 +141,6 @@ const ChatsState = (props) => {
                               }]
                 } 
             **/
-            console.log(rawData);
             rawData.messages.forEach(async (chat) => {
                 const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey)
                 const data = {
@@ -191,8 +162,10 @@ const ChatsState = (props) => {
 
             axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, delData);
             userChatIndexDB(chatId);
+            setLoading(false);
         }
         catch (fetchError) {
+            setLoading(false);
             throw fetchError
         }
 
@@ -211,7 +184,7 @@ const ChatsState = (props) => {
             }
         }
         catch (error) {
-            throw "Something went wrong!"
+            throw error
         }
 
     }
@@ -307,7 +280,7 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, sendChat, userMessages
+            setInputMessage, userChatServer, sendChat, userMessages,loading
         }}>
             {props.children}
         </ChatsContext.Provider>

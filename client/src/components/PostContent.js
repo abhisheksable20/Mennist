@@ -11,6 +11,7 @@ import removeSave from '../assets/remove_save_svg.svg'
 import Spinner from './Spinner'
 import reportPost from "../assets/report_svg.svg"
 import ReportPostComponent from './ReportPostComponent'
+import { db } from '../internalDatabase/db'
 
 function PostContent(props) {
     const [searchParams] = useSearchParams();
@@ -181,8 +182,14 @@ function PostContent(props) {
     }
 
     // Start the chat session with this user
-    const startChatSesssion = () => {
+    const startChatSesssion = async () => {
         if(postData.chatId){
+            const userChatId = (await db.keys.get("user-keypair")).chatId;
+            if(postData.chatId === userChatId){
+                navigate('/my-chats');
+                return;
+            }
+            
             navigate(`/user-chat/${postData.chatId}`)
         }
     }
