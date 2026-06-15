@@ -162,10 +162,11 @@ const ChatsState = (props) => {
                 messagesKeys: delChatsKeys
             }
 
-            axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+                        await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
                 data: delData,
                 withCredentials: true
             });
+
             userChatIndexDB(chatId);
             setLoading(false);
         }
