@@ -22,7 +22,7 @@ const ChatsState = (props) => {
             await allChatsFromLocalStorage();
 
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, { withCredentials: true })).data;
-            if (!rawData){
+            if (!rawData) {
                 setLoading(false);
                 return;
             }
@@ -43,7 +43,7 @@ const ChatsState = (props) => {
                     await saveAndUpdateDBV2(DBData);
                 })
             )
-            
+
             setLoading(false);
             allChatsFromLocalStorage();
         }
@@ -119,7 +119,7 @@ const ChatsState = (props) => {
             await userChatIndexDB(chatId);
 
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data;
-            if(!rawData.messages){
+            if (!rawData.messages) {
                 setLoading(false);
                 return;
             }
@@ -141,8 +141,9 @@ const ChatsState = (props) => {
                               }]
                 } 
             **/
-            rawData.messages.forEach(async (chat) => {
-                const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey)
+            console.log(rawData);
+            for (const chat of rawData.messages) {
+                const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, privateKey);
                 const data = {
                     chatId: rawData.chatId,
                     plainMsg: decryptedMsg,
@@ -152,7 +153,8 @@ const ChatsState = (props) => {
 
                 newChats.push(data);
                 delChatsKeys.push(chat.id);
-            });
+
+            }
 
             await db.chats.bulkAdd(newChats);
             const delData = {
@@ -160,7 +162,10 @@ const ChatsState = (props) => {
                 messagesKeys: delChatsKeys
             }
 
-            axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, delData);
+            axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+                data: delData,
+                withCredentials: true
+            });
             userChatIndexDB(chatId);
             setLoading(false);
         }
@@ -280,7 +285,7 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, sendChat, userMessages,loading
+            setInputMessage, userChatServer, sendChat, userMessages, loading
         }}>
             {props.children}
         </ChatsContext.Provider>
