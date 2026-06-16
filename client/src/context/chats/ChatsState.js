@@ -172,7 +172,7 @@ const ChatsState = (props) => {
         }
         catch (fetchError) {
             setLoading(false);
-            throw fetchError
+            console.log("Failed to save the chat!");
         }
 
     }
