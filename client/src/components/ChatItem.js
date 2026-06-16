@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom'
 
 function ChatItem(props) {
         const { username, timestamp, lastMsg, chatId } = props
-
         return (
             <Link to={`/user-chat/${chatId}`} className="list-group-item chat-item" aria-current="true">
                 <div className='my-2'>

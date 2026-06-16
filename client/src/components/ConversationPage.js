@@ -8,10 +8,12 @@ import ConversationItem from './ConversationItem';
 import { db } from '../internalDatabase/db';
 import { generateUsername } from "unique-username-generator";
 import axios from "axios";
+import ChatLoading from './ChatLoading';
 
 function ConversationPage() {
   const { chatId } = useParams();
-  const { inputMessage, setInputMessage, chatIdRef, userChatServer, sendChat, userMessages } = useContext(ChatsContext);
+  const { inputMessage, setInputMessage, chatIdRef,
+    userChatServer, sendChat, userMessages, loading } = useContext(ChatsContext);
   const userData = useRef(null);
   const [userName, setUsername] = useState("");
   const [isSendBtnDisabled, setSendBtnDisability] = useState(false)
@@ -48,9 +50,9 @@ function ConversationPage() {
   }, []);
 
   useEffect(() => {
-    if(inputMessage.trim().length <= 0){
+    if (inputMessage.trim().length <= 0) {
       setSendBtnDisability(true);
-    }else{
+    } else {
       setSendBtnDisability(false);
     }
 
@@ -103,41 +105,45 @@ function ConversationPage() {
     }
     catch (error) {
       setSendBtnDisability(false);
+      setInputMessage("")
     }
   }
 
   return (
-    <div className='conversation-page'>
-      <div className='content-wrapper'>
-        {/* Converation Header */}
-        <div className='mb-4'>
-          <h2 className='card-text'>{userName}</h2>
-          <h6 className='text-body-secondary mb-5'>Hope it's the opposite of your gender.</h6>
+    <>
+      {loading ? <ChatLoading />: ""}
+      <div className='conversation-page'>
+        <div className='content-wrapper'>
+          {/* Converation Header */}
+          <div className='mb-4'>
+            <h2 className='card-text'>{userName}</h2>
+            <h6 className='text-body-secondary mb-5'>Hope it's the opposite of your gender.</h6>
+          </div>
+          {
+            userMessages.map((chat) => {
+              return <ConversationItem key={chat.id} chat={chat} />
+            })
+          }
         </div>
-        {
-          userMessages.map((chat) => {
-            return <ConversationItem key={chat.id} chat={chat} />
-          })
-        }
-      </div>
 
-      {/* Input component to take msg from the user */}
-      <div className="chat-input-wrapper">
-        <div className="chat-input-box">
-          <textarea
-            className="form-control chat-textarea"
-            id='chatInput'
-            name='chatInput'
-            value={inputMessage}
-            rows={1}
-            placeholder="Type something..."
-            onChange={handleInputOnChange} />
-          <button className="send-btn" onClick={sendMsg} disabled={isSendBtnDisabled}>
-            <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
-          </button>
+        {/* Input component to take msg from the user */}
+        <div className="chat-input-wrapper">
+          <div className="chat-input-box">
+            <textarea
+              className="form-control chat-textarea"
+              id='chatInput'
+              name='chatInput'
+              value={inputMessage}
+              rows={1}
+              placeholder="Type something..."
+              onChange={handleInputOnChange} />
+            <button className="send-btn" onClick={sendMsg} disabled={isSendBtnDisabled}>
+              <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

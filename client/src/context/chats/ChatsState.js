@@ -145,6 +145,7 @@ const ChatsState = (props) => {
             for (const chat of rawData.messages) {
                 const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, privateKey);
                 const data = {
+                    firebaseId:chat.id,
                     chatId: rawData.chatId,
                     plainMsg: decryptedMsg,
                     timestamp: chat.timestamp,
@@ -156,13 +157,13 @@ const ChatsState = (props) => {
 
             }
 
-            await db.chats.bulkAdd(newChats);
+            await db.chats.bulkPut(newChats);
             const delData = {
                 chatId: rawData.chatId,
                 messagesKeys: delChatsKeys
             }
 
-                        await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
                 data: delData,
                 withCredentials: true
             });
@@ -172,7 +173,6 @@ const ChatsState = (props) => {
         }
         catch (fetchError) {
             setLoading(false);
-            throw fetchError
         }
 
     }

@@ -104,6 +104,11 @@
     transition: all 0.2s ease;
 }
 
+.send-btn:disabled {
+    background-color: #16A34A;
+    color: #FAFAFA;
+}
+
 .send-btn:hover {
     background-color: #16A34A;
     transform: scale(1.05);
