@@ -2,13 +2,12 @@ import ChatsContext from "./chatsContext";
 import axios from "axios";
 import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { encryptMessage } from "../../crypto/encryptMessage";
 import { decryptMessage } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
     const [inputMessage, setInputMessage] = useState("");
-    const [messages, setMessages] = useState([]);
     const [userMessages, setUserMessages] = useState([]);
     const [allMessages, setAllMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -87,7 +86,7 @@ const ChatsState = (props) => {
                     timestamp: chat.timestamp
                 }
 
-                await db.chatUser.put(data);
+                await db.chatUser.add(data);
                 return;
             }
 
@@ -108,7 +107,7 @@ const ChatsState = (props) => {
     }
 
     // Fetch Single user chats from the server database in firebase
-    const userChatServer = async () => {
+    const userChatServer = useCallback(async (signal) => {
         if (!chatIdRef.current)
             return;
 
@@ -118,7 +117,7 @@ const ChatsState = (props) => {
         try {
             await userChatIndexDB(chatId);
 
-            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId } })).data;
+            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId }, signal })).data;
             if (!rawData.messages) {
                 setLoading(false);
                 return;
@@ -167,15 +166,15 @@ const ChatsState = (props) => {
                 data: delData,
                 withCredentials: true
             });
+
             userChatIndexDB(chatId);
             setLoading(false);
         }
         catch (fetchError) {
             setLoading(false);
-            console.log("Failed to save the chat!");
         }
 
-    }
+    },[])
 
     // Only fetch single user chat from local Index Database Using Dexie
     const userChatIndexDB = async (chatId) => {
@@ -286,7 +285,7 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, sendChat, userMessages, loading
+            setInputMessage, userChatServer, userMessages, loading
         }}>
             {props.children}
         </ChatsContext.Provider>
