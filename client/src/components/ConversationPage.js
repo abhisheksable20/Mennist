@@ -9,6 +9,7 @@ import { db } from '../internalDatabase/db';
 import { generateUsername } from "unique-username-generator";
 import axios from "axios";
 import ChatLoading from './ChatLoading';
+import NoContent from './NoContent';
 
 function ConversationPage() {
   const { chatId } = useParams();
@@ -115,6 +116,9 @@ function ConversationPage() {
       setInputMessage("");
     }
     catch (error) {
+      console.log(error);
+    }
+    finally {
       setSendBtnDisability(false);
       setInputMessage("")
     }
@@ -129,6 +133,9 @@ function ConversationPage() {
           <div className='mb-4'>
             <h2 className='card-text'>{userName}</h2>
             <h6 className='text-body-secondary mb-5'>Hope it's the opposite of your gender.</h6>
+          </div>
+          <div>
+            {userMessages.length === 0 ? <NoContent svgType={3} title={"NO MESSAGES YET"} text={"Every great conversation starts with a single awkward message."} /> : ""}
           </div>
           {
             userMessages.map((chat) => {

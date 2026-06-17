@@ -1,13 +1,10 @@
-import React, { useEffect, useState, useRef, useContext } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import PostContext from '../context/posts/postContext';
 import PostItem from './PostItem';
-import axios from "axios";
 import useInfiniteScroll from "react-infinite-scroll-hook";
 import Spinner from './Spinner';
 import { useNavigate } from 'react-router-dom';
 import NoContent from './NoContent';
-
-const PAGE_SIZE = 10;
 
 function Posts(props) {
     const { posts, hasNext, getAllPosts, resetPostFetching, loading } = useContext(PostContext)
@@ -91,7 +88,7 @@ function Posts(props) {
 
             <div className="row g-5">
                 {!loading && posts.length === 0 ? (
-                    <NoContent />
+                    <NoContent svgType={1} title={"TOO QUIET IN HERE"} text={"Tell the story nobody knows about."}/>
                 ) : (
                     posts.map(post => (
                         <PostItem key={post.id} post={post} />

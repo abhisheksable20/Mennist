@@ -3,6 +3,7 @@ import "../styles/ChatPage.css"
 import ChatItem from './ChatItem'
 import ChatsContext from '../context/chats/chatsContext'
 import ChatLoading from './ChatLoading'
+import NoContent from './NoContent'
 
 function ChatsPage() {
   const { fetchAllChats, allMessages, loading } = useContext(ChatsContext);
@@ -21,6 +22,7 @@ function ChatsPage() {
 
         {/* Display my all chats */}
         <div className='list-group mt-4'>
+          {allMessages.length === 0 ? <NoContent svgType={2} title={"NO CHATS"} text={"Your chat history is cleaner than my browser history."}/> : ""}
           {
             allMessages.map((msg) => {
               return <ChatItem key={msg.chatId} chatId={msg.chatId} username={msg.username} timestamp={msg.timestamp} lastMsg={msg.lastMsg} />

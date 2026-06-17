@@ -22,11 +22,9 @@ const ChatsState = (props) => {
 
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, { withCredentials: true })).data;
             if (!rawData) {
-                setLoading(false);
                 return;
             }
 
-            console.log("Raw Data: ", rawData)
             const privateKey = (await db.keys.get("user-keypair")).privateKey;
 
             await Promise.all(
@@ -43,13 +41,15 @@ const ChatsState = (props) => {
                 })
             )
 
-            setLoading(false);
             allChatsFromLocalStorage();
         }
         catch (error) {
-            setLoading(false);
-            throw error
+            console.log(error);
         }
+        finally {
+            setLoading(false);
+        }
+
     }
 
     // Fetch all the chats from local storage IndexDatabase to show all the chats in ChatsPage.js
@@ -119,7 +119,6 @@ const ChatsState = (props) => {
 
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId }, signal })).data;
             if (!rawData.messages) {
-                setLoading(false);
                 return;
             }
 
@@ -140,7 +139,6 @@ const ChatsState = (props) => {
                               }]
                 } 
             **/
-            console.log(rawData);
             for (const chat of rawData.messages) {
                 const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, privateKey);
                 const data = {
@@ -168,9 +166,11 @@ const ChatsState = (props) => {
             });
 
             userChatIndexDB(chatId);
-            setLoading(false);
         }
         catch (fetchError) {
+            console.log(fetchError);
+        }
+        finally{
             setLoading(false);
         }
 
