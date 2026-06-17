@@ -17,7 +17,7 @@ const globalLimiter = rateLimit({
 // This limiter is post limiter only 3 posts are allowed in 1 min for an user
 const postLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 3,
+  max: 5,
   standardHeaders: false,
   legacyHeaders: false,
   handler: (req, res) => {
@@ -28,4 +28,18 @@ const postLimiter = rateLimit({
   },
 });
 
-module.exports = {globalLimiter, postLimiter};
+// This is chat limiter only 100 request are allowed per user per minute
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: false,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Too many request,try after some time.",
+    });
+  },
+});
+
+module.exports = {globalLimiter, postLimiter, chatLimiter};

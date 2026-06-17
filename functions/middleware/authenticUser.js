@@ -1,19 +1,15 @@
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 
 const db = admin.database();
 
 // Generate user id using ip and user agent
-function generateUserId(req) {
-  const ip = req.headers["x-forwarded-for"] ||
-    req.socket.remoteAddress ||
-    "0.0.0.0";
-  const userAgent = req.headers["user-agent"] || "unknown";
-  const rawId = `${ip}_${userAgent}`;
-  const uniqueId = crypto.createHash("sha256")
-      .update(rawId).digest("hex").slice(0, 16);
-
-  return uniqueId;
+function generateUserId(publicKey) {
+  return crypto
+      .createHmac("sha256", process.env.JWT_SECRET_KEY)
+      .update(publicKey)
+      .digest("hex");
 }
 
 // Check wheather the user has sessionId or not
@@ -36,7 +32,9 @@ const isLoggedIn = async (req, res, next) => {
     return res.status(401).send({error: "Session expired"});
   }
 
-  req.user = {uid: data.userId};
+  const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
+
+  req.user = {uid: data.userId, chatId};
   next();
 };
 
@@ -45,7 +43,7 @@ const isLoggedIn = async (req, res, next) => {
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
   const sessionId = req.cookies.sessionId;
-  const publicKey = req.query.publicKey;
+  const publicKey = req.body.publicKey;
 
   if (!publicKey) {
     return res.status(400).send({error: "Public key not found"});
@@ -55,7 +53,8 @@ const authUser = async (req, res, next) => {
   if (!sessionId) {
     const session = await createSession(req, res, publicKey);
 
-    req.user = {uid: session.userId};
+    const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
+    req.user = {uid: session.userId, chatId};
     return next();
   }
 
@@ -70,7 +69,9 @@ const authUser = async (req, res, next) => {
     });
 
     const session = await createSession(req, res, publicKey);
-    req.user = {uid: session.userId};
+
+    const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
+    req.user = {uid: session.userId, chatId};
     return next();
   }
 
@@ -83,12 +84,13 @@ const authUser = async (req, res, next) => {
     return res.status(401).send({error: "Session expired"});
   }
 
-  req.user = {uid: data.userId};
+  const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
+  req.user = {uid: data.userId, chatId};
   next();
 };
 
 const createSession = async (req, res, publicKey) => {
-  const userId = generateUserId(req);
+  const userId = generateUserId(publicKey);
   const sessionId = crypto.randomBytes(8).toString("hex");
 
   const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;

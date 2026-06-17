@@ -1,22 +1,45 @@
 // Converting raw timestamp to month date, year
 export function convertTimestampToReadable(timestamp) {
-    if(!timestamp){
+    if (!timestamp) {
         return "NO DATE";
     }
 
-    const formattedDate = new Date(+timestamp).toLocaleDateString("en-US", {
+    const date = new Date(+timestamp);
+    const now = new Date();
+
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) {
+        return "Just now";
+    }
+
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+        return `${diffInMinutes} min${diffInMinutes > 1 ? "s" : ""} ago`;
+    }
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+        return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+    }
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) {
+        return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+    }
+
+    // Older than 7 days → show actual date
+    return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
-        day: "numeric"
+        day: "numeric",
     });
-
-    return formattedDate;
 }
 
 // Get total word count from the content
-export function totalWords (content) {
-    if(!content || content.trim().length === 0)
-      return 0;
-    
+export function totalWords(content) {
+    if (!content || content.trim().length === 0)
+        return 0;
+
     return content.trim().split(/\s+/).length;
 }

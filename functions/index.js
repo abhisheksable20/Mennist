@@ -5,6 +5,8 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const {ValidationError} = require("express-validation");
 
+require("dotenv").config();
+
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -23,7 +25,7 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
 };
 
@@ -50,5 +52,8 @@ app.use("/", require("./routes/posts"));
 
 // Post CRUD operation route for user
 app.use("/user", require("./routes/userPosts"));
+
+// Chats operation route
+app.use("/chats", require("./routes/chats"));
 
 exports.api = functions.https.onRequest(app);

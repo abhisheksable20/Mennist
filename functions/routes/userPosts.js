@@ -9,8 +9,9 @@ const db = admin.database();
 
 const retrieveLimit = 10;
 
-router.get("/create-user", authUser, globalLimiter, async (req, res) => {
-  return res.status(200).send("User created successfully!");
+router.post("/create-user", authUser, globalLimiter, async (req, res) => {
+  const payload = {chatId: req.user.chatId};
+  return res.status(200).send(payload);
 });
 
 // Fetch user specific posts
