@@ -77,6 +77,25 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
   }
 });
 
+// Delete all chats and its meta data from the server for all the user
+router.delete("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
+  const {chatId} = req.body;
+  const userId = req.user.uid;
+
+  if(!chatId)
+    return res.status(406).send({error: "Cannot process your request!"});
+
+  try {
+    const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+    await db.ref(`chats/${userId}/${recieverUserId}`).remove();
+    return res.status(200).send({message: "Messages deleted successfully!"});
+  } 
+  catch (error) {
+    console.log("Failed to delete chats data: ", error);
+    return res.status(500).send({error: "Something went wrong!"});
+  }
+});
+
 // Delete the fetched chats
 router.delete("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
   /**

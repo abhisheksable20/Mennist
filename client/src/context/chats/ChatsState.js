@@ -170,11 +170,11 @@ const ChatsState = (props) => {
         catch (fetchError) {
             console.log(fetchError);
         }
-        finally{
+        finally {
             setLoading(false);
         }
 
-    },[])
+    }, [])
 
     // Only fetch single user chat from local Index Database Using Dexie
     const userChatIndexDB = async (chatId) => {
@@ -245,6 +245,44 @@ const ChatsState = (props) => {
         }
     }
 
+    // Delete single user chats from the server then from local database
+    const deleteUserChats = async (chatId) => {
+        if (!chatId)
+            return false;
+
+        try {
+            const delChatId = { chatId: chatId };
+
+            await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+                data:delChatId,
+                withCredentials:true
+            });
+
+            await delChatsFromLocal(chatId);
+            return true;
+
+        }
+        catch (error) {
+            console.log("Failed to delete chats please contact support team.");
+            return false;
+        }
+    }
+
+    // Delete chats from local storage 
+    const delChatsFromLocal = async (chatId) => {
+        try {
+            await Promise.all([
+                db.chats.where("chatId").equals(chatId).delete(),
+                db.chatUser.delete(chatId)
+            ]);
+            return true;
+        }
+        catch (error) {
+            console.log("Failed to delete chats contact support team.")
+            return false;
+        }
+    }
+
     // Encrypt the input message from the user
     const encryptInputMessage = async (receiverPublicKey, senderPrivateKey) => {
         const encrypted = await encryptMessage(inputMessage, receiverPublicKey, senderPrivateKey);
@@ -285,7 +323,7 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, userMessages, loading
+            setInputMessage, userChatServer, userMessages, loading, deleteUserChats
         }}>
             {props.children}
         </ChatsContext.Provider>

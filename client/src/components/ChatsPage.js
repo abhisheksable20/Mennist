@@ -10,7 +10,12 @@ function ChatsPage() {
 
   useEffect(() => {
     fetchAllChats();
-  }, [])
+  }, []);
+
+  // Handle delete single user chats
+  const deleteMyChats = async () => {
+
+  }
 
   return (
     <>
