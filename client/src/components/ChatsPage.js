@@ -5,16 +5,21 @@ import ChatsContext from '../context/chats/chatsContext'
 import ChatLoading from './ChatLoading'
 import NoContent from './NoContent'
 
-function ChatsPage() {
-  const { fetchAllChats, allMessages, loading } = useContext(ChatsContext);
+function ChatsPage(props) {
+  const { fetchAllChats, allMessages, loading, deleteUserChats } = useContext(ChatsContext);
 
   useEffect(() => {
     fetchAllChats();
   }, []);
 
   // Handle delete single user chats
-  const deleteMyChats = async () => {
-
+  const deleteMyChats = async (chatId) => {
+    try {
+      await deleteUserChats(chatId);
+    } 
+    catch (error) {
+      console.log("Failed to delete the chat", error);
+    }
   }
 
   return (
@@ -30,7 +35,7 @@ function ChatsPage() {
           {allMessages.length === 0 ? <NoContent svgType={2} title={"NO CHATS"} text={"Your chat history is cleaner than my browser history."}/> : ""}
           {
             allMessages.map((msg) => {
-              return <ChatItem key={msg.chatId} chatId={msg.chatId} username={msg.username} timestamp={msg.timestamp} lastMsg={msg.lastMsg} />
+              return <ChatItem key={msg.chatId} chatId={msg.chatId} username={msg.username} timestamp={msg.timestamp} lastMsg={msg.lastMsg} deleteChat={deleteMyChats}/>
             })
           }
         </div>
