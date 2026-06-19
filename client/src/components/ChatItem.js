@@ -19,7 +19,7 @@ function ChatItem(props) {
             <div className="chat-item-layout">
                 <Link to={`/user-chat/${chatId}`} className="chat-content text-decoration-none">
                     <h5 className="mb-1 card-title">{username}</h5>
-                    <p className="mb-0 card-text">{lastMsg}</p>
+                    <p className="mb-0 card-text chat-preview">{lastMsg}</p>
                     <small className="chat-timestamp">
                         {convertTimestampToReadable(timestamp)}
                     </small>

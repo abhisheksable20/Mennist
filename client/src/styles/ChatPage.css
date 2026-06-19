@@ -64,6 +64,11 @@
     opacity: 0.8;
 }
 
+.chat-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 
 /* Conversation Page */

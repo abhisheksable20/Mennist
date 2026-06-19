@@ -23,6 +23,18 @@
     filter: invert(1);
 }
 
+.delete-btn {
+  background-color: #D0342C;
+  color: #FAFAFA;
+}
+
+.delete-btn:disabled {
+  background-color: #e89a96 !important;
+  color: #ffffff !important;
+  opacity: 1; /* prevents Bootstrap from fading it */
+  cursor: not-allowed;
+}
+
 .form-check-input {
     background-color: #171717;
     border-color: rgba(255,255,255,0.2);

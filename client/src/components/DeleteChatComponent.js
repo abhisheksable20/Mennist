@@ -1,24 +1,38 @@
 import React from 'react'
 import "../styles/ReportModal.css"
-import axios from 'axios';
-import { useContext, useRef } from 'react';
+import { useContext, useRef, useState } from 'react';
 import ChatsContext from '../context/chats/chatsContext';
 
 function DeleteChatComponent(props) {
   const { deleteBtnRef, setSelectedChatId, selectedChatId } = props;
   const { deleteUserChats } = useContext(ChatsContext);
   const closeBtnRef = useRef(null);
+  const [isBtnDisabled, setBtnDisablity] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState("Delete Chat");
 
   // This function will trigger when the delete chat button is clicked
   const handleDeleteChat = async () => {
-    if (!selectedChatId) {
-      return;
+    try {
+      if (!selectedChatId) {
+        return;
+      }
+
+      setBtnDisablity(true);
+      setDeleteMsg("Deleting...")
+
+      await deleteUserChats(selectedChatId);
+      setSelectedChatId(null);
+
+      closeBtnRef.current.click();
+    }
+    catch (error) {
+      console.log("Failed to delete the chat!")
+    }
+    finally {
+      setBtnDisablity(false);
+      setDeleteMsg("Delete Chat")
     }
 
-    const isDeleted = await deleteUserChats(selectedChatId);
-    setSelectedChatId(null);
-
-    closeBtnRef.current.click();
   }
 
   return (
@@ -29,7 +43,7 @@ function DeleteChatComponent(props) {
 
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-          <div className="modal-dialog">
+          <div className="modal-dialog" data-bs-backdrop="static" data-bs-keyboard="false">
             <div className="modal-content">
               <div className="modal-header">
                 <h1 className="modal-title fs-5" id="exampleModalLabel">Delete this conversation?</h1>
@@ -43,7 +57,7 @@ function DeleteChatComponent(props) {
               </div>
               <div className="d-flex modal-footer">
                 <button ref={closeBtnRef} type="button" className="btn w-50" data-bs-dismiss="modal" style={{ background: "#FAFAFA", color: "#0D0D0D" }}>Close</button>
-                <button type="button" className="btn w-50" style={{ background: "#D0342C", color: "#FAFAFA" }} onClick={handleDeleteChat}>Delete Chat</button>
+                <button type="button" className="btn w-50 delete-btn" style={{ background: "#D0342C", color: "#FAFAFA" }} onClick={handleDeleteChat} disabled={isBtnDisabled}>{deleteMsg}</button>
               </div>
             </div>
           </div>

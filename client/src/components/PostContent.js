@@ -56,6 +56,10 @@ function PostContent(props) {
     };
 
     useEffect(() => {
+        document.title = sTitle;
+    }, [])
+
+    useEffect(() => {
         if (id) {
             fetchPost();
             getTotalVibeCount();

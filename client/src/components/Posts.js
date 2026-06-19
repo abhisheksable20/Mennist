@@ -28,6 +28,10 @@ function Posts(props) {
         }
     }
 
+    useEffect(() => {
+        document.title = "Mennist | Home"
+    }, [])
+
     // Trigger when state of the pill change
     useEffect(() => {
         const resetFetching = async () => {

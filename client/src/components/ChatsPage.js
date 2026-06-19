@@ -7,11 +7,12 @@ import NoContent from './NoContent'
 import DeleteChatComponent from './DeleteChatComponent'
 
 function ChatsPage(props) {
-  const { fetchAllChats, allMessages, loading, deleteUserChats } = useContext(ChatsContext);
+  const { fetchAllChats, allMessages, loading} = useContext(ChatsContext);
   const deleteBtnRef = useRef(null);
   const [selectedChatId, setSelectedChatId] = useState(null);
 
   useEffect(() => {
+    document.title = "Mennist | My Chats"
     fetchAllChats();
   }, []);
 

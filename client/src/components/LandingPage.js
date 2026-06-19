@@ -3,13 +3,17 @@ import '../styles/LandingPage.css'
 import creatAcc from "../assets/anonymous_svg_icon.svg"
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { generateKeyPair } from '../crypto/keyManager'
 import { db } from '../internalDatabase/db'
 
 function LandingPage(props) {
   const [btnDisabled, setDisablility] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "Mennist - Anonymous Chats & Posts";
+  }, [])
 
   // Setup the user
   const setupUser = async () => {

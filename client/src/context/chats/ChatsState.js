@@ -260,7 +260,6 @@ const ChatsState = (props) => {
 
             await delChatsFromLocal(chatId);
             return true;
-
         }
         catch (error) {
             console.log("Failed to delete chats please contact support team.");
@@ -283,7 +282,7 @@ const ChatsState = (props) => {
         }
         catch (error) {
             console.log("Failed to delete chats contact support team.")
-            return false;
+            throw error
         }
     }
 
