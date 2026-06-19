@@ -253,7 +253,7 @@ const ChatsState = (props) => {
         try {
             const delChatId = { chatId: chatId };
 
-            await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL}/chats/my-chats`, {
                 data:delChatId,
                 withCredentials:true
             });
@@ -275,6 +275,10 @@ const ChatsState = (props) => {
                 db.chats.where("chatId").equals(chatId).delete(),
                 db.chatUser.delete(chatId)
             ]);
+
+            const updatedChatList = allMessages.filter(chat => chat.chatId !== chatId);
+            setAllMessages(updatedChatList);
+
             return true;
         }
         catch (error) {
