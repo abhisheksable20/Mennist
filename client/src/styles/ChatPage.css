@@ -22,10 +22,53 @@
 }
 
 .chat-item:hover {
-    background: #22C55E;
+    background: #16A34A;
     color: #FAFAFA;
 }
 
+.chat-item-layout {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    align-items: center;
+    min-height: 90px;
+}
+
+.chat-content {
+    color: inherit;
+    padding-right: 1rem;
+}
+
+.chat-content:hover {
+    color: inherit;
+}
+
+.chat-timestamp {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+.delete-section {
+    height: 60%;
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.delete-section img {
+    cursor: pointer;
+}
+
+.delete-section img:hover {
+    opacity: 0.8;
+}
+
+.chat-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 
 /* Conversation Page */
@@ -113,3 +156,5 @@
     background-color: #16A34A;
     transform: scale(1.05);
 }
+
+/*  */

@@ -71,6 +71,8 @@ function ConversationPage() {
           recieverPublicKey: user.publicKey
         };
 
+        document.title = user.username;
+
         setUsername(user.username);
         userChatServer(controller.signal);
       }

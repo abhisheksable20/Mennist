@@ -67,7 +67,7 @@ function App() {
               <Route path='/' element={<Home alert={showAlert} />} />
               <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
               <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
-              <Route path='/my-chats' element={<ChatsPage />} />
+              <Route path='/my-chats' element={<ChatsPage alert={showAlert}/>} />
               <Route path='/user-chat/:chatId' element={<ConversationPage />} />
             </Route>
           </Routes>
