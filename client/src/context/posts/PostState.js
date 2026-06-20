@@ -7,7 +7,7 @@ const PostState = (props) => {
     const [posts, setPosts] = useState([]);
     const [hasNext, setHasNext] = useState(true);
     const [content, setContent] = useState({ title: "", content: "" });
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const isFetchingRef = useRef(false);
     const lastTimestampRef = useRef(Date.now());

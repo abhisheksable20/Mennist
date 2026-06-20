@@ -41,7 +41,7 @@ const ChatsState = (props) => {
                 })
             )
 
-            allChatsFromLocalStorage();
+            await allChatsFromLocalStorage();
         }
         catch (error) {
             console.log(error);

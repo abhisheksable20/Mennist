@@ -89,20 +89,24 @@ function Posts(props) {
                     </li>
                 </ul>
             </div>
-
-            <div className="row g-5">
-                {!loading && posts.length === 0 ? (
-                    <NoContent svgType={1} title={"TOO QUIET IN HERE"} text={"Tell the story nobody knows about."}/>
-                ) : (
-                    posts.map(post => (
-                        <PostItem key={post.id} post={post} />
-                    ))
-                )}
-            </div>
-
+            {
+                loading && posts.length === 0 ? (<Spinner />) :
+                    (
+                        <>
+                            <div className="row g-5">
+                                {!loading && posts.length === 0 ? (
+                                    <NoContent svgType={1} title={"TOO QUIET IN HERE"} text={"Tell the story nobody knows about."} />
+                                ) : (
+                                    posts.map(post => (
+                                        <PostItem key={post.id} post={post} />
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    )}
 
             {/* Sentinel — always render this at the bottom */}
-            {loading && <Spinner />}
+            {loading && posts.length > 0 && <Spinner />}
             {hasNext && <div ref={sentryRef} />}
 
         </div>
