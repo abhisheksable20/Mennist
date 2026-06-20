@@ -157,4 +157,12 @@
     transform: scale(1.05);
 }
 
+.e2ee-notice {
+  display: block;
+  text-align: center;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
 /*  */
