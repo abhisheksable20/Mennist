@@ -34,7 +34,7 @@
 /* Hero */
 .hero-title {
     font-size: clamp(2rem, 6vw, 6rem);
-    line-height: 1.05;
+    line-height: 1.1;
 }
 
 .hero-title span {
@@ -44,6 +44,7 @@
 .hero-subtitle {
     max-width: 700px;
     font-size: clamp(0.95rem, 3vw, 1.25rem);
+    padding: 0 15px;
     color: #A3A3A3;
     line-height: 1.6;
 }
