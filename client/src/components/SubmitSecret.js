@@ -5,9 +5,12 @@ import { totalWords } from '../dataProcessing/dataProcessing';
 
 function SubmitSecret(props) {
   const { content, setContent } = useContext(PostContext);
-  
+
   // Handle imput changing its texts
   const handleInputOnChange = (e) => {
+    e.target.style.height = "auto";
+    e.target.style.height = `${e.target.scrollHeight}px`;
+    
     setContent({ ...content, [e.target.name]: e.target.value });
   }
 
@@ -18,9 +21,9 @@ function SubmitSecret(props) {
 
   // Handle total words count
   const totalWords = () => {
-    if(content.content.trim().length === 0)
+    if (content.content.trim().length === 0)
       return 0;
-    
+
     return content.content.trim().split(/\s+/).length;
   }
 
@@ -46,28 +49,27 @@ function SubmitSecret(props) {
       {/* Input form Content */}
       <div className="mt-5 mb-4">
         <label for="exampleFormControlTextarea1" className="form-label custom-label">MY SECRET</label>
-        <div className='position-relative'>
-          <textarea className="form-control form-control-lg custom-input"
-            id="content"
-            name='content'
-            value={content.content}
-            onChange={handleInputOnChange}
-            rows="12"
-            placeholder="Write your secret here...">
-          </textarea>
+        <textarea className="form-control form-control-lg custom-input auto-grow-textarea"
+          id="content"
+          name='content'
+          value={content.content}
+          onChange={handleInputOnChange}
+          rows="12"
+          placeholder="Write your secret here...">
+        </textarea>
 
-          {/* Divider */}
-          <div className="textarea-divider"></div>
+        {/* Divider */}
+        <div className="textarea-divider mt-3"></div>
 
-          {/* Bottom stats */}
-          <div className="textarea-footer d-flex justify-content-between px-4">
-            <span className='custom-submit-span'>{`Characters: ${totalCharacters()}`}</span>
-            <span className='custom-submit-span'>{content && `Words: ${totalWords(content.content)}`}</span>
-          </div>
+        {/* Bottom stats */}
+        <div className="d-flex justify-content-between mt-2">
+          <span className='custom-submit-span'>{`Characters: ${totalCharacters()}`}</span>
+          <span className='custom-submit-span'>{content && `Words: ${totalWords(content.content)}`}</span>
         </div>
+
       </div>
       <p className='condition-text'>Share freely, but stay respectful — avoid posting any misleading, harmful, self-harming, hateful, or threatening content toward others.</p>
-      <SubmitButton alert={props.alert}/>
+      <SubmitButton alert={props.alert} />
     </div>
   )
 }

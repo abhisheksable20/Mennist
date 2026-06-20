@@ -125,6 +125,8 @@
     box-shadow: none !important;
     font-family: "Open Sans", sans-serif;
     font-size: 16px;
+    overflow-y: hidden;
+    min-height: 24px;
     max-height: 180px;
 }
 
@@ -158,11 +160,11 @@
 }
 
 .e2ee-notice {
-  display: block;
-  text-align: center;
-  margin-top: 6px;
-  font-size: 0.75rem;
-  color: #6c757d;
+    display: block;
+    text-align: center;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: #6c757d;
 }
 
 /*  */

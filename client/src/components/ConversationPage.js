@@ -103,6 +103,10 @@ function ConversationPage() {
 
 
   const handleInputOnChange = (e) => {
+    const textarea = e.target;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+
     setInputMessage(e.target.value)
   }
 
@@ -121,6 +125,11 @@ function ConversationPage() {
       console.log(error);
     }
     finally {
+      const textarea = document.getElementById("chatInput");
+      if (textarea) {
+        textarea.style.height = "auto";
+      }
+      
       setSendBtnDisability(false);
       setInputMessage("")
     }
