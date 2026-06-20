@@ -161,6 +161,7 @@ function ConversationPage() {
               <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
             </button>
           </div>
+          <small className="e2ee-notice">Messages are protected with end-to-end encryption.</small>
         </div>
       </div>
     </>
