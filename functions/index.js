@@ -48,12 +48,12 @@ app.use((err, req, res, next) => {
 });
 
 // Post CRUD operation route
-app.use("/", require("./routes/posts"));
+app.use("/api", require("./routes/posts"));
 
 // Post CRUD operation route for user
-app.use("/user", require("./routes/userPosts"));
+app.use("/api/user", require("./routes/userPosts"));
 
 // Chats operation route
-app.use("/chats", require("./routes/chats"));
+app.use("/api/chats", require("./routes/chats"));
 
 exports.api = functions.https.onRequest(app);

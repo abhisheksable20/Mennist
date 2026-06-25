@@ -14,7 +14,7 @@ function generateUserId(publicKey) {
 
 // Check wheather the user has sessionId or not
 const isLoggedIn = async (req, res, next) => {
-  const sessionId = req.cookies.sessionId;
+  const sessionId = req.cookies.__session;
   if (!sessionId) {
     return res.status(401).send({error: `Session expired`});
   }
@@ -23,12 +23,12 @@ const isLoggedIn = async (req, res, next) => {
   const data = snap.val();
 
   if (!data) {
-    res.clearCookie("sessionId");
+    res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
 
   if (Date.now() > data.expiresAt) {
-    res.clearCookie("sessionId");
+    res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
 
@@ -42,7 +42,7 @@ const isLoggedIn = async (req, res, next) => {
 // Authenticating the user
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
-  const sessionId = req.cookies.sessionId;
+  const sessionId = req.cookies.__session;
   const publicKey = req.body.publicKey;
 
   if (!publicKey) {
@@ -62,7 +62,7 @@ const authUser = async (req, res, next) => {
 
   // This will trigger if we delete the session manually
   if (!snap.exists()) {
-    res.clearCookie("sessionId", {
+    res.clearCookie("__session", {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -80,7 +80,7 @@ const authUser = async (req, res, next) => {
   // check expiry if expired then delete the user
   if (Date.now() > data.expiresAt) {
     await db.ref(`sessions/${sessionId}`).remove();
-    res.clearCookie("sessionId");
+    res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
 
@@ -106,10 +106,11 @@ const createSession = async (req, res, publicKey) => {
   });
 
   // Make it Secure: true in production
-  res.cookie("sessionId", sessionId, {
+  res.cookie("__session", sessionId, {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+    path: "/",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 

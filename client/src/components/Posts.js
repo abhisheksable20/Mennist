@@ -24,7 +24,7 @@ function Posts(props) {
                 return;
             }
 
-            props.alert(`Something went wrong! ${apiError}`, "alert");
+            props.alert(`Something went wrong!`, "alert");
         }
     }
 
