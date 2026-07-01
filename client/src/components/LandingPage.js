@@ -31,6 +31,14 @@ function LandingPage(props) {
         chatId: data.chatId
       });
 
+      // Delete all the data in index db
+      if (data.isNew) {
+        await db.transaction("rw", db.chatUser, db.chats, async () => {
+          await db.chatUser.clear();
+          await db.chats.clear();
+        })
+      }
+
       props.alert("You're now anonymous.", "success");
       setTimeout(() => {
         navigate("/");
@@ -51,8 +59,17 @@ function LandingPage(props) {
 
   // Generating Private Key and Public Key
   const generateKeys = async () => {
-    const userKeys = await generateKeyPair();
-    return userKeys;
+    try {
+      const keys = await db.keys.get("user-keypair");
+      if (keys)
+        return keys
+
+      const userKeys = await generateKeyPair();
+      return userKeys;
+    }
+    catch (error) {
+      throw error;
+    }
   }
 
   return (

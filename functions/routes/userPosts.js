@@ -10,7 +10,7 @@ const db = admin.database();
 const retrieveLimit = 10;
 
 router.post("/create-user", authUser, globalLimiter, async (req, res) => {
-  const payload = {chatId: req.user.chatId};
+  const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
 });
 

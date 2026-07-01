@@ -54,7 +54,11 @@ const authUser = async (req, res, next) => {
     const session = await createSession(req, res, publicKey);
 
     const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
-    req.user = {uid: session.userId, chatId};
+    req.user = {
+      uid: session.userId,
+      isNew: true,
+      chatId,
+    };
     return next();
   }
 
@@ -71,7 +75,11 @@ const authUser = async (req, res, next) => {
     const session = await createSession(req, res, publicKey);
 
     const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
-    req.user = {uid: session.userId, chatId};
+    req.user = {
+      uid: session.userId,
+      isNew: true,
+      chatId,
+    };
     return next();
   }
 
@@ -85,7 +93,11 @@ const authUser = async (req, res, next) => {
   }
 
   const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
-  req.user = {uid: data.userId, chatId};
+  req.user = {
+    uid: data.userId,
+    isNew: false,
+    chatId,
+  };
   next();
 };
 
