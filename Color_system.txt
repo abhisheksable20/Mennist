@@ -22,4 +22,4 @@ Hover: #16A34A
 Toast Color
 Alert : #D0342C
 Success: #22C55E
-Primary: #4F46E5
+Primary: #4F46E5    
