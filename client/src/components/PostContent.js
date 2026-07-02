@@ -5,7 +5,9 @@ import { totalWords } from '../dataProcessing/dataProcessing'
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing'
 import chatSVG from '../assets/chat_round-svg.svg'
 import halfLikeSVG from '../assets/heart-half_svg.svg'
+import shareSVG from '../assets/share_svg.svg'
 import fullLikeSVG from '../assets/heart_fullsvg.svg'
+import vibeHeartSVG from "../assets/vibe_heart_full.svg"
 import saveSVG from '../assets/save_svg.svg'
 import removeSave from '../assets/remove_save_svg.svg'
 import Spinner from './Spinner'
@@ -21,7 +23,7 @@ function PostContent(props) {
     const timestamp = searchParams.get("timestamp");
 
     const navigate = useNavigate();
-    const [postData, setPostData] = useState({ id: id, title: "", content: "", timestamp: 0, chatId: null});
+    const [postData, setPostData] = useState({ id: id, title: "", content: "", timestamp: 0, chatId: null });
     const [isLoading, setIsLoading] = useState(false);
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
@@ -187,15 +189,38 @@ function PostContent(props) {
 
     // Start the chat session with this user
     const startChatSesssion = async () => {
-        if(postData.chatId){
+        if (postData.chatId) {
             const userChatId = (await db.keys.get("user-keypair")).chatId;
-            if(postData.chatId === userChatId){
+            if (postData.chatId === userChatId) {
                 navigate('/my-chats');
                 return;
             }
-            
+
             navigate(`/user-chat/${postData.chatId}`)
         }
+    }
+
+    // Share the mennist vibe posts
+    const sharePost = async () => {
+        const url = `${window.location.origin}/post/${postData.id}`;
+        const text = `Found this anonymous post on Mennist:
+        
+"${postData.content.slice(0, 150)}${postData.content.length > 150 ? "..." : ""}"
+
+Read the full story:
+${url}
+
+Share your own story anonymously on Mennist.`;
+
+        if (navigator.share) {
+            await navigator.share({
+                title: postData.title || "Mennist Vibe",
+                text,
+            });
+        } else {
+            await navigator.clipboard.writeText(text);
+        }
+
     }
 
     const reportPostBtn = () => {
@@ -226,14 +251,14 @@ function PostContent(props) {
                 {/* Divider */}
                 <div className="post-divider"></div>
                 {/* Report Post section */}
-                <div className='d-flex justify-content-between align-items-center mt-4' style={{marginBottom:"150px"}}>
+                <div className='d-flex justify-content-between align-items-center mt-4' style={{ marginBottom: "150px" }}>
                     <p className='text-body-secondary'>Report this post</p>
                     <button type="button" className="btn report-btn d-flex align-items-center justify-content-center gap-2" onClick={reportPostBtn}>
-                        <img src={reportPost} alt="Report Posts Icon" width="24px" height="24px"/>
+                        <img src={reportPost} alt="Report Posts Icon" width="24px" height="24px" />
                         Report
                     </button>
                 </div>
-                <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} alert={props.alert}/>
+                <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} alert={props.alert} />
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">
@@ -241,8 +266,8 @@ function PostContent(props) {
 
                             {/* Vibe Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={vibeBtn}>
-                                <img src={isVibed ? fullLikeSVG : halfLikeSVG} width="24px" height='24px' />
-                                <span>{totalVibes === 0 ? "Vibe" : totalVibes}</span>
+                                <img src={isVibed ? fullLikeSVG : vibeHeartSVG} width="24px" height='24px' />
+                                {totalVibes === 0 ? "" : <span>{totalVibes}</span>}
                             </div>
 
                             <div className="vertical-divider"></div>
@@ -250,7 +275,6 @@ function PostContent(props) {
                             {/* Chat Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={startChatSesssion}>
                                 <img src={chatSVG} width="24px" height='24px' />
-                                <span>Chat</span>
                             </div>
 
                             <div className="vertical-divider"></div>
@@ -258,7 +282,13 @@ function PostContent(props) {
                             {/* Save Post Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={savePostBtn}>
                                 <img src={isSaved ? removeSave : saveSVG} width="24px" height='24px' />
-                                <span>{isSaved ? "Saved" : "Save"}</span>
+                            </div>
+
+                            <div className="vertical-divider"></div>
+
+                            {/* Share Post Btn */}
+                            <div className="d-flex align-items-center gap-2 icon-svg" onClick={sharePost}>
+                                <img src={shareSVG} width="24px" height='24px' />
                             </div>
 
                         </div>
