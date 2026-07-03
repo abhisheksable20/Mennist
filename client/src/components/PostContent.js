@@ -18,12 +18,8 @@ import { db } from '../internalDatabase/db'
 function PostContent(props) {
     const [searchParams] = useSearchParams();
     const { id } = useParams();
-    const sTitle = searchParams.get("title");
-    const sContent = searchParams.get("content");
-    const timestamp = searchParams.get("timestamp");
-
     const navigate = useNavigate();
-    const [postData, setPostData] = useState({ id: id, title: "", content: "", timestamp: 0, chatId: null });
+    const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null });
     const [isLoading, setIsLoading] = useState(false);
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
@@ -58,8 +54,8 @@ function PostContent(props) {
     };
 
     useEffect(() => {
-        document.title = sTitle;
-    }, [])
+        document.title = postData.title;
+    }, [postData])
 
     useEffect(() => {
         if (id) {
@@ -113,8 +109,8 @@ function PostContent(props) {
 
     // save the posts to local storage
     const savePostBtn = () => {
-        if (postData.title.length <= 2 || postData.content.length <= 2) {
-            props.alert("Failed to save post!", "alert");
+        if (!postData.chatId) {
+            props.alert("Nothing to save.", "alert");
             return;
         }
 
@@ -141,9 +137,9 @@ function PostContent(props) {
 
         const postToSave = {
             id: id,
-            title: sTitle,
-            content: sContent,
-            timestamp: timestamp
+            title: postData.title,
+            content: postData.content.length > 100 ? postData.content.substring(0, 100) + "..." : postData.content,
+            timestamp: postData.timestamp
         }
         savedPosts.push(postToSave);
 
