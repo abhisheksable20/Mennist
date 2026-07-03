@@ -4,7 +4,6 @@ import axios from 'axios'
 import { totalWords } from '../dataProcessing/dataProcessing'
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing'
 import chatSVG from '../assets/chat_round-svg.svg'
-import halfLikeSVG from '../assets/heart-half_svg.svg'
 import shareSVG from '../assets/share_svg.svg'
 import fullLikeSVG from '../assets/heart_fullsvg.svg'
 import vibeHeartSVG from "../assets/vibe_heart_full.svg"
@@ -199,14 +198,14 @@ function PostContent(props) {
     // Share the mennist vibe posts
     const sharePost = async () => {
         const url = `${window.location.origin}/post/${postData.id}`;
-        const text = `Found this anonymous post on Mennist:
+        const text = `Found this vibe on Mennist:
         
 "${postData.content.slice(0, 150)}${postData.content.length > 150 ? "..." : ""}"
 
 Read the full story:
 ${url}
 
-Share your own story anonymously on Mennist.`;
+Share your own vibe on Mennist.`;
 
         if (navigator.share) {
             await navigator.share({
@@ -262,7 +261,7 @@ Share your own story anonymously on Mennist.`;
 
                             {/* Vibe Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={vibeBtn}>
-                                <img src={isVibed ? fullLikeSVG : vibeHeartSVG} width="24px" height='24px' />
+                                <img src={isVibed ? fullLikeSVG : vibeHeartSVG} width="24px" height='24px' alt='Vibe Button'/>
                                 {totalVibes === 0 ? "" : <span>{totalVibes}</span>}
                             </div>
 
@@ -270,21 +269,21 @@ Share your own story anonymously on Mennist.`;
 
                             {/* Chat Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={startChatSesssion}>
-                                <img src={chatSVG} width="24px" height='24px' />
+                                <img src={chatSVG} width="24px" height='24px' alt='Start Chat'/>
                             </div>
 
                             <div className="vertical-divider"></div>
 
                             {/* Save Post Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={savePostBtn}>
-                                <img src={isSaved ? removeSave : saveSVG} width="24px" height='24px' />
+                                <img src={isSaved ? removeSave : saveSVG} width="24px" height='24px' alt='Save Post'/>
                             </div>
 
                             <div className="vertical-divider"></div>
 
                             {/* Share Post Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={sharePost}>
-                                <img src={shareSVG} width="24px" height='24px' />
+                                <img src={shareSVG} width="24px" height='24px' alt='Share Post'/>
                             </div>
 
                         </div>

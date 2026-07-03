@@ -16,8 +16,7 @@ const app = express();
 const allowedOrigins = [
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
-  "https://www.mennist.com",
-  "http://localhost:3000"];
+  "https://www.mennist.com"];
 const corsOptions = {
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
