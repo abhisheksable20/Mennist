@@ -159,6 +159,30 @@
     transform: scale(1.05);
 }
 
+/* File preview styles */
+.file-preview-card {
+    background: #171717;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    max-width: 320px;
+}
+
+.image-preview-wrapper {
+    margin-bottom: 10px;
+}
+
+.preview-image {
+    width: 100%;
+    max-height: 250px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+}
+/* End of file preview styles */
+
+
 .e2ee-notice {
     display: block;
     text-align: center;

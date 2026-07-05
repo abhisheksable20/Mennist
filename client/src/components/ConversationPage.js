@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import "../styles/ChatPage.css"
 import sendSVG from "../assets/send_svg.svg"
+import uploadFileSVG from "../assets/add_svg_icon.svg"
 import { useEffect, useContext, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
@@ -17,7 +18,9 @@ function ConversationPage() {
     userChatServer, sendChat, userMessages, loading } = useContext(ChatsContext);
   const userData = useRef(null);
   const [userName, setUsername] = useState("");
-  const [isSendBtnDisabled, setSendBtnDisability] = useState(false)
+  const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const getUserData = useCallback(async (signal) => {
     if (!chatIdRef.current)
@@ -100,7 +103,9 @@ function ConversationPage() {
 
   }, [inputMessage])
 
-
+  useEffect(() => {
+    console.log(previewUrl)
+  }, [previewUrl])
 
   const handleInputOnChange = (e) => {
     const textarea = e.target;
@@ -108,6 +113,19 @@ function ConversationPage() {
     textarea.style.height = `${textarea.scrollHeight}px`;
 
     setInputMessage(e.target.value)
+  }
+
+  // Handle file attachement
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+
+    if (file.type.startsWith("image/"))
+      setPreviewUrl(URL.createObjectURL(file));
+    else
+      setPreviewUrl(null);
   }
 
   const sendMsg = async () => {
@@ -129,7 +147,7 @@ function ConversationPage() {
       if (textarea) {
         textarea.style.height = "auto";
       }
-      
+
       setSendBtnDisability(false);
       setInputMessage("")
     }
@@ -158,6 +176,18 @@ function ConversationPage() {
         {/* Input component to take msg from the user */}
         <div className="chat-input-wrapper">
           <div className="chat-input-box">
+            <button
+              className="send-btn"
+              style={{ backgroundColor: "#262626" }}
+              onClick={() => {
+                document.getElementById("fileInput").click()
+              }}>
+              <img src={uploadFileSVG} alt="Attach file" width="22" height="22" />
+            </button>
+            <input
+              type="file"
+              id='fileInput' accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.mp3,.wav" hidden
+              onChange={handleFileChange} />
             <textarea
               className="form-control chat-textarea"
               id='chatInput'
