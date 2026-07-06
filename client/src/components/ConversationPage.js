@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
 import "../styles/ChatPage.css"
 import sendSVG from "../assets/send_svg.svg"
 import uploadFileSVG from "../assets/add_svg_icon.svg"
-import { useEffect, useContext, useRef, useCallback } from 'react'
+import { useEffect, useContext, useRef, useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
@@ -11,12 +10,14 @@ import { generateUsername } from "unique-username-generator";
 import axios from "axios";
 import ChatLoading from './ChatLoading';
 import NoContent from './NoContent';
+import FilePreview from "./FilePreview";
 
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
     userChatServer, sendChat, userMessages, loading } = useContext(ChatsContext);
   const userData = useRef(null);
+  const previewBtnRef = useRef(null);
   const [userName, setUsername] = useState("");
   const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -103,10 +104,16 @@ function ConversationPage() {
 
   }, [inputMessage])
 
-  useEffect(() => {
-    console.log(previewUrl)
-  }, [previewUrl])
 
+  useEffect(() => {
+    if(!selectedFile)
+      return;
+
+    previewBtnRef.current.click();
+
+  }, [selectedFile]);
+
+  // Handling text message input change
   const handleInputOnChange = (e) => {
     const textarea = e.target;
     textarea.style.height = "auto";
@@ -115,17 +122,17 @@ function ConversationPage() {
     setInputMessage(e.target.value)
   }
 
+  // Handling attachements inputs
+  const handleAttachmentInput = () => {
+    console.log("Handle Attachment!");
+  }
+
   // Handle file attachement
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setSelectedFile(file);
-
-    if (file.type.startsWith("image/"))
-      setPreviewUrl(URL.createObjectURL(file));
-    else
-      setPreviewUrl(null);
   }
 
   const sendMsg = async () => {
@@ -173,9 +180,13 @@ function ConversationPage() {
           }
         </div>
 
+        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput}/>
+
         {/* Input component to take msg from the user */}
         <div className="chat-input-wrapper">
           <div className="chat-input-box">
+
+            {/* Attach the image or file button */}
             <button
               className="send-btn"
               style={{ backgroundColor: "#262626" }}
@@ -188,6 +199,7 @@ function ConversationPage() {
               type="file"
               id='fileInput' accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.mp3,.wav" hidden
               onChange={handleFileChange} />
+
             <textarea
               className="form-control chat-textarea"
               id='chatInput'
@@ -196,9 +208,11 @@ function ConversationPage() {
               rows={1}
               placeholder="Type something..."
               onChange={handleInputOnChange} />
+
             <button className="send-btn" onClick={sendMsg} disabled={isSendBtnDisabled}>
               <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
             </button>
+
           </div>
           <small className="e2ee-notice">Messages are protected with end-to-end encryption.</small>
         </div>
