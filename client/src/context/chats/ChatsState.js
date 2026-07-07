@@ -3,7 +3,7 @@ import axios from "axios";
 import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
 import { useState, useRef, useCallback } from "react";
-import { encryptMessage } from "../../crypto/encryptMessage";
+import { encryptMessage, encrypteFile } from "../../crypto/encryptMessage";
 import { decryptMessage } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
@@ -245,6 +245,43 @@ const ChatsState = (props) => {
         }
     }
 
+    // Sending the attachement to server 
+    const sendAttachment = async (file, receiverPublicKey) => {
+        try {
+            if (!chatIdRef.current)
+                return false
+
+            if (!file) {
+                return false;
+            }
+
+            /**
+             * Data recieved from the encryption process
+             * {
+             *  encryptedFile
+             *  encryptedKey
+             *  nounce
+             *  fileName
+             *  fileType
+             * }
+             */
+            const encryptedFileData = await encrypteFile(file, receiverPublicKey);
+            const chatBody = {
+                ...encryptedFileData,
+                chatId: chatIdRef.current
+            }
+
+            await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-chat`, chatBody, { withCredentials: true });
+            
+
+
+        }
+        catch (error) {
+            throw error;
+        }
+
+    }
+
     // Delete single user chats from the server then from local database
     const deleteUserChats = async (chatId) => {
         if (!chatId)
@@ -254,8 +291,8 @@ const ChatsState = (props) => {
             const delChatId = { chatId: chatId };
 
             await axios.delete(`${process.env.REACT_APP_API_URL}/chats/my-chats`, {
-                data:delChatId,
-                withCredentials:true
+                data: delChatId,
+                withCredentials: true
             });
 
             await delChatsFromLocal(chatId);

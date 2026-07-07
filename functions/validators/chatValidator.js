@@ -1,4 +1,4 @@
-const {Joi} = require("express-validation");
+const { Joi } = require("express-validation");
 
 const chatBlobValidation = {
   body: Joi.object({
@@ -9,7 +9,11 @@ const chatBlobValidation = {
   }),
 };
 
+// Validating file attachements before processing and saving it to the database
+const fileBlobValidation = {
 
-module.exports = {chatBlobValidation};
+}
+
+module.exports = { chatBlobValidation, fileBlobValidation };
 
 

@@ -124,7 +124,11 @@ function ConversationPage() {
 
   // Handling attachements inputs
   const handleAttachmentInput = () => {
-    console.log("Handle Attachment!");
+    if(!selectedFile)
+      return;
+
+    
+
   }
 
   // Handle file attachement
