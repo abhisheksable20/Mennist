@@ -265,15 +265,21 @@ const ChatsState = (props) => {
              *  fileType
              * }
              */
-            const encryptedFileData = await encrypteFile(file, receiverPublicKey);
+            const keys = await db.keys.get("user-keypair");
+
+            const buffer = await file.arrayBuffer();
+            const imageByte = new Uint8Array(buffer);
+
+            const encryptedFileData = await encrypteFile(imageByte, receiverPublicKey);
             const chatBody = {
                 ...encryptedFileData,
-                chatId: chatIdRef.current
+                chatId: chatIdRef.current,
+                senderPublicKey: keys.publicKey
             }
 
             await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-chat`, chatBody, { withCredentials: true });
-            
 
+            
 
         }
         catch (error) {

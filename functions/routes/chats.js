@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
-const { chatBlobValidation } = require("../validators/chatValidator");
+const { chatBlobValidation, fileBlobValidation } = require("../validators/chatValidator");
 const { chatLimiter } = require("../middleware/rateLimiter");
 const { isLoggedIn } = require("../middleware/authenticUser");
 const { validate } = require("express-validation");
@@ -57,6 +57,7 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
     encryptedMsg,
     timestamp,
     nounce,
+    type: "plain/text"
   };
 
   const chatMetaData = {
@@ -65,6 +66,7 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
     encryptedMsg,
     timestamp,
     nounce,
+    type: "plain/text"
   };
 
   try {
@@ -78,8 +80,8 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 });
 
 // Router to handle attachment coming from the client side
-router.post("/send-attachment", isLoggedIn, chatLimiter, async (req, res) => {
-  const { chatId, encryptedFile, encryptedImageKey, nounce, name, type } = req.body;
+router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValidation), async (req, res) => {
+  const { chatId, senderPublicKey, encryptedFile, encryptedImageKey, nounce, name, type, size } = req.body;
   const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   const senderUserId = req.user.uid;
 
@@ -94,8 +96,35 @@ router.post("/send-attachment", isLoggedIn, chatLimiter, async (req, res) => {
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
   const timestamp = Date.now();
 
-  
+  const chatBlob = {
+    encryptedFile,
+    encryptedImageKey,
+    nounce,
+    name,
+    type,
+    size,
+    timestamp
+  }
 
+  const chatMetaData = {
+    senderChatId,
+    senderPublicKey,
+    type,
+    timestamp,
+    nounce,
+    encryptedMsg: name,
+  }
+
+  // Updating firebase realtime database
+  try {
+    await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
+    await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
+    return res.status(200).send({ message: "Message send successfully" });
+  }
+  catch (sendChatError) {
+    console.log("sendChatError: ", sendChatError);
+    res.status(500).send({ error: "Something went wrong" });
+  }
 });
 
 // Delete all chats and its meta data from the server for all the user

@@ -18,11 +18,8 @@ export async function encryptMessage(message, receiverPublicKey, senderPrivateKe
 }
 
 // Encrypting the file to send it to the server
-export async function encrypteFile(file, receiverPublicKey, senderPrivateKey) {
+export async function encrypteFile(imageByte, receiverPublicKey) {
     const sodium = await initSodium();
-    
-    const buffer = await file.arrayBuffer();
-    const imageByte = new Uint8Array(buffer);
     
     const nounce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES);
 
@@ -34,14 +31,15 @@ export async function encrypteFile(file, receiverPublicKey, senderPrivateKey) {
         imageKey
     );
 
-    const encryptedImageKey = sodium.crypto_box_seal(imageKey, receiverPublicKey);
+    const encryptedFileKey = sodium.crypto_box_seal(imageKey, receiverPublicKey);
 
     return {
         encryptedFile,
         nounce:nounce,
-        encryptedImageKey:encryptedImageKey,
+        encryptedFileKey:encryptedFileKey,
         name:file.name,
-        type:file.type
+        type:file.type,
+        size:file.size
     }
 
 }
