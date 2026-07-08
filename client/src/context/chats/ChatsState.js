@@ -3,7 +3,7 @@ import axios from "axios";
 import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
 import { useState, useRef, useCallback } from "react";
-import { encryptMessage, encrypteFile } from "../../crypto/encryptMessage";
+import { encryptMessage, encryptedFile } from "../../crypto/encryptMessage";
 import { decryptMessage } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
@@ -74,6 +74,7 @@ const ChatsState = (props) => {
         try {
             const chatId = chat.chatId;
             const plainMsg = chat.plainMsg
+            const type = chat.type;
             const chatUser = await db.chatUser.get(chatId);
 
             if (!chatUser) {
@@ -83,6 +84,7 @@ const ChatsState = (props) => {
                     username,
                     publicKey: chat.senderPublicKey,
                     lastMsg: plainMsg,
+                    type,
                     timestamp: chat.timestamp
                 }
 
@@ -93,7 +95,8 @@ const ChatsState = (props) => {
             if (chatUser.timestamp < chat.timestamp) {
                 const updatedData = {
                     lastMsg: plainMsg,
-                    timestamp: chat.timestamp
+                    timestamp: chat.timestamp,
+                    type: chat.type
                 }
 
                 await db.chatUser.update(chatId, updatedData);
@@ -220,21 +223,23 @@ const ChatsState = (props) => {
 
             const timestamp = Date.now();
 
-            // Storing chat blob on client side in ChatUser Table in dexie
+            // Storing chat blob on client side in chats Table in dexie
             const indexDBData = {
                 chatId: chatIdRef.current,
                 plainMsg: inputMessage,
                 timestamp,
+                type: "plain/text",
                 fromMe: true
             }
             const id = await db.chats.add(indexDBData);
             setUserMessages(prev => [...prev, { id, ...indexDBData }])
 
-            // Updating last msg in chats table in dexie
+            // Updating last msg in chatsUser table in dexie
             const DBData = {
                 chatId: chatIdRef.current,
                 plainMsg: inputMessage,
                 senderPublicKey: receiverPublicKey,
+                type: "plain/text",
                 timestamp
             }
 
@@ -270,17 +275,42 @@ const ChatsState = (props) => {
             const buffer = await file.arrayBuffer();
             const imageByte = new Uint8Array(buffer);
 
-            const encryptedFileData = await encrypteFile(imageByte, receiverPublicKey);
+            const encryptedFileData = await encryptedFile(imageByte, receiverPublicKey);
             const chatBody = {
                 ...encryptedFileData,
                 chatId: chatIdRef.current,
-                senderPublicKey: keys.publicKey
+                senderPublicKey: keys.publicKey,
+                name: file.name,
+                type: file.type,
+                size: file.size
             }
 
-            await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-chat`, chatBody, { withCredentials: true });
+            await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-attachment`, chatBody, { withCredentials: true });
 
-            
+            const timestamp = Date.now();
 
+            // Storing the data in index DB in chatUser database
+            const indexDBData = {
+                chatId: chatIdRef.current,
+                timestamp,
+                imageByte,
+                type: file.type,
+                fromMe: true,
+            }
+
+            const id = await db.chats.add(indexDBData);
+            // setUserMessages(prev => [...prev, { id, ...indexDBData }]);
+
+            // Updating last msg in chats table in dexie
+            const DBData = {
+                chatId: chatIdRef.current,
+                plainMsg: file.name,
+                senderPublicKey: receiverPublicKey,
+                timestamp,
+                type: file.type
+            }
+
+            await saveAndUpdateDBV2(DBData);
         }
         catch (error) {
             throw error;
@@ -369,7 +399,7 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, userMessages, loading, deleteUserChats
+            setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment
         }}>
             {props.children}
         </ChatsContext.Provider>

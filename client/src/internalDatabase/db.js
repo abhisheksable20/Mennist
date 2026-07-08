@@ -18,4 +18,4 @@ db.version(3).stores({
   keys: "id",
   chatUser: "chatId, username, publicKey, lastMsg, type, timestamp",
   chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageByte, type, fromMe"
-})
+});

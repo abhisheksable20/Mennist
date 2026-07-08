@@ -2,52 +2,52 @@ const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
-const { chatBlobValidation, fileBlobValidation } = require("../validators/chatValidator");
-const { chatLimiter } = require("../middleware/rateLimiter");
-const { isLoggedIn } = require("../middleware/authenticUser");
-const { validate } = require("express-validation");
+const {chatBlobValidation, fileBlobValidation} = require("../validators/chatValidator");
+const {chatLimiter} = require("../middleware/rateLimiter");
+const {isLoggedIn} = require("../middleware/authenticUser");
+const {validate} = require("express-validation");
 
 const db = admin.database();
 
 // Get Post Owner PublicKey
 router.post("/get-publicKey", isLoggedIn, chatLimiter, async (req, res) => {
-  const { chatId } = req.body;
+  const {chatId} = req.body;
   const userUniqueId = req.user.uid;
 
   if (!chatId) {
-    return res.status(400).send({ error: "You cannot chat with this person." });
+    return res.status(400).send({error: "You cannot chat with this person."});
   }
 
   const receiverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   if (userUniqueId === receiverUserId) {
-    return res.status(406).send({ error: "You have your own public key" });
+    return res.status(406).send({error: "You have your own public key"});
   }
 
   try {
     const snapshot = await db.ref(`users/${receiverUserId}/publicKey`).once("value");
 
     if (snapshot.exists()) {
-      return res.status(200).json({ publicKey: snapshot.val() });
+      return res.status(200).json({publicKey: snapshot.val()});
     }
 
-    return res.status(401).send({ error: "Public key not found." });
+    return res.status(401).send({error: "Public key not found."});
   } catch (error) {
-    return res.status(500).send({ error: "Something went wrong" });
+    return res.status(500).send({error: "Something went wrong"});
   }
 });
 
 // save encrypted chat to the server
 router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation), async (req, res) => {
-  const { chatId, encryptedMsg, senderPublicKey, nounce } = req.body;
+  const {chatId, encryptedMsg, senderPublicKey, nounce} = req.body;
   const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   const senderUserId = req.user.uid;
 
   if (!recieverUserId) {
-    return res.status(404).send({ error: "User not found!" });
+    return res.status(404).send({error: "User not found!"});
   }
 
   if (senderUserId === recieverUserId) {
-    return res.status(406).send({ error: "Cannot chat with yourself" });
+    return res.status(406).send({error: "Cannot chat with yourself"});
   }
 
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
@@ -57,7 +57,7 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
     encryptedMsg,
     timestamp,
     nounce,
-    type: "plain/text"
+    type: "plain/text",
   };
 
   const chatMetaData = {
@@ -66,31 +66,31 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
     encryptedMsg,
     timestamp,
     nounce,
-    type: "plain/text"
+    type: "plain/text",
   };
 
   try {
     await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
     await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
-    return res.status(200).send({ message: "Message send successfully" });
+    return res.status(200).send({message: "Message send successfully"});
   } catch (sendChatError) {
     console.log("sendChatError: ", sendChatError);
-    res.status(500).send({ error: "Something went wrong" });
+    res.status(500).send({error: "Something went wrong"});
   }
 });
 
 // Router to handle attachment coming from the client side
 router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValidation), async (req, res) => {
-  const { chatId, senderPublicKey, encryptedFile, encryptedImageKey, nounce, name, type, size } = req.body;
+  const {chatId, senderPublicKey, encryptedFile, encryptedFileKey, nounce, name, type, size} = req.body;
   const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   const senderUserId = req.user.uid;
 
   if (!recieverUserId) {
-    return res.status(404).send({ error: "User not found!" });
+    return res.status(404).send({error: "User not found!"});
   }
 
   if (senderUserId === recieverUserId) {
-    return res.status(406).send({ error: "Cannot chat with yourself" });
+    return res.status(406).send({error: "Cannot chat with yourself"});
   }
 
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
@@ -98,13 +98,13 @@ router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValida
 
   const chatBlob = {
     encryptedFile,
-    encryptedImageKey,
+    encryptedFileKey,
     nounce,
     name,
     type,
     size,
-    timestamp
-  }
+    timestamp,
+  };
 
   const chatMetaData = {
     senderChatId,
@@ -113,36 +113,35 @@ router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValida
     timestamp,
     nounce,
     encryptedMsg: name,
-  }
+  };
 
   // Updating firebase realtime database
   try {
     await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
     await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
-    return res.status(200).send({ message: "Message send successfully" });
-  }
-  catch (sendChatError) {
+    return res.status(200).send({message: "Message send successfully"});
+  } catch (sendChatError) {
     console.log("sendChatError: ", sendChatError);
-    res.status(500).send({ error: "Something went wrong" });
+    res.status(500).send({error: "Something went wrong"});
   }
 });
 
 // Delete all chats and its meta data from the server for all the user
 router.delete("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
-  const { chatId } = req.body;
+  const {chatId} = req.body;
   const userId = req.user.uid;
 
   if (!chatId) {
-    return res.status(406).send({ error: "Cannot process your request!" });
+    return res.status(406).send({error: "Cannot process your request!"});
   }
 
   try {
     const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
     await db.ref(`chats/${userId}/${recieverUserId}`).remove();
-    return res.status(200).send({ message: "Messages deleted successfully!" });
+    return res.status(200).send({message: "Messages deleted successfully!"});
   } catch (error) {
     console.log("Failed to delete chats data: ", error);
-    return res.status(500).send({ error: "Something went wrong!" });
+    return res.status(500).send({error: "Something went wrong!"});
   }
 });
 
@@ -156,11 +155,11 @@ router.delete("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
    *    }
    */
 
-  const { chatId, messagesKeys } = req.body;
+  const {chatId, messagesKeys} = req.body;
   const userId = req.user.uid;
 
   if (!chatId || !messagesKeys) {
-    return res.status(406).send({ error: "Cannot process your request!" });
+    return res.status(406).send({error: "Cannot process your request!"});
   }
 
   try {
@@ -178,16 +177,16 @@ router.delete("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
     return res.status(200).send("Deleted Successfully!");
   } catch (delError) {
     console.log("Error: ", delError);
-    return res.status(500).send({ error: "Something went wrong!" });
+    return res.status(500).send({error: "Something went wrong!"});
   }
 });
 
 
 // Get user chat from database - specific user chat
 router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
-  const { chatId } = req.query;
+  const {chatId} = req.query;
   if (!chatId) {
-    return res.status(406).send({ error: "Cannot process your request." });
+    return res.status(406).send({error: "Cannot process your request."});
   }
 
   const senderUserId = req.user.uid;
@@ -195,7 +194,7 @@ router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
   try {
     const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
     if (!recieverUserId) {
-      return res.status(406).send({ error: "Token not matched!" });
+      return res.status(406).send({error: "Token not matched!"});
     }
 
     const snapshot = await db.ref(`chats/${senderUserId}/${recieverUserId}`).once("value");
@@ -226,7 +225,7 @@ router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
 
     return res.status(200).send(data);
   } catch (fetchError) {
-    return res.status(500).send({ error: fetchError });
+    return res.status(500).send({error: fetchError});
   }
 });
 
@@ -256,7 +255,7 @@ router.get("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
 
     return res.status(200).send(chatsData);
   } catch (error) {
-    return res.status(500).send({ error: error });
+    return res.status(500).send({error: error});
   }
 });
 

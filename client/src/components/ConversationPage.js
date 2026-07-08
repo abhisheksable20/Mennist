@@ -15,7 +15,7 @@ import FilePreview from "./FilePreview";
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
-    userChatServer, sendChat, userMessages, loading } = useContext(ChatsContext);
+    userChatServer, sendChat, userMessages, loading, sendAttachment } = useContext(ChatsContext);
   const userData = useRef(null);
   const previewBtnRef = useRef(null);
   const [userName, setUsername] = useState("");
@@ -106,7 +106,7 @@ function ConversationPage() {
 
 
   useEffect(() => {
-    if(!selectedFile)
+    if (!selectedFile)
       return;
 
     previewBtnRef.current.click();
@@ -123,12 +123,30 @@ function ConversationPage() {
   }
 
   // Handling attachements inputs
-  const handleAttachmentInput = () => {
-    if(!selectedFile)
-      return;
+  const handleAttachmentInput = async () => {
+    setSendBtnDisability(true);
 
-    
+    try {
+      if (!selectedFile || !chatIdRef || !userData.current) {
+        return;
+      }
+      console.log("File Type: ", selectedFile.type);
+      await sendAttachment(selectedFile, userData.current.recieverPublicKey);
+      setSendBtnDisability(false);
+      setInputMessage("");
+    }
+    catch (attachmentError) {
+      console.log("Error sending attachment: ", attachmentError)
+    }
+    finally {
+      const textarea = document.getElementById("chatInput");
+      if (textarea) {
+        textarea.style.height = "auto";
+      }
 
+      setSendBtnDisability(false);
+      setInputMessage("")
+    }
   }
 
   // Handle file attachement
@@ -184,7 +202,7 @@ function ConversationPage() {
           }
         </div>
 
-        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput}/>
+        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} />
 
         {/* Input component to take msg from the user */}
         <div className="chat-input-wrapper">
