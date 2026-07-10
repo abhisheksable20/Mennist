@@ -130,7 +130,7 @@ function ConversationPage() {
       if (!selectedFile || !chatIdRef || !userData.current) {
         return;
       }
-      console.log("File Type: ", selectedFile.type);
+      
       await sendAttachment(selectedFile, userData.current.recieverPublicKey);
       setSendBtnDisability(false);
       setInputMessage("");
