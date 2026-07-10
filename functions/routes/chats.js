@@ -96,6 +96,7 @@ router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValida
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
   const timestamp = Date.now();
 
+  // This is message blob
   const chatBlob = {
     encryptedFile,
     encryptedFileKey,
@@ -104,8 +105,10 @@ router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValida
     type,
     size,
     timestamp,
+    encryptedMsg: name,
   };
 
+  // This is last message chat blob
   const chatMetaData = {
     senderChatId,
     senderPublicKey,
@@ -249,6 +252,7 @@ router.get("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
         encryptedMsg: chat.encryptedMsg,
         timestamp: chat.timestamp,
         nounce: chat.nounce,
+        type: chat.type,
       };
     });
 

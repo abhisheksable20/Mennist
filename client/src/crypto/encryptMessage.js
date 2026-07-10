@@ -22,7 +22,7 @@ export async function encryptedFile(imageByte, receiverPublicKey) {
     const sodium = await initSodium();
 
     const publicKeyBytes = sodium.from_base64(receiverPublicKey);
-    const nounce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES);
+    const nounce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
     const imageKey = sodium.randombytes_buf(sodium.crypto_secretbox_KEYBYTES);
 
     const encryptedFile = sodium.crypto_secretbox_easy(
