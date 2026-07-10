@@ -3,7 +3,7 @@ import "../styles/ReportModal.css"
 import { formatFileSize } from '../dataProcessing/dataProcessing';
 
 function FilePreview(props) {
-  const { previewBtnRef, selectedFile, sendAttachment } = props;
+  const { previewBtnRef, selectedFile, sendAttachment, fileDownloadFlag } = props;
   const [imageUrl, setImageUrl] = useState(null);
   const closeModalRef = useRef(null);
 
@@ -29,6 +29,21 @@ function FilePreview(props) {
   const handleSendBtn = () => {
     sendAttachment();
     closeModalRef.current.click();
+  }
+
+  // Save file in local device
+  const saveFile = ()=>{
+    const url = URL.createObjectURL(selectedFile);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `M-${Date.now()}`;
+
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -61,8 +76,14 @@ function FilePreview(props) {
               )}
             </div>
             <div className="d-flex modal-footer">
-              <button ref={closeModalRef} type="button" className="btn w-50" data-bs-dismiss="modal" style={{ background: "#D0342C", color: "#FAFAFA" }}>Cancel</button>
-              <button type="button" className="btn w-50" style={{ background: "#22C55E", color: "#FAFAFA" }} onClick={handleSendBtn}>Send</button>
+              {fileDownloadFlag.current ? (
+                <button className="btn w-100 submit-button" onClick={saveFile}>Download</button>
+              ) : (
+                <div className="d-flex w-100 gap-2">
+                  <button ref={closeModalRef} type="button" className="btn w-50 red-btn" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" className="btn w-50 submit-button" onClick={handleSendBtn}>Send</button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ function ConversationPage() {
   const { inputMessage, setInputMessage, chatIdRef,
     userChatServer, sendChat, userMessages, loading, sendAttachment } = useContext(ChatsContext);
   const userData = useRef(null);
+  const fileDownloadFlag = useRef(false);
   const previewBtnRef = useRef(null);
   const [userName, setUsername] = useState("");
   const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
@@ -154,7 +155,17 @@ function ConversationPage() {
     const file = e.target.files[0];
     if (!file) return;
 
+    fileDownloadFlag.current = false;
     setSelectedFile(file);
+  }
+
+  // Handle file download
+  const fileDownload = (imageBlob) => {
+    if (!imageBlob)
+      return;
+
+    fileDownloadFlag.current = true;
+    setSelectedFile(imageBlob);
   }
 
   const sendMsg = async () => {
@@ -197,12 +208,12 @@ function ConversationPage() {
           </div>
           {
             userMessages.map((chat) => {
-              return <ConversationItem key={chat.id} chat={chat} />
+              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} />
             })
           }
         </div>
 
-        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} />
+        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} fileDownloadFlag={fileDownloadFlag}/>
 
         {/* Input component to take msg from the user */}
         <div className="chat-input-wrapper">
