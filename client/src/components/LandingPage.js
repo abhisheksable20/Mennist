@@ -6,6 +6,7 @@ import axios from 'axios'
 import { useState, useEffect } from 'react'
 import { generateKeyPair } from '../crypto/keyManager'
 import { db } from '../internalDatabase/db'
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 function LandingPage(props) {
   const [btnDisabled, setDisablility] = useState(false);
@@ -21,9 +22,16 @@ function LandingPage(props) {
     props.alert("Preparing your safe space...", "primary");
     try {
       const keys = await generateKeys();
+      const deviceFingerprint = await getOrCreateFingerprint();
+
       const publicKey = keys.publicKey
 
-      const data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, { publicKey }, { withCredentials: true })).data;
+      const postData = {
+        publicKey,
+        deviceFingerprint
+      }
+
+      const data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, postData, { withCredentials: true })).data;
       await db.keys.put({
         id: "user-keypair",
         privateKey: keys.privateKey,
@@ -70,6 +78,21 @@ function LandingPage(props) {
     catch (error) {
       throw error;
     }
+  }
+
+  // Generating device fingerprint
+  const getOrCreateFingerprint = async () => {
+    let fingerPrint = localStorage.getItem('deviceFingerprint');
+
+    if (!fingerPrint) {
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      fingerPrint = result.visitorId;
+
+      localStorage.setItem('deviceFingerprint', fingerPrint);
+    }
+
+    return fingerPrint;
   }
 
   return (

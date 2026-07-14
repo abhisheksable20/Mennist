@@ -230,7 +230,7 @@ function ConversationPage() {
             </button>
             <input
               type="file"
-              id='fileInput' accept="image/*,audio/*,.pdf,.doc,.docx,.txt,.mp3,.wav" hidden
+              id='fileInput' accept="image/*" hidden
               onChange={handleFileChange} />
 
             <textarea
