@@ -3,6 +3,7 @@ import { convertTimestampToReadable } from '../dataProcessing/dataProcessing';
 
 function ConversationItem(props) {
   const { fromMe, plainMsg, timestamp, type, imageBlob } = props.chat;
+  const { fileDownload } = props
 
   const imageUrl = useMemo(() => {
     if (!imageBlob) return null;
@@ -19,19 +20,20 @@ function ConversationItem(props) {
     };
   }, [imageUrl]);
 
+  // Triggering the download method in conversationPage.js
+  const handleDownloadBtn = () => {
+    fileDownload(imageBlob);
+  }
+
   return (
     <div className={`d-flex flex-column align-items-${fromMe ? "end" : "start"} mb-4`}>
       <div className="chat-bubble">
         {type.startsWith("image") ? (
           <img
+            className="chat-image"
             src={imageUrl}
             alt="attachment"
-            style={{
-              maxWidth: "250px",
-              maxHeight: "350px",
-              borderRadius: "12px",
-              objectFit: "cover"
-            }} />
+            onClick={handleDownloadBtn} />
         ) : (
           <p className='mb-0'>{plainMsg}</p>
         )}
