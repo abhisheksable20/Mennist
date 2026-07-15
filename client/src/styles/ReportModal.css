@@ -67,3 +67,18 @@
     flex-wrap: nowrap;
     gap: 10px;
 }
+
+.chat-image {
+  max-width: 250px;
+  max-height: 350px;
+  border-radius: 12px;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.red-btn {
+  color: #FAFAFA;
+  font-family: 'Poppins', sans-serif;
+  font-weight: normal;
+  background: #D0342C;
+}

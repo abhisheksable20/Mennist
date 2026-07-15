@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
-const {chatBlobValidation} = require("../validators/chatValidator");
+const {chatBlobValidation, fileBlobValidation} = require("../validators/chatValidator");
 const {chatLimiter} = require("../middleware/rateLimiter");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {validate} = require("express-validation");
@@ -50,13 +50,14 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
     return res.status(406).send({error: "Cannot chat with yourself"});
   }
 
-  const senderChatId = jwt.sign(req.user.uid, process.env.JWT_SECRET_KEY);
+  const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
   const timestamp = Date.now();
 
   const chatBlob = {
     encryptedMsg,
     timestamp,
     nounce,
+    type: "plain/text",
   };
 
   const chatMetaData = {
@@ -65,8 +66,59 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
     encryptedMsg,
     timestamp,
     nounce,
+    type: "plain/text",
   };
 
+  try {
+    await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
+    await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
+    return res.status(200).send({message: "Message send successfully"});
+  } catch (sendChatError) {
+    console.log("sendChatError: ", sendChatError);
+    res.status(500).send({error: "Something went wrong"});
+  }
+});
+
+// Router to handle attachment coming from the client side
+router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValidation), async (req, res) => {
+  const {chatId, senderPublicKey, encryptedFile, encryptedFileKey, nounce, name, type, size} = req.body;
+  const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+  const senderUserId = req.user.uid;
+
+  if (!recieverUserId) {
+    return res.status(404).send({error: "User not found!"});
+  }
+
+  if (senderUserId === recieverUserId) {
+    return res.status(406).send({error: "Cannot chat with yourself"});
+  }
+
+  const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
+  const timestamp = Date.now();
+
+  // This is message blob
+  const chatBlob = {
+    encryptedFile,
+    encryptedFileKey,
+    nounce,
+    name,
+    type,
+    size,
+    timestamp,
+    encryptedMsg: name,
+  };
+
+  // This is last message chat blob
+  const chatMetaData = {
+    senderChatId,
+    senderPublicKey,
+    type,
+    timestamp,
+    nounce,
+    encryptedMsg: name,
+  };
+
+  // Updating firebase realtime database
   try {
     await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
     await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
@@ -200,6 +252,7 @@ router.get("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
         encryptedMsg: chat.encryptedMsg,
         timestamp: chat.timestamp,
         nounce: chat.nounce,
+        type: chat.type,
       };
     });
 

@@ -3,8 +3,8 @@ import axios from "axios";
 import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
 import { useState, useRef, useCallback } from "react";
-import { encryptMessage } from "../../crypto/encryptMessage";
-import { decryptMessage } from "../../crypto/decryptMessage";
+import { encryptMessage, encryptedFile } from "../../crypto/encryptMessage";
+import { decryptMessage, decryptFile } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
     const [inputMessage, setInputMessage] = useState("");
@@ -29,7 +29,12 @@ const ChatsState = (props) => {
 
             await Promise.all(
                 rawData.map(async (chat) => {
-                    const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
+                    let decryptedMsg = "";
+                    if (chat.type.startsWith("image"))
+                        decryptedMsg = chat.encryptedMsg;
+                    else
+                        decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
+
                     const DBData = {
                         chatId: chat.chatId,
                         plainMsg: decryptedMsg,
@@ -74,6 +79,7 @@ const ChatsState = (props) => {
         try {
             const chatId = chat.chatId;
             const plainMsg = chat.plainMsg
+            const type = chat.type;
             const chatUser = await db.chatUser.get(chatId);
 
             if (!chatUser) {
@@ -83,6 +89,7 @@ const ChatsState = (props) => {
                     username,
                     publicKey: chat.senderPublicKey,
                     lastMsg: plainMsg,
+                    type,
                     timestamp: chat.timestamp
                 }
 
@@ -93,7 +100,8 @@ const ChatsState = (props) => {
             if (chatUser.timestamp < chat.timestamp) {
                 const updatedData = {
                     lastMsg: plainMsg,
-                    timestamp: chat.timestamp
+                    timestamp: chat.timestamp,
+                    type: chat.type
                 }
 
                 await db.chatUser.update(chatId, updatedData);
@@ -125,7 +133,7 @@ const ChatsState = (props) => {
             const delChatsKeys = [];
             const newChats = [];
 
-            const privateKey = (await db.keys.get("user-keypair")).privateKey;
+            const keys = (await db.keys.get("user-keypair"));
 
             /*
                 Structure from server
@@ -133,6 +141,11 @@ const ChatsState = (props) => {
                     chatId: "",
                     senderPublicKey: "",
                     messages: [{
+                                encryptedFile,
+                                encryptedKey,
+                                name,
+                                size,
+                                type
                                 encryptedMsg,
                                 timestamp,
                                 nounce
@@ -140,13 +153,25 @@ const ChatsState = (props) => {
                 } 
             **/
             for (const chat of rawData.messages) {
-                const decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, privateKey);
                 const data = {
                     firebaseId: chat.id,
                     chatId: rawData.chatId,
-                    plainMsg: decryptedMsg,
                     timestamp: chat.timestamp,
+                    type: chat.type,
                     fromMe: false
+                }
+
+                let decryptedMsg = null;
+                if (chat.type.startsWith("image")) {
+                    decryptedMsg = await decryptFile(chat.encryptedFile, chat.encryptedFileKey, chat.nounce, keys.publicKey, keys.privateKey);
+                    const imageBlob = new Blob([decryptedMsg], {type:chat.type})
+
+                    data["imageBlob"] = imageBlob;
+                    data["plainMsg"] = chat.name;
+                }
+                else{
+                    decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, keys.privateKey);
+                    data["plainMsg"] = decryptedMsg;
                 }
 
                 newChats.push(data);
@@ -220,21 +245,23 @@ const ChatsState = (props) => {
 
             const timestamp = Date.now();
 
-            // Storing chat blob on client side in ChatUser Table in dexie
+            // Storing chat blob on client side in chats Table in dexie
             const indexDBData = {
                 chatId: chatIdRef.current,
                 plainMsg: inputMessage,
                 timestamp,
+                type: "plain/text",
                 fromMe: true
             }
             const id = await db.chats.add(indexDBData);
             setUserMessages(prev => [...prev, { id, ...indexDBData }])
 
-            // Updating last msg in chats table in dexie
+            // Updating last msg in chatsUser table in dexie
             const DBData = {
                 chatId: chatIdRef.current,
                 plainMsg: inputMessage,
                 senderPublicKey: receiverPublicKey,
+                type: "plain/text",
                 timestamp
             }
 
@@ -243,6 +270,75 @@ const ChatsState = (props) => {
         catch (sendChatErr) {
             throw sendChatErr
         }
+    }
+
+    // Sending the attachement to server 
+    const sendAttachment = async (file, receiverPublicKey) => {
+        try {
+            if (!chatIdRef.current)
+                return false
+
+            if (!file) {
+                return false;
+            }
+
+            /**
+             * Data recieved from the encryption process
+             * {
+             *  encryptedFile
+             *  encryptedKey
+             *  nounce
+             *  fileName
+             *  fileType
+             * }
+             */
+            const keys = await db.keys.get("user-keypair");
+
+            const buffer = await file.arrayBuffer();
+            const imageByte = new Uint8Array(buffer);
+
+            const encryptedFileData = await encryptedFile(imageByte, receiverPublicKey);
+            const chatBody = {
+                ...encryptedFileData,
+                chatId: chatIdRef.current,
+                senderPublicKey: keys.publicKey,
+                name: file.name,
+                type: file.type,
+                size: file.size
+            }
+
+            await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-attachment`, chatBody, { withCredentials: true });
+
+            const timestamp = Date.now();
+
+            // Storing the data in index DB in chatUser database
+            const indexDBData = {
+                chatId: chatIdRef.current,
+                timestamp,
+                imageBlob:file,
+                plainMsg:file.name,
+                type: file.type,
+                fromMe: true,
+            }
+
+            const id = await db.chats.add(indexDBData);
+            setUserMessages(prev => [...prev, { id, ...indexDBData }]);
+
+            // Updating last msg in chats table in dexie
+            const DBData = {
+                chatId: chatIdRef.current,
+                plainMsg: file.name,
+                senderPublicKey: receiverPublicKey,
+                timestamp,
+                type: file.type
+            }
+
+            await saveAndUpdateDBV2(DBData);
+        }
+        catch (error) {
+            throw error;
+        }
+
     }
 
     // Delete single user chats from the server then from local database
@@ -254,8 +350,8 @@ const ChatsState = (props) => {
             const delChatId = { chatId: chatId };
 
             await axios.delete(`${process.env.REACT_APP_API_URL}/chats/my-chats`, {
-                data:delChatId,
-                withCredentials:true
+                data: delChatId,
+                withCredentials: true
             });
 
             await delChatsFromLocal(chatId);
@@ -326,7 +422,7 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, userMessages, loading, deleteUserChats
+            setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment
         }}>
             {props.children}
         </ChatsContext.Provider>

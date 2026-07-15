@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
 import "../styles/ChatPage.css"
 import sendSVG from "../assets/send_svg.svg"
-import { useEffect, useContext, useRef, useCallback } from 'react'
+import uploadFileSVG from "../assets/add_svg_icon.svg"
+import { useEffect, useContext, useRef, useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
@@ -10,14 +10,19 @@ import { generateUsername } from "unique-username-generator";
 import axios from "axios";
 import ChatLoading from './ChatLoading';
 import NoContent from './NoContent';
+import FilePreview from "./FilePreview";
 
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
-    userChatServer, sendChat, userMessages, loading } = useContext(ChatsContext);
+    userChatServer, sendChat, userMessages, loading, sendAttachment } = useContext(ChatsContext);
   const userData = useRef(null);
+  const fileDownloadFlag = useRef(false);
+  const previewBtnRef = useRef(null);
   const [userName, setUsername] = useState("");
-  const [isSendBtnDisabled, setSendBtnDisability] = useState(false)
+  const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const getUserData = useCallback(async (signal) => {
     if (!chatIdRef.current)
@@ -101,13 +106,66 @@ function ConversationPage() {
   }, [inputMessage])
 
 
+  useEffect(() => {
+    if (!selectedFile)
+      return;
 
+    previewBtnRef.current.click();
+
+  }, [selectedFile]);
+
+  // Handling text message input change
   const handleInputOnChange = (e) => {
     const textarea = e.target;
     textarea.style.height = "auto";
     textarea.style.height = `${textarea.scrollHeight}px`;
 
     setInputMessage(e.target.value)
+  }
+
+  // Handling attachements inputs
+  const handleAttachmentInput = async () => {
+    setSendBtnDisability(true);
+
+    try {
+      if (!selectedFile || !chatIdRef || !userData.current) {
+        return;
+      }
+
+      await sendAttachment(selectedFile, userData.current.recieverPublicKey);
+      setSendBtnDisability(false);
+      setInputMessage("");
+    }
+    catch (attachmentError) {
+      console.log("Error sending attachment: ", attachmentError)
+    }
+    finally {
+      const textarea = document.getElementById("chatInput");
+      if (textarea) {
+        textarea.style.height = "auto";
+      }
+
+      setSendBtnDisability(false);
+      setInputMessage("")
+    }
+  }
+
+  // Handle file attachement
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    fileDownloadFlag.current = false;
+    setSelectedFile(file);
+  }
+
+  // Handle file download
+  const fileDownload = (imageBlob) => {
+    if (!imageBlob)
+      return;
+
+    fileDownloadFlag.current = true;
+    setSelectedFile(imageBlob);
   }
 
   const sendMsg = async () => {
@@ -129,7 +187,7 @@ function ConversationPage() {
       if (textarea) {
         textarea.style.height = "auto";
       }
-      
+
       setSendBtnDisability(false);
       setInputMessage("")
     }
@@ -150,14 +208,31 @@ function ConversationPage() {
           </div>
           {
             userMessages.map((chat) => {
-              return <ConversationItem key={chat.id} chat={chat} />
+              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} />
             })
           }
         </div>
 
+        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} fileDownloadFlag={fileDownloadFlag}/>
+
         {/* Input component to take msg from the user */}
         <div className="chat-input-wrapper">
           <div className="chat-input-box">
+
+            {/* Attach the image or file button */}
+            <button
+              className="send-btn"
+              style={{ backgroundColor: "#262626" }}
+              onClick={() => {
+                document.getElementById("fileInput").click()
+              }}>
+              <img src={uploadFileSVG} alt="Attach file" width="22" height="22" />
+            </button>
+            <input
+              type="file"
+              id='fileInput' accept="image/*" hidden
+              onChange={handleFileChange} />
+
             <textarea
               className="form-control chat-textarea"
               id='chatInput'
@@ -166,9 +241,11 @@ function ConversationPage() {
               rows={1}
               placeholder="Type something..."
               onChange={handleInputOnChange} />
+
             <button className="send-btn" onClick={sendMsg} disabled={isSendBtnDisabled}>
               <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
             </button>
+
           </div>
           <small className="e2ee-notice">Messages are protected with end-to-end encryption.</small>
         </div>

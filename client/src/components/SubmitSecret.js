@@ -1,10 +1,15 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import SubmitButton from './SubmitButton'
 import PostContext from '../context/posts/postContext'
 import { totalWords } from '../dataProcessing/dataProcessing';
 
 function SubmitSecret(props) {
   const { content, setContent } = useContext(PostContext);
+
+
+  useEffect(() => {
+    document.title = "Share my vibe"
+  }, [])
 
   // Handle imput changing its texts
   const handleInputOnChange = (e) => {

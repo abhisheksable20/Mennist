@@ -13,3 +13,15 @@ db.version(2).stores({
   chatUser: "chatId, username, publicKey, lastMsg, timestamp",
   chats: "++id, &firebaseId, chatId, plainMsg, timestamp, fromMe"
 });
+
+db.version(3).stores({
+  keys: "id",
+  chatUser: "chatId, username, publicKey, lastMsg, type, timestamp",
+  chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageByte, type, fromMe"
+});
+
+db.version(4).stores({
+  keys: "id",
+  chatUser: "chatId, username, publicKey, lastMsg, type, timestamp",
+  chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageBlob, type, fromMe"
+});

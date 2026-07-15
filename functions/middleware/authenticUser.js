@@ -43,7 +43,7 @@ const isLoggedIn = async (req, res, next) => {
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
   const sessionId = req.cookies.__session;
-  const publicKey = req.body.publicKey;
+  const {publicKey, deviceFingerprint} = req.body;
 
   if (!publicKey) {
     return res.status(400).send({error: "Public key not found"});
@@ -51,7 +51,7 @@ const authUser = async (req, res, next) => {
 
   // Create a new user
   if (!sessionId) {
-    const session = await createSession(req, res, publicKey);
+    const session = await createSession(req, res, publicKey, deviceFingerprint);
 
     const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
     req.user = {
@@ -72,7 +72,7 @@ const authUser = async (req, res, next) => {
       sameSite: "none",
     });
 
-    const session = await createSession(req, res, publicKey);
+    const session = await createSession(req, res, publicKey, deviceFingerprint);
 
     const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
     req.user = {
@@ -101,7 +101,7 @@ const authUser = async (req, res, next) => {
   next();
 };
 
-const createSession = async (req, res, publicKey) => {
+const createSession = async (req, res, publicKey, deviceFingerprint) => {
   const userId = generateUserId(publicKey);
   const sessionId = crypto.randomBytes(8).toString("hex");
 
@@ -115,6 +115,7 @@ const createSession = async (req, res, publicKey) => {
   // Creating user database for storing publicKey
   await db.ref(`users/${userId}`).set({
     publicKey: publicKey,
+    deviceFingerprint: deviceFingerprint,
   });
 
   // Make it Secure: true in production

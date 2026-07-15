@@ -36,6 +36,15 @@ export function convertTimestampToReadable(timestamp) {
     });
 }
 
+export function formatFileSize (bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+};
+
 // Get total word count from the content
 export function totalWords(content) {
     if (!content || content.trim().length === 0)
