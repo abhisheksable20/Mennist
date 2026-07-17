@@ -12,6 +12,7 @@ import { Toast as BSToast } from 'bootstrap'
 import ChatsPage from './components/ChatsPage';
 import ConversationPage from './components/ConversationPage';
 import ChatsState from './context/chats/ChatsState';
+import TermsAndConditions from './components/TermsAndConditions';
 
 
 function Layout(props) {
@@ -65,9 +66,10 @@ function App() {
 
             <Route element={<Layout alert={showAlert} />}>
               <Route path='/' element={<Home alert={showAlert} />} />
+              <Route path='/terms-and-conditions' element={<TermsAndConditions />} />
               <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
               <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
-              <Route path='/my-chats' element={<ChatsPage alert={showAlert}/>} />
+              <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
               <Route path='/user-chat/:chatId' element={<ConversationPage />} />
             </Route>
           </Routes>

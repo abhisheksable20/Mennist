@@ -311,7 +311,7 @@ const ChatsState = (props) => {
 
             const timestamp = Date.now();
 
-            // Storing the data in index DB in chatUser database
+            // Storing the data in index DB in chats database
             const indexDBData = {
                 chatId: chatIdRef.current,
                 timestamp,
@@ -324,7 +324,7 @@ const ChatsState = (props) => {
             const id = await db.chats.add(indexDBData);
             setUserMessages(prev => [...prev, { id, ...indexDBData }]);
 
-            // Updating last msg in chats table in dexie
+            // Updating last msg in chatUser table in dexie
             const DBData = {
                 chatId: chatIdRef.current,
                 plainMsg: file.name,

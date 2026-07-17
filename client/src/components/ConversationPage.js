@@ -123,7 +123,7 @@ function ConversationPage() {
     setInputMessage(e.target.value)
   }
 
-  // Handling attachements inputs
+  // sending attachments to server side using context method
   const handleAttachmentInput = async () => {
     setSendBtnDisability(true);
 
