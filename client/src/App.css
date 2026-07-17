@@ -333,6 +333,12 @@ body {
   background-color: #D0342C;
 }
 
+/* Styles for terms and conditions */
+.terms-para {
+  color: #FAFAFA;
+  font-family: "Open Sans", sans-serif;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

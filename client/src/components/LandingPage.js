@@ -1,7 +1,7 @@
 import React from 'react'
 import '../styles/LandingPage.css'
 import creatAcc from "../assets/anonymous_svg_icon.svg"
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import { useState, useEffect } from 'react'
 import { generateKeyPair } from '../crypto/keyManager'
@@ -125,6 +125,11 @@ function LandingPage(props) {
           <img src={creatAcc} alt="submitButton" width="28px" height="28px" />
           Get Started
         </button>
+
+        <p className="mt-3">
+          By clicking <strong>Get Started</strong>, you agree to our{" "}
+          <Link className='terms-link' to="/terms-and-conditions">Terms & Conditions</Link>.
+        </p>
 
         {/* Bottom text */}
         <div className="bottom-text mt-4 mb-5">

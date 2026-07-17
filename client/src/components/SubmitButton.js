@@ -53,7 +53,7 @@ function SubmitButton(props) {
     }, [content, currentPath]);
 
     return (
-        <div>
+        <div className={`${location.pathname==='/terms-and-conditions'?"d-none":""}`}>
             <button className="btn submit-button d-flex align-items-center justify-content-center gap-2 w-100"
                 onClick={navigateToSubmitSecret} disabled={btnDisabled}>
                 <img src={submitSVG} alt="submitButton" width="24px" height="24px" />
