@@ -61,7 +61,7 @@ const ChatsState = (props) => {
     const allChatsFromLocalStorage = async () => {
         try {
             const data = await db.chatUser
-                .orderBy("timestamp")
+                .sortBy("timestamp")
                 .toArray();
 
             if (data)

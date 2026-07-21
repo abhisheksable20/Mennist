@@ -63,8 +63,8 @@ function Posts(props) {
     return (
         <div className="container my-5 posts-container">
             <div>
-                <h6 className='special-text'>LATEST SECRETS</h6>
-                <h2 className='card-text'>Share Your Secret, Secretly!</h2>
+                <h6 className='special-text'>LATEST VIBES</h6>
+                <h2 className='card-text'>Share Your Vibe, Secretly!</h2>
                 <h6 className='text-body-secondary mb-4'>Speak freely, stay anonymous.</h6>
             </div>
 
