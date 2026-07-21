@@ -24,10 +24,13 @@ router.post("/get-publicKey", isLoggedIn, chatLimiter, async (req, res) => {
   }
 
   try {
-    const snapshot = await db.ref(`users/${receiverUserId}/publicKey`).once("value");
+    const snapshot = await db.ref(`users/${receiverUserId}/userDetail`).once("value");
 
     if (snapshot.exists()) {
-      return res.status(200).json({publicKey: snapshot.val()});
+      const userDetail = snapshot.val();
+      const publicKey = userDetail.publicKey;
+
+      return res.status(200).json({publicKey: publicKey});
     }
 
     return res.status(401).send({error: "Public key not found."});

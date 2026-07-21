@@ -61,7 +61,8 @@ const ChatsState = (props) => {
     const allChatsFromLocalStorage = async () => {
         try {
             const data = await db.chatUser
-                .sortBy("timestamp")
+                .orderBy("timestamp")
+                .reverse()
                 .toArray();
 
             if (data)
@@ -164,12 +165,12 @@ const ChatsState = (props) => {
                 let decryptedMsg = null;
                 if (chat.type.startsWith("image")) {
                     decryptedMsg = await decryptFile(chat.encryptedFile, chat.encryptedFileKey, chat.nounce, keys.publicKey, keys.privateKey);
-                    const imageBlob = new Blob([decryptedMsg], {type:chat.type})
+                    const imageBlob = new Blob([decryptedMsg], { type: chat.type })
 
                     data["imageBlob"] = imageBlob;
                     data["plainMsg"] = chat.name;
                 }
-                else{
+                else {
                     decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, keys.privateKey);
                     data["plainMsg"] = decryptedMsg;
                 }
@@ -315,8 +316,8 @@ const ChatsState = (props) => {
             const indexDBData = {
                 chatId: chatIdRef.current,
                 timestamp,
-                imageBlob:file,
-                plainMsg:file.name,
+                imageBlob: file,
+                plainMsg: file.name,
                 type: file.type,
                 fromMe: true,
             }
