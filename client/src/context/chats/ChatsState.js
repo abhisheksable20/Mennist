@@ -7,12 +7,30 @@ import { encryptMessage, encryptedFile } from "../../crypto/encryptMessage";
 import { decryptMessage, decryptFile } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
+    const [chatFlag, setChatFlag] = useState(false);
     const [inputMessage, setInputMessage] = useState("");
     const [userMessages, setUserMessages] = useState([]);
     const [allMessages, setAllMessages] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const chatIdRef = useRef(null);
+
+    // Set chat flag
+    const changeChatFlag = async (flag) => {
+        const isChecked = flag;
+        setChatFlag(flag);
+
+        localStorage.setItem("chatEnableStatus", JSON.stringify(isChecked));
+
+        // enable or disable chat feature on server side
+        try {
+            const serverBody = { chatFlag: isChecked };
+            await axios.post(`${process.env.REACT_APP_API_URL}/user/chatFlag`, serverBody, { withCredentials: true });
+        }
+        catch (chatFlagError) {
+            console.log(chatFlagError);
+        }
+    }
 
     // Fetch all the chats from the server
     const fetchAllChats = async () => {
@@ -423,7 +441,8 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment
+            setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment,
+            chatFlag,changeChatFlag, setChatFlag, chatFlag
         }}>
             {props.children}
         </ChatsContext.Provider>

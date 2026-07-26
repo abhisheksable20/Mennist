@@ -1,8 +1,8 @@
 const express = require("express");
 const admin = require("firebase-admin");
-const { authUser, isLoggedIn } = require("../middleware/authenticUser");
+const {authUser, isLoggedIn} = require("../middleware/authenticUser");
 const fetchPosts = require("../dataProcessing/postsProcessing");
-const { globalLimiter } = require("../middleware/rateLimiter");
+const {globalLimiter} = require("../middleware/rateLimiter");
 
 const router = express.Router();
 const db = admin.database();
@@ -10,32 +10,31 @@ const db = admin.database();
 const retrieveLimit = 10;
 
 router.post("/create-user", authUser, globalLimiter, async (req, res) => {
-  const payload = { chatId: req.user.chatId, isNew: req.user.isNew };
+  const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
 });
 
 // Enable or Disable chat flag
 router.post("/chatFlag", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
-  const { chatFlag } = req.body;
+  const {chatFlag} = req.body;
 
   if (typeof chatFlag !== "boolean") {
     return res.status(400).json({
       success: false,
-      message: "chatFlag must be a boolean."
+      message: "chatFlag must be a boolean.",
     });
   }
 
   try {
     await db.ref(`users/${userId}/userDetail`).update({
-      chatFlag: chatFlag
+      chatFlag: chatFlag,
     });
 
-    return res.status(200).send({message:"Flag changed successfully!"});
-  }
-  catch (chatFlagError) {
+    return res.status(200).send({message: "Flag changed successfully!"});
+  } catch (chatFlagError) {
     console.log("User post fetching error: ", chatFlagError);
-    return res.status(500).send({ error: "Internal server error!" });
+    return res.status(500).send({error: "Internal server error!"});
   }
 });
 
@@ -53,7 +52,7 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
     return res.status(200).send(data);
   } catch (userPostError) {
     console.log("User post fetching error: ", userPostError);
-    return res.status(500).send({ error: "Internal server error!" });
+    return res.status(500).send({error: "Internal server error!"});
   }
 });
 
@@ -64,7 +63,7 @@ router.delete("/posts/:postId", isLoggedIn, async (req, res) => {
   const postId = req.params.postId;
 
   if (!postId) {
-    return res.status(400).send({ error: "Failed to delete your post!" });
+    return res.status(400).send({error: "Failed to delete your post!"});
   }
 
   try {
@@ -73,10 +72,10 @@ router.delete("/posts/:postId", isLoggedIn, async (req, res) => {
     updates[`userPosts/${userId}/${postId}`] = null;
 
     await db.ref().update(updates);
-    return res.status(200).send({ success: "Post deleted successfully!" });
+    return res.status(200).send({success: "Post deleted successfully!"});
   } catch (delError) {
     console.log("Post deletion error: ", delError);
-    return res.status(500).send({ error: "Internal server error!" });
+    return res.status(500).send({error: "Internal server error!"});
   }
 });
 

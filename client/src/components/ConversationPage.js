@@ -5,6 +5,7 @@ import { useEffect, useContext, useRef, useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
+import ChatFeatureAlert from "./ChatFeatureAlert";
 import { db } from '../internalDatabase/db';
 import { generateUsername } from "unique-username-generator";
 import axios from "axios";
@@ -15,7 +16,7 @@ import FilePreview from "./FilePreview";
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
-    userChatServer, sendChat, userMessages, loading, sendAttachment } = useContext(ChatsContext);
+    userChatServer, sendChat, userMessages, loading, sendAttachment,  chatFlag } = useContext(ChatsContext);
   const userData = useRef(null);
   const fileDownloadFlag = useRef(false);
   const previewBtnRef = useRef(null);
@@ -168,6 +169,7 @@ function ConversationPage() {
     setSelectedFile(imageBlob);
   }
 
+  // Send the message to the reciever side
   const sendMsg = async () => {
     setSendBtnDisability(true);
     try {
@@ -196,6 +198,7 @@ function ConversationPage() {
   return (
     <>
       {loading ? <ChatLoading /> : ""}
+      {!chatFlag && (<ChatFeatureAlert/>)}
       <div className='conversation-page'>
         <div className='content-wrapper'>
           {/* Converation Header */}
@@ -216,7 +219,7 @@ function ConversationPage() {
         <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} fileDownloadFlag={fileDownloadFlag}/>
 
         {/* Input component to take msg from the user */}
-        <div className="chat-input-wrapper">
+        <div className={`chat-input-wrapper ${!chatFlag?"d-none":""}`}>
           <div className="chat-input-box">
 
             {/* Attach the image or file button */}

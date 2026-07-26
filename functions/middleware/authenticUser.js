@@ -38,7 +38,6 @@ const isLoggedIn = async (req, res, next) => {
   next();
 };
 
-
 // Authenticating the user
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {

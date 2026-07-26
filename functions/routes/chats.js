@@ -39,6 +39,24 @@ router.post("/get-publicKey", isLoggedIn, chatLimiter, async (req, res) => {
   }
 });
 
+// Check wheather the receiver is available for chat or not
+const isUserChatAvail = async (receiverUserId) => {
+  if(!receiverUserId)
+    return false;
+
+  try {
+    const snapshot = await db.ref(`users/${receiverUserId}/userDetail`).once("value");
+    if(snapshot.exists())
+      return snapshot.val().chatFlag ?? false;
+
+    return false;
+  } 
+  catch (flagFetchErr) {
+    console.log("Flag Fetching Error: ", flagFetchErr)
+    return false
+  }
+}
+
 // save encrypted chat to the server
 router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation), async (req, res) => {
   const {chatId, encryptedMsg, senderPublicKey, nounce} = req.body;
@@ -52,6 +70,10 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
   if (senderUserId === recieverUserId) {
     return res.status(406).send({error: "Cannot chat with yourself"});
   }
+
+  const isReceiverChatAvail = await isUserChatAvail(recieverUserId);
+  if(!isReceiverChatAvail)
+    return res.status(403).send({error:"Reciever chat is disabled!"});
 
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
   const timestamp = Date.now();

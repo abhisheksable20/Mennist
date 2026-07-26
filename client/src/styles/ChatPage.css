@@ -1,3 +1,11 @@
+.alert-danger-bg {
+    background-color: #D0342C;
+    border-color: #D0342C;
+    border-radius: 0;
+    color: #FAFAFA;
+    font-family: "Open Sans", sans-serif;;
+}
+
 .home-chat-btn {
     font-family: 'Poppins', sans-serif;
     color: #FAFAFA;
