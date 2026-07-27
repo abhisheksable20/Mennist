@@ -1,7 +1,7 @@
 const express = require("express");
 const admin = require("firebase-admin");
 const {authUser, isLoggedIn} = require("../middleware/authenticUser");
-const fetchPosts = require("../dataProcessing/postsProcessing");
+const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
 const {globalLimiter} = require("../middleware/rateLimiter");
 
 const router = express.Router();
