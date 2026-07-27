@@ -1,6 +1,9 @@
 .alert-danger-bg {
     background-color: #D0342C;
-    border-color: #D0342C;
+    border-bottom: 1.5px solid #A3A3A3;
+    border-top: 0;
+    border-right: 0;
+    border-left: 0;
     border-radius: 0;
     color: #FAFAFA;
     font-family: "Open Sans", sans-serif;;

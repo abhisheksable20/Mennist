@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
 import ChatFeatureAlert from "./ChatFeatureAlert";
+import RecieverChatFlagAlert from "./RecieverChatFlagAlert";
 import { db } from '../internalDatabase/db';
 import { generateUsername } from "unique-username-generator";
 import axios from "axios";
@@ -16,7 +17,7 @@ import FilePreview from "./FilePreview";
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
-    userChatServer, sendChat, userMessages, loading, sendAttachment,  chatFlag } = useContext(ChatsContext);
+    userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag } = useContext(ChatsContext);
   const userData = useRef(null);
   const fileDownloadFlag = useRef(false);
   const previewBtnRef = useRef(null);
@@ -24,6 +25,10 @@ function ConversationPage() {
   const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  // If this is true sender can send messages and attachments
+  // If this is false sender cannot send messages and attachments
+  const [isReceiverAvail, setIsReceiverAvail] = useState(true);
 
   const getUserData = useCallback(async (signal) => {
     if (!chatIdRef.current)
@@ -38,6 +43,8 @@ function ConversationPage() {
       const username = generateUsername();
       const data = (await axios.post(`${process.env.REACT_APP_API_URL}/chats/get-publicKey`, bodyData, { signal })).data
       const publicKey = data.publicKey;
+      const chatFlag = data.chatFlag;
+      setIsReceiverAvail(chatFlag);
 
       const chatMetaData = {
         chatId: chatIdRef.current,
@@ -139,6 +146,8 @@ function ConversationPage() {
     }
     catch (attachmentError) {
       console.log("Error sending attachment: ", attachmentError)
+      if (attachmentError.response?.status)
+        setIsReceiverAvail(false);
     }
     finally {
       const textarea = document.getElementById("chatInput");
@@ -183,6 +192,8 @@ function ConversationPage() {
     }
     catch (error) {
       console.log(error);
+      if (error.response?.status)
+        setIsReceiverAvail(false);
     }
     finally {
       const textarea = document.getElementById("chatInput");
@@ -198,7 +209,8 @@ function ConversationPage() {
   return (
     <>
       {loading ? <ChatLoading /> : ""}
-      {!chatFlag && (<ChatFeatureAlert/>)}
+      {!chatFlag && (<ChatFeatureAlert />)}
+      {!isReceiverAvail && (<RecieverChatFlagAlert />)}
       <div className='conversation-page'>
         <div className='content-wrapper'>
           {/* Converation Header */}
@@ -216,10 +228,10 @@ function ConversationPage() {
           }
         </div>
 
-        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} fileDownloadFlag={fileDownloadFlag}/>
+        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} fileDownloadFlag={fileDownloadFlag} />
 
         {/* Input component to take msg from the user */}
-        <div className={`chat-input-wrapper ${!chatFlag?"d-none":""}`}>
+        <div className={`chat-input-wrapper ${!chatFlag ? "d-none" : ""}`}>
           <div className="chat-input-box">
 
             {/* Attach the image or file button */}
