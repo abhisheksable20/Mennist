@@ -1,13 +1,27 @@
 import React from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing';
 
 function PostItem(props) {
-  const { id, title, content, timestamp } = props.post;
+  const navigate = useNavigate();
+
+  const { id,
+    title,
+    content,
+    timestamp,
+    isAdult = false } = props.post || {};
 
   return (
     <div className="col-12 col-md-6 col-lg-4">
-      <div className="card h-100">
+      <div
+        className={`card h-100 ${isAdult ? "adult-card" : ""}`}
+        onClick={() => navigate(`/post/${id}`)}>
+        {isAdult && (
+          <span className="badge text-bg-danger">
+            18+
+          </span>
+        )}
+
         <div className="card-body d-flex flex-column">
           {/* Green dash */}
           <div className="card-accent mt-2" />
