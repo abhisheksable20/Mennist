@@ -9,33 +9,6 @@ const db = admin.database();
 
 const retrieveLimit = 10;
 
-router.get("/migratexyx", async (req, res) => {
-  try {
-    const snapshot = await db.ref("users").once("value");
-    const updates = {};
-
-    snapshot.forEach((userSnap) => {
-      const uid = userSnap.key;
-      const data = userSnap.val();
-
-      if (data.publicKey) {
-        updates[`users/${uid}/userDetails/publicKey`] = data.publicKey;
-        updates[`users/${uid}/userDetails/chatFlag`] = false;
-        if (data.deviceFingerprint) {
-          updates[`users/${uid}/userDetails/deviceFingerprint`] = data.deviceFingerprint;
-        }
-
-        updates[`users/${uid}/publicKey`] = null;
-      }
-    });
-
-    await db.ref().update(updates);
-    console.log("Migration successfull!");
-  } catch (error) {
-    console.log("Error in migrate: ", error);
-  }
-});
-
 router.post("/create-user", authUser, globalLimiter, async (req, res) => {
   const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
