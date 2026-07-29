@@ -24,10 +24,14 @@ router.post("/get-publicKey", isLoggedIn, chatLimiter, async (req, res) => {
   }
 
   try {
-    const snapshot = await db.ref(`users/${receiverUserId}/publicKey`).once("value");
+    const snapshot = await db.ref(`users/${receiverUserId}/userDetail`).once("value");
 
     if (snapshot.exists()) {
-      return res.status(200).json({publicKey: snapshot.val()});
+      const userDetail = snapshot.val();
+      const publicKey = userDetail.publicKey;
+      const chatFlag = userDetail.chatFlag;
+
+      return res.status(200).json({publicKey: publicKey, chatFlag: chatFlag});
     }
 
     return res.status(401).send({error: "Public key not found."});
@@ -35,6 +39,28 @@ router.post("/get-publicKey", isLoggedIn, chatLimiter, async (req, res) => {
     return res.status(500).send({error: "Something went wrong"});
   }
 });
+
+// Check wheather the receiver is available for chat or not
+const isUserChatAvail = async (receiverUserId) => {
+  if (!receiverUserId) {
+    return false;
+  }
+
+  try {
+    const snapshot = await db.ref(`users/${receiverUserId}/userDetail`).once("value");
+    if (snapshot.exists()) {
+      const snapshotVal = snapshot.val();
+      if (snapshotVal.chatFlag) {
+        return snapshotVal.chatFlag;
+      }
+    }
+
+    return false;
+  } catch (flagFetchErr) {
+    console.log("Flag Fetching Error: ", flagFetchErr);
+    return false;
+  }
+};
 
 // save encrypted chat to the server
 router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation), async (req, res) => {
@@ -48,6 +74,11 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 
   if (senderUserId === recieverUserId) {
     return res.status(406).send({error: "Cannot chat with yourself"});
+  }
+
+  const isReceiverChatAvail = await isUserChatAvail(recieverUserId);
+  if (!isReceiverChatAvail) {
+    return res.status(403).send({error: "Reciever chat is disabled!"});
   }
 
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);

@@ -23,6 +23,7 @@ function LandingPage(props) {
     try {
       const keys = await generateKeys();
       const deviceFingerprint = await getOrCreateFingerprint();
+      localStorage.setItem("chatEnableStatus", "false");
 
       const publicKey = keys.publicKey
 

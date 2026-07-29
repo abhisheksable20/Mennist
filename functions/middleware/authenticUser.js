@@ -38,7 +38,6 @@ const isLoggedIn = async (req, res, next) => {
   next();
 };
 
-
 // Authenticating the user
 // This functions will be only used to create new account
 const authUser = async (req, res, next) => {
@@ -112,10 +111,11 @@ const createSession = async (req, res, publicKey, deviceFingerprint) => {
     expiresAt,
   });
 
-  // Creating user database for storing publicKey
-  await db.ref(`users/${userId}`).set({
+  // Creating storage to store user basic details
+  await db.ref(`users/${userId}/userDetail`).set({
     publicKey: publicKey,
     deviceFingerprint: deviceFingerprint,
+    chatFlag: false,
   });
 
   // Make it Secure: true in production

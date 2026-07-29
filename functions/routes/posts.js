@@ -5,7 +5,7 @@ const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
 const {postValidation, reportValidation} = require("../validators/postValidator");
-const postFetching = require("../dataProcessing/postsProcessing");
+const {postFetching, isContentAdult} = require("../dataProcessing/postsProcessing");
 
 const db = admin.database();
 
@@ -66,11 +66,13 @@ router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (
 
     const {title, content} = req.body;
     const timestamp = Date.now();
+    const isAdult = isContentAdult(content, title);
 
     const postData = {
       title,
       content,
       timestamp,
+      isAdult,
       chatId: req.user.chatId,
     };
 
@@ -78,7 +80,7 @@ router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (
     await dbRef.set(postData);
 
     // Setting user post data
-    await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp});
+    await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp, isAdult});
 
     return res.status(200).send("Post submitted successfully.");
   } catch (submitError) {

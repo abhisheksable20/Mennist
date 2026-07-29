@@ -7,12 +7,30 @@ import { encryptMessage, encryptedFile } from "../../crypto/encryptMessage";
 import { decryptMessage, decryptFile } from "../../crypto/decryptMessage";
 
 const ChatsState = (props) => {
+    const [chatFlag, setChatFlag] = useState(false);
     const [inputMessage, setInputMessage] = useState("");
     const [userMessages, setUserMessages] = useState([]);
     const [allMessages, setAllMessages] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const chatIdRef = useRef(null);
+
+    // Set chat flag
+    const changeChatFlag = async (flag) => {
+        const isChecked = flag;
+        setChatFlag(flag);
+
+        localStorage.setItem("chatEnableStatus", JSON.stringify(isChecked));
+
+        // enable or disable chat feature on server side
+        try {
+            const serverBody = { chatFlag: isChecked };
+            await axios.post(`${process.env.REACT_APP_API_URL}/user/chatFlag`, serverBody, { withCredentials: true });
+        }
+        catch (chatFlagError) {
+            console.log(chatFlagError);
+        }
+    }
 
     // Fetch all the chats from the server
     const fetchAllChats = async () => {
@@ -61,7 +79,8 @@ const ChatsState = (props) => {
     const allChatsFromLocalStorage = async () => {
         try {
             const data = await db.chatUser
-                .sortBy("timestamp")
+                .orderBy("timestamp")
+                .reverse()
                 .toArray();
 
             if (data)
@@ -164,12 +183,12 @@ const ChatsState = (props) => {
                 let decryptedMsg = null;
                 if (chat.type.startsWith("image")) {
                     decryptedMsg = await decryptFile(chat.encryptedFile, chat.encryptedFileKey, chat.nounce, keys.publicKey, keys.privateKey);
-                    const imageBlob = new Blob([decryptedMsg], {type:chat.type})
+                    const imageBlob = new Blob([decryptedMsg], { type: chat.type })
 
                     data["imageBlob"] = imageBlob;
                     data["plainMsg"] = chat.name;
                 }
-                else{
+                else {
                     decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, keys.privateKey);
                     data["plainMsg"] = decryptedMsg;
                 }
@@ -315,8 +334,8 @@ const ChatsState = (props) => {
             const indexDBData = {
                 chatId: chatIdRef.current,
                 timestamp,
-                imageBlob:file,
-                plainMsg:file.name,
+                imageBlob: file,
+                plainMsg: file.name,
                 type: file.type,
                 fromMe: true,
             }
@@ -422,7 +441,8 @@ const ChatsState = (props) => {
     return (
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
-            setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment
+            setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment,
+            chatFlag,changeChatFlag, setChatFlag, chatFlag
         }}>
             {props.children}
         </ChatsContext.Provider>

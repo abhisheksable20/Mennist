@@ -1,7 +1,7 @@
 const express = require("express");
 const admin = require("firebase-admin");
 const {authUser, isLoggedIn} = require("../middleware/authenticUser");
-const fetchPosts = require("../dataProcessing/postsProcessing");
+const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
 const {globalLimiter} = require("../middleware/rateLimiter");
 
 const router = express.Router();
@@ -12,6 +12,30 @@ const retrieveLimit = 10;
 router.post("/create-user", authUser, globalLimiter, async (req, res) => {
   const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
+});
+
+// Enable or Disable chat flag
+router.post("/chatFlag", isLoggedIn, globalLimiter, async (req, res) => {
+  const userId = req.user.uid;
+  const {chatFlag} = req.body;
+
+  if (typeof chatFlag !== "boolean") {
+    return res.status(400).json({
+      success: false,
+      message: "chatFlag must be a boolean.",
+    });
+  }
+
+  try {
+    await db.ref(`users/${userId}/userDetail`).update({
+      chatFlag: chatFlag,
+    });
+
+    return res.status(200).send({message: "Flag changed successfully!"});
+  } catch (chatFlagError) {
+    console.log("User post fetching error: ", chatFlagError);
+    return res.status(500).send({error: "Internal server error!"});
+  }
 });
 
 // Fetch user specific posts
