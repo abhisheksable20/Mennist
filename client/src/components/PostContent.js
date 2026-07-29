@@ -253,7 +253,7 @@ Share your own vibe on Mennist.`;
                         Report
                     </button>
                 </div>
-                <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} alert={props.alert} />
+                <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">

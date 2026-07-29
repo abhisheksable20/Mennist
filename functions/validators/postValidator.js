@@ -9,7 +9,8 @@ const postValidation = {
 
 const reportValidation = {
   body: Joi.object({
-    postId: Joi.string().max(100).required(),
+    postId: Joi.string().required(),
+    postOwnerChatId: Joi.string().required(),
     reason: Joi.string().min(3).max(500).required(),
   }),
 };

@@ -5,21 +5,22 @@ import { useState, useRef } from 'react';
 import axios from 'axios';
 
 function ReportPostComponent(props) {
-  const { reportBtnRef, postId } = props;
+  const { reportBtnRef, chatId, postId } = props;
   const closeReportRef = useRef(null);
   const [selectedMsg, setSelectedMsg] = useState("");
   const [isDisable, setDisablity] = useState(false);
 
   // Report the post
   const reportPost = async () => {
-    if(!postId || selectedMsg.length <= 0){
+    if(!chatId || selectedMsg.length <= 0 || !postId){
       props.alert("Tell us why you're reporting this", "alert")
       return;
     }
 
     const data = {
-      postId: postId,
-      reason: selectedMsg
+      postId:postId,
+      reason: selectedMsg,
+      postOwnerChatId:chatId
     }
 
     try {

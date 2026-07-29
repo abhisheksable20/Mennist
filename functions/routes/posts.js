@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
+const jwt = require("jsonwebtoken");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
@@ -122,24 +123,19 @@ router.put("/vibes/:postId", isLoggedIn, globalLimiter, async (req, res) => {
 // Report the post
 router.post("/report", isLoggedIn, validate(reportValidation), async (req, res) => {
   const user = req.user.uid;
-  const {postId, reason} = req.body;
+  const {reason, postOwnerChatId, postId} = req.body;
 
-  if (!postId) {
+  if (!postOwnerChatId || !postId) {
     return res.status(400).send({error: "Something went wrong!"});
   }
 
   try {
-    const postRef = await db.ref(`posts/${postId}`).once("value");
-    if (!postRef.exists()) {
-      return res.status(404).send({error: "Sorry, post not found"});
-    }
-
-    const data = postRef.val();
+    const recieverUserId = jwt.verify(postOwnerChatId, process.env.JWT_SECRET_KEY);
 
     const reportData = {
       reason: reason,
       timestamp: Date.now(),
-      userUniqueId: data.userUniqueId,
+      userUniqueId: recieverUserId,
     };
 
     await db.ref(`reports/posts/${postId}/${user}`).set(reportData);
