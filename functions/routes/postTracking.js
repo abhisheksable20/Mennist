@@ -6,9 +6,9 @@ const { isLoggedIn } = require("../middleware/authenticUser");
 const db = admin.database();
 
 const counterMap = {
-    view: "postViews",
+    viewed: "postViews",
     saved: "postSaved",
-    share: "postShared",
+    shared: "postShared",
     chat: "postChats"
 }
 
@@ -38,7 +38,7 @@ router.post("/postAction", isLoggedIn, async (req, res) => {
         console.log("Post Action Error: ", postActionError);
         return res.status(500).json({ success: false })
     }
-})
+});
 
 
 module.exports = router;
