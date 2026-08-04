@@ -58,6 +58,6 @@ app.use("/api/user", require("./routes/userPosts"));
 app.use("/api/chats", require("./routes/chats"));
 
 // Post tracking operations route
-app.use("api/actions", require("./routes/postTracking"));
+app.use("/api/actions", require("./routes/postTracking"));
 
 exports.api = functions.https.onRequest(app);

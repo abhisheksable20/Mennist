@@ -54,7 +54,8 @@ function PostContent(props) {
 
     useEffect(() => {
         document.title = postData.title;
-    }, [postData])
+        postActions("viewed");
+    }, [postData]);
 
     useEffect(() => {
         if (id) {
@@ -65,6 +66,39 @@ function PostContent(props) {
         }
 
     }, [id]);
+
+    const postActions = async (action) => {
+        if (!action)
+            return;
+
+        try {
+            const postActionsData = await db.postActions.get(postData.id);
+            if (postActionsData) {
+                if (postActionsData[action])
+                    return false;
+
+                await db.postActions.update(postData.id, {
+                    [action]: true
+                });
+            }
+            else {
+                await db.postActions.put({
+                    postId: postData.id,
+                    [action]: true
+                });
+            }
+
+            const body = {
+                postId: postData.id,
+                action
+            }
+
+            axios.post(`${process.env.REACT_APP_API_URL}/actions/postAction`, body, { withCredentials: true });
+        }
+        catch (error) {
+            console.log("Post action error: ", error);
+        }
+    }
 
     // Fetch total vibe count
     const getTotalVibeCount = async () => {
@@ -132,6 +166,7 @@ function PostContent(props) {
 
         if (savedPosts.length >= MAX_SAVING_CAPACITY) {
             props.alert("Only 20 posts can be saved", "alert");
+            return;
         }
 
         const postToSave = {
@@ -145,6 +180,7 @@ function PostContent(props) {
         localStorage.setItem("savedPosts", JSON.stringify(savedPosts));
         setIsSaved(true);
         props.alert("Post saved successfully!", "success");
+        postActions("saved");
     }
 
     const isPostSaved = () => {
@@ -216,6 +252,8 @@ Share your own vibe on Mennist.`;
             await navigator.clipboard.writeText(text);
         }
 
+        postActions("shared");
+
     }
 
     const reportPostBtn = () => {
@@ -261,7 +299,7 @@ Share your own vibe on Mennist.`;
 
                             {/* Vibe Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={vibeBtn}>
-                                <img src={isVibed ? fullLikeSVG : vibeHeartSVG} width="24px" height='24px' alt='Vibe Button'/>
+                                <img src={isVibed ? fullLikeSVG : vibeHeartSVG} width="24px" height='24px' alt='Vibe Button' />
                                 {totalVibes === 0 ? "" : <span>{totalVibes}</span>}
                             </div>
 
@@ -269,21 +307,21 @@ Share your own vibe on Mennist.`;
 
                             {/* Chat Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={startChatSesssion}>
-                                <img src={chatSVG} width="24px" height='24px' alt='Start Chat'/>
+                                <img src={chatSVG} width="24px" height='24px' alt='Start Chat' />
                             </div>
 
                             <div className="vertical-divider"></div>
 
                             {/* Save Post Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={savePostBtn}>
-                                <img src={isSaved ? removeSave : saveSVG} width="24px" height='24px' alt='Save Post'/>
+                                <img src={isSaved ? removeSave : saveSVG} width="24px" height='24px' alt='Save Post' />
                             </div>
 
                             <div className="vertical-divider"></div>
 
                             {/* Share Post Btn */}
                             <div className="d-flex align-items-center gap-2 icon-svg" onClick={sharePost}>
-                                <img src={shareSVG} width="24px" height='24px' alt='Share Post'/>
+                                <img src={shareSVG} width="24px" height='24px' alt='Share Post' />
                             </div>
 
                         </div>

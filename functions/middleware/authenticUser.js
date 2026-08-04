@@ -101,12 +101,6 @@ const authUser = async (req, res, next) => {
   next();
 };
 
-// Delete the user data if the session is deleted or expired
-const deleteUserData = async (data) => {
-  const userId = data.userId;
-  const snapshot = await db.ref(`users/${userId}`)
-}
-
 const createSession = async (req, res, publicKey, deviceFingerprint) => {
   const userId = generateUserId(publicKey);
   const sessionId = crypto.randomBytes(8).toString("hex");

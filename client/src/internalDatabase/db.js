@@ -25,3 +25,10 @@ db.version(4).stores({
   chatUser: "chatId, username, publicKey, lastMsg, type, timestamp",
   chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageBlob, type, fromMe"
 });
+
+db.version(5).stores({
+  keys: "id",
+  chatUser: "chatId, username, publicKey, lastMsg, type, timestamp",
+  chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageBlob, type, fromMe",
+  postActions: "&postId, viewed, saved, shared, chat, postWatchTime"
+});
