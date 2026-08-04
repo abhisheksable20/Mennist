@@ -17,7 +17,7 @@ const globalLimiter = rateLimit({
 // This limiter is post limiter only 3 posts are allowed in 1 min for an user
 const postLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 3,
   standardHeaders: false,
   legacyHeaders: false,
   handler: (req, res) => {

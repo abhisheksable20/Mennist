@@ -86,6 +86,7 @@ const authUser = async (req, res, next) => {
 
   // check expiry if expired then delete the user
   if (Date.now() > data.expiresAt) {
+    // await deleteUserData(sessionId);
     await db.ref(`sessions/${sessionId}`).remove();
     res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
@@ -99,6 +100,12 @@ const authUser = async (req, res, next) => {
   };
   next();
 };
+
+// Delete the user data if the session is deleted or expired
+const deleteUserData = async (data) => {
+  const userId = data.userId;
+  const snapshot = await db.ref(`users/${userId}`)
+}
 
 const createSession = async (req, res, publicKey, deviceFingerprint) => {
   const userId = generateUserId(publicKey);

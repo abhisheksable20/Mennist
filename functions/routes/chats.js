@@ -10,7 +10,7 @@ const {validate} = require("express-validation");
 const db = admin.database();
 
 // Get Post Owner PublicKey
-router.post("/get-publicKey", isLoggedIn, chatLimiter, async (req, res) => {
+router.post("/get-publicKey", chatLimiter, isLoggedIn, async (req, res) => {
   const {chatId} = req.body;
   const userUniqueId = req.user.uid;
 
@@ -63,7 +63,7 @@ const isUserChatAvail = async (receiverUserId) => {
 };
 
 // save encrypted chat to the server
-router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation), async (req, res) => {
+router.post("/send-chat", chatLimiter, isLoggedIn, validate(chatBlobValidation), async (req, res) => {
   const {chatId, encryptedMsg, senderPublicKey, nounce} = req.body;
   const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   const senderUserId = req.user.uid;
@@ -111,7 +111,7 @@ router.post("/send-chat", isLoggedIn, chatLimiter, validate(chatBlobValidation),
 });
 
 // Router to handle attachment coming from the client side
-router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValidation), async (req, res) => {
+router.post("/send-attachment", chatLimiter, isLoggedIn, validate(fileBlobValidation), async (req, res) => {
   const {chatId, senderPublicKey, encryptedFile, encryptedFileKey, nounce, name, type, size} = req.body;
   const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   const senderUserId = req.user.uid;
@@ -161,7 +161,7 @@ router.post("/send-attachment", isLoggedIn, chatLimiter, validate(fileBlobValida
 });
 
 // Delete all chats and its meta data from the server for all the user
-router.delete("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
+router.delete("/my-chats", chatLimiter, isLoggedIn, async (req, res) => {
   const {chatId} = req.body;
   const userId = req.user.uid;
 
@@ -180,7 +180,7 @@ router.delete("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
 });
 
 // Delete the fetched chats
-router.delete("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
+router.delete("/user-chat", chatLimiter, isLoggedIn, async (req, res) => {
   /**
    * The delete data body structure should be
    *    {
@@ -217,7 +217,7 @@ router.delete("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
 
 
 // Get user chat from database - specific user chat
-router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
+router.get("/user-chat", chatLimiter, isLoggedIn, async (req, res) => {
   const {chatId} = req.query;
   if (!chatId) {
     return res.status(406).send({error: "Cannot process your request."});
@@ -264,7 +264,7 @@ router.get("/user-chat", isLoggedIn, chatLimiter, async (req, res) => {
 });
 
 // Get user all chats
-router.get("/my-chats", isLoggedIn, chatLimiter, async (req, res) => {
+router.get("/my-chats", chatLimiter, isLoggedIn, async (req, res) => {
   const userId = req.user.uid;
 
   try {

@@ -13,7 +13,7 @@ const db = admin.database();
 const retrieveLimit = 10;
 
 // Get all the database posts
-router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
+router.get("/posts", globalLimiter, isLoggedIn, async (req, res) => {
   const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
   try {
     const ref = db.ref("posts");
@@ -27,7 +27,7 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
 });
 
 // Get a specific post
-router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
+router.get("/posts/:postId", globalLimiter, isLoggedIn, async (req, res) => {
   try {
     const postId = req.params.postId;
     if (!postId) {
@@ -59,9 +59,8 @@ router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
   }
 });
 
-
 // Submit the post in database
-router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (req, res) => {
+router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (req, res) => {
   try {
     const userUniqueId = req.user.uid;
 
@@ -92,7 +91,7 @@ router.post("/posts", isLoggedIn, postLimiter, validate(postValidation), async (
 
 
 // Post like counter functions
-router.put("/vibes/:postId", isLoggedIn, globalLimiter, async (req, res) => {
+router.put("/vibes/:postId", globalLimiter, isLoggedIn, async (req, res) => {
   const user = req.user.uid;
   const postId = req.params.postId;
 
