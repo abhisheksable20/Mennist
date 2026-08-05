@@ -224,6 +224,7 @@ function PostContent(props) {
                 return;
             }
 
+            await postActions("chat")
             navigate(`/user-chat/${postData.chatId}`)
         }
     }
