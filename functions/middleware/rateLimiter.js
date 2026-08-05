@@ -42,4 +42,18 @@ const chatLimiter = rateLimit({
   },
 });
 
-module.exports = {globalLimiter, postLimiter, chatLimiter};
+// This is post track limiter
+const postTrackLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: false,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      message: "Too many request,try after some time.",
+    });
+  },
+})
+
+module.exports = { globalLimiter, postLimiter, chatLimiter, postTrackLimiter };

@@ -64,7 +64,6 @@ function PostContent(props) {
             isAlreadyVibed();
             isPostSaved();
         }
-
     }, [id]);
 
     const postActions = async (action) => {
@@ -106,9 +105,7 @@ function PostContent(props) {
             const vibeCount = (await axios.get(`${process.env.REACT_APP_API_URL}/vibes/${id}`)).data.count;
             setTotalVibes(vibeCount);
         }
-        catch (error) {
-
-        }
+        catch (vibeCountError) {}
     }
 
     // Handle Vibe Btn 

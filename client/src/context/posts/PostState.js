@@ -82,7 +82,7 @@ const PostState = (props) => {
         setHasNext(true);
 
         // Fetch posts from local storage
-        if(activeState === 2){
+        if (activeState === 2) {
             const savedPosts = JSON.parse(localStorage.getItem("savedPosts")) || [];
             setPosts(savedPosts);
             setHasNext(false);
@@ -103,6 +103,10 @@ const PostState = (props) => {
             }
 
             const res = (await axios.post(`${process.env.REACT_APP_API_URL}/posts`, data)).data;
+            setContent({
+                title: "",
+                content:""
+            });
         }
 
         catch (submitError) {
