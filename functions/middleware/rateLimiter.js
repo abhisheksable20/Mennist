@@ -54,6 +54,6 @@ const postTrackLimiter = rateLimit({
       message: "Too many request,try after some time.",
     });
   },
-})
+});
 
-module.exports = { globalLimiter, postLimiter, chatLimiter, postTrackLimiter };
+module.exports = {globalLimiter, postLimiter, chatLimiter, postTrackLimiter};

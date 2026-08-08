@@ -39,30 +39,4 @@ const postFetching = async (ref, endAt, limitToLast) => {
   return postsData;
 };
 
-// Content moderation (Checking wheather the content is adult or not just return true or false)
-const isContentAdult = (content, title) => {
-  const adultWords = [
-    "porn",
-    "nude",
-    "xxx",
-    "blowjob",
-    "cum",
-    "anal",
-    "sex",
-    "fuck",
-    "dick",
-    "pussy",
-  ];
-
-  const lContent = content.toLowerCase();
-  const lTitle = title.toLowerCase();
-
-  const isTitleAdult = adultWords.some((word) => lTitle.includes(word));
-  if (isTitleAdult) {
-    return true;
-  }
-
-  return adultWords.some((word) => lContent.includes(word));
-};
-
-module.exports = {postFetching, isContentAdult};
+module.exports = {postFetching};

@@ -6,8 +6,12 @@ const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
 const {postValidation, reportValidation} = require("../validators/postValidator");
-const {postFetching, isContentAdult} = require("../dataProcessing/postsProcessing");
+const {postFetching} = require("../dataProcessing/postsProcessing");
+const {GoogleGenAI} = require("@google/genai");
 
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 const db = admin.database();
 
 const retrieveLimit = 10;
@@ -66,13 +70,24 @@ router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (
 
     const {title, content} = req.body;
     const timestamp = Date.now();
-    const isAdult = isContentAdult(content, title);
+
+    let aiData = {
+      category: "Other",
+      nsfw: false,
+    };
+
+    try {
+      aiData = await postClassification(title, content);
+    } catch (geminiError) {
+      console.error("Gemini classification failed:", geminiError);
+    }
 
     const postData = {
       title,
       content,
       timestamp,
-      isAdult,
+      isAdult: aiData.nsfw,
+      category: aiData.category,
       chatId: req.user.chatId,
     };
 
@@ -80,7 +95,7 @@ router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (
     await dbRef.set(postData);
 
     // Setting user post data
-    await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp, isAdult});
+    await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp, isAdult: aiData.nsfw});
 
     return res.status(200).send("Post submitted successfully.");
   } catch (submitError) {
@@ -88,6 +103,54 @@ router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (
     return res.status(500).send("Internal Server Error.");
   }
 });
+
+// Classifying the post according to their title and content also checking nsfw
+const postClassification = async (title, content) => {
+  const prompt = `
+You are an AI content classifier.
+
+Return ONLY valid JSON.
+
+Categories:
+Love
+Friendship
+Family
+Education
+Career
+Finance
+Mental Health
+Technology
+Gaming
+Entertainment
+Politics
+Health
+Confession
+Motivation
+Other
+
+Return JSON:
+
+{
+  "category":""
+  "nsfw":false
+}
+
+Title:
+${title}
+
+Content:
+${content}
+`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3.5-flash-lite",
+    contents: prompt,
+  });
+
+  const text = response.text;
+
+  return JSON.parse(text);
+};
 
 
 // Post like counter functions
