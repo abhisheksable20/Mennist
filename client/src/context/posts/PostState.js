@@ -105,7 +105,7 @@ const PostState = (props) => {
             const res = (await axios.post(`${process.env.REACT_APP_API_URL}/posts`, data)).data;
             setContent({
                 title: "",
-                content:""
+                content: ""
             });
         }
 
@@ -113,8 +113,6 @@ const PostState = (props) => {
             throw submitError;
         }
     }
-
-    // Get like count from the server
 
 
     return (

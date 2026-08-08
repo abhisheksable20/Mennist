@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { totalWords } from '../dataProcessing/dataProcessing'
-import { convertTimestampToReadable } from '../dataProcessing/dataProcessing'
+import { totalWords, convertTimestampToReadable } from '../dataProcessing/dataProcessing'
 import chatSVG from '../assets/chat_round-svg.svg'
 import shareSVG from '../assets/share_svg.svg'
 import fullLikeSVG from '../assets/heart_fullsvg.svg'
@@ -13,6 +12,7 @@ import Spinner from './Spinner'
 import reportPost from "../assets/report_svg.svg"
 import ReportPostComponent from './ReportPostComponent'
 import { db } from '../internalDatabase/db'
+import { postActions } from '../dataProcessing/postsActions'
 
 function PostContent(props) {
     const [searchParams] = useSearchParams();
@@ -54,7 +54,7 @@ function PostContent(props) {
 
     useEffect(() => {
         document.title = postData.title;
-        postActions("viewed");
+        postActions("viewed", postData.id);
     }, [postData]);
 
     useEffect(() => {
@@ -65,39 +65,6 @@ function PostContent(props) {
             isPostSaved();
         }
     }, [id]);
-
-    const postActions = async (action) => {
-        if (!action)
-            return;
-
-        try {
-            const postActionsData = await db.postActions.get(postData.id);
-            if (postActionsData) {
-                if (postActionsData[action])
-                    return false;
-
-                await db.postActions.update(postData.id, {
-                    [action]: true
-                });
-            }
-            else {
-                await db.postActions.put({
-                    postId: postData.id,
-                    [action]: true
-                });
-            }
-
-            const body = {
-                postId: postData.id,
-                action
-            }
-
-            axios.post(`${process.env.REACT_APP_API_URL}/actions/postAction`, body, { withCredentials: true });
-        }
-        catch (error) {
-            console.log("Post action error: ", error);
-        }
-    }
 
     // Fetch total vibe count
     const getTotalVibeCount = async () => {
@@ -177,7 +144,7 @@ function PostContent(props) {
         localStorage.setItem("savedPosts", JSON.stringify(savedPosts));
         setIsSaved(true);
         props.alert("Post saved successfully!", "success");
-        postActions("saved");
+        postActions("saved", postData.id);
     }
 
     const isPostSaved = () => {
@@ -224,7 +191,7 @@ function PostContent(props) {
                 return;
             }
 
-            await postActions("chat")
+            postActions("chat", postData.id)
             navigate(`/user-chat/${postData.chatId}`)
         }
     }
@@ -250,7 +217,7 @@ Share your own vibe on Mennist.`;
             await navigator.clipboard.writeText(text);
         }
 
-        postActions("shared");
+        postActions("shared", postData.id);
 
     }
 
