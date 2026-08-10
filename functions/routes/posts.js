@@ -63,6 +63,51 @@ router.get("/posts/:postId", globalLimiter, isLoggedIn, async (req, res) => {
   }
 });
 
+// Get specific category posts from database
+router.get("/suggestPost/:category", globalLimiter, async (req, res) => {
+  try {
+    const postCategory = req.params.category.toLowerCase();
+    if (!postCategory) {
+      return res.status(400).send({
+        error: "Category not found.",
+      });
+    }
+
+    const snapshot = await db
+        .ref("posts")
+        .orderByChild("category")
+        .equalTo(postCategory)
+        .limitToFirst(retrieveLimit)
+        .once("value");
+
+    if (!snapshot.exists()) {
+      return res.status(200).send([]);
+    }
+
+    const data = [];
+
+    snapshot.forEach((child) => {
+      const post = child.val();
+      delete post.postActions;
+      delete post.category;
+
+      data.push({
+        id: child.key,
+        ...post,
+        content:
+          post.content && post.content.length > 100 ?
+            post.content.substring(0, 100) + "..." :
+            post.content,
+      });
+    });
+
+    return res.status(200).send(data);
+  } catch (postFetchError) {
+    console.log("Suggestion fetching error:", postFetchError);
+    return res.status(500).send("Internal server error!");
+  }
+});
+
 // Submit the post in database
 router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (req, res) => {
   try {
@@ -87,7 +132,7 @@ router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (
       content,
       timestamp,
       isAdult: aiData.nsfw,
-      category: aiData.category,
+      category: aiData.category.toLowerCase(),
       chatId: req.user.chatId,
     };
 
