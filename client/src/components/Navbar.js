@@ -15,7 +15,10 @@ function Navbar(props) {
         <div>
             <nav className="navbar">
                 <div className="container-fluid">
-                    <span className="navbar-brand navbar-title mb-0 h1 px-2 py-3" onClick={navigateToHome}>Mennist</span>
+                    <span className="navbar-brand navbar-title mb-0 h1 px-2 py-3" onClick={navigateToHome}>
+                        Mennist
+                        <span className="beta-badge">BETA</span>
+                    </span>
                     {location.pathname === "/my-chats"
                         || location.pathname.startsWith("/user-chat/") ?
                         <ChatFlagButton alert={props.alert} /> : <SubmitButton alert={props.alert} />}

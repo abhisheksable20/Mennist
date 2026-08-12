@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords, convertTimestampToReadable } from '../dataProcessing/dataProcessing'
+import ShowSimilarPosts from './ShowSimilarPosts'
 import chatSVG from '../assets/chat_round-svg.svg'
 import shareSVG from '../assets/share_svg.svg'
 import fullLikeSVG from '../assets/heart_fullsvg.svg'
@@ -249,7 +250,7 @@ Share your own vibe on Mennist.`;
                 {/* Divider */}
                 <div className="post-divider"></div>
                 {/* Report Post section */}
-                <div className='d-flex justify-content-between align-items-center mt-4' style={{ marginBottom: "150px" }}>
+                <div className='d-flex justify-content-between align-items-center mt-4'>
                     <p className='text-body-secondary'>Report this post</p>
                     <button type="button" className="btn report-btn d-flex align-items-center justify-content-center gap-2" onClick={reportPostBtn}>
                         <img src={reportPost} alt="Report Posts Icon" width="24px" height="24px" />
@@ -257,6 +258,8 @@ Share your own vibe on Mennist.`;
                     </button>
                 </div>
                 <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
+                {/* Show more posts section */}
+                <ShowSimilarPosts />
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">

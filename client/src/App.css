@@ -47,6 +47,17 @@ body {
   cursor: pointer;
 }
 
+.beta-badge {
+  font-size: 0.45em;
+  font-weight: normal;
+  margin-left: 6px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background-color: #4B352A;
+  color: #FAFAFA;
+  vertical-align: top;
+}
+
 .navbar-brand,
 .navbar-brand:hover,
 .navbar-brand:focus {
@@ -269,6 +280,8 @@ body {
 .post-content {
   font-family: "Open Sans", sans-serif;
   line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
   color: #D4D4D4;
 }
 
