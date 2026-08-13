@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useContext } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords, convertTimestampToReadable } from '../dataProcessing/dataProcessing'
+import PostContext from '../context/posts/postContext'
 import ShowSimilarPosts from './ShowSimilarPosts'
 import chatSVG from '../assets/chat_round-svg.svg'
 import shareSVG from '../assets/share_svg.svg'
@@ -18,6 +19,7 @@ import { postActions } from '../dataProcessing/postsActions'
 function PostContent(props) {
     const [searchParams] = useSearchParams();
     const { id } = useParams();
+    const {similarPosts, fetchSimilarPosts} = useContext(PostContext)
     const navigate = useNavigate();
     const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null });
     const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +48,8 @@ function PostContent(props) {
         }
     }
 
+    
+
     // Calculate the read time
     const calculateReadTime = (content) => {
         const words = totalWords(content);
@@ -56,6 +60,9 @@ function PostContent(props) {
     useEffect(() => {
         document.title = postData.title;
         postActions("viewed", postData.id);
+
+        if(postData.category)
+            fetchSimilarPosts(postData.category, postData.id);
     }, [postData]);
 
     useEffect(() => {
@@ -259,7 +266,7 @@ Share your own vibe on Mennist.`;
                 </div>
                 <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
                 {/* Show more posts section */}
-                <ShowSimilarPosts />
+                <ShowSimilarPosts similarPosts={similarPosts}/>
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">

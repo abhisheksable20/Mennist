@@ -49,6 +49,7 @@ router.get("/posts/:postId", globalLimiter, isLoggedIn, async (req, res) => {
 
     const data = snapshot.val();
     delete data.userUniqueId;
+    delete data.postActions;
 
     const post = {
       id: snapshot.key,

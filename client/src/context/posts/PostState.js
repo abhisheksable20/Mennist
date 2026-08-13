@@ -8,11 +8,14 @@ const PostState = (props) => {
     const [hasNext, setHasNext] = useState(true);
     const [content, setContent] = useState({ title: "", content: "" });
     const [loading, setLoading] = useState(false);
+    const [similarPosts, setSimilarPosts] = useState([]);
 
     const isFetchingRef = useRef(false);
+    const isSimilarPostsFetchingRef = useRef(false);
     const lastTimestampRef = useRef(Date.now());
     const fetchURLRef = useRef(null);
     const abortControllerRef = useRef(null);
+    const abortSimilarPostsControllerRef = useRef(null);
 
     const PAGE_SIZE = 10;
 
@@ -51,6 +54,32 @@ const PostState = (props) => {
         } finally {
             isFetchingRef.current = false;
             setLoading(false);
+        }
+    }
+
+    // Fetch the similar posts according to their category
+    const fetchSimilarPosts = async (category, currentPostId) => {
+        if (!category || isSimilarPostsFetchingRef.current)
+            return;
+
+        isSimilarPostsFetchingRef.current = true;
+        if (abortSimilarPostsControllerRef.current)
+            abortControllerRef.current.abort();
+
+        const controller = new AbortController();
+        abortSimilarPostsControllerRef.current = controller;
+
+        try {
+            const data = (await axios.get(`${process.env.REACT_APP_API_URL}/suggestPost/${category}`,
+                { signal: controller.signal })).data
+            
+            if(data){
+                const filteredSimilarPosts = data.filter((post) => post.id !== currentPostId)
+                setSimilarPosts(filteredSimilarPosts);
+            }
+        }
+        catch (SimilarPostsError) {
+            console.log("Failed to load similar posts")
         }
     }
 
@@ -116,7 +145,10 @@ const PostState = (props) => {
 
 
     return (
-        <PostContext.Provider value={{ posts, hasNext, content, loading, setContent, getAllPosts, submitPost, resetPostFetching }}>
+        <PostContext.Provider value={{
+            posts, hasNext, content, loading, similarPosts,
+            setContent, getAllPosts, submitPost, resetPostFetching, fetchSimilarPosts
+        }}>
             {props.children}
         </PostContext.Provider>
     )
