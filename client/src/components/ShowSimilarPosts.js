@@ -5,10 +5,10 @@ import PostItem from './PostItem'
 function ShowSimilarPosts(props) {
     const { similarPosts } = props;
     return (
-        <div>
+        <div className="mt-5" style={{ marginBottom: "200px" }}>
             {
                 similarPosts.length === 0 ? "" : (
-                    <div className="mt-5" style={{ marginBottom: "200px" }}>
+                    <div>
                         <h4 className="post-title mb-4">Similar Posts</h4>
                         <div className="row g-5">
                             {
