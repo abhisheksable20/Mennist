@@ -383,6 +383,14 @@ body {
   font-family: "Open Sans", sans-serif;
 }
 
+.testing-notice {
+  border-left: 4px solid #22C55E;
+  border-radius: 2px;
+  padding-left: 20px;
+  font-weight: 600;
+  color: #FAFAFA;
+}
+
 /* Styles for Chat Flag Button */
 .large-switch .form-check-input {
   transform: scale(1.5);

@@ -7,7 +7,12 @@ function TermsAndConditions() {
             <h1 className="mb-4 post-title">Terms and Conditions</h1>
 
             <p className="post-title">
-                <strong>Last Updated:</strong> July 17, 2026
+                <strong>Last Updated:</strong> Aug 13, 2026
+            </p>
+
+            <p className="testing-notice my-4">
+                Please note that Mennist is currently in testing. You may experience
+                occasional glitches, errors, or unexpected behavior.
             </p>
 
             <p className="terms-para">
