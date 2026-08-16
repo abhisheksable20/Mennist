@@ -1,16 +1,16 @@
 .modal-content {
     background-color: #171717;
     color: #FAFAFA;
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255, 255, 255, 0.2);
     font-family: "Open Sans", sans-serif;
 }
 
 .modal-header {
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .modal-footer {
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .report-icon {
@@ -24,20 +24,21 @@
 }
 
 .delete-btn {
-  background-color: #D0342C;
-  color: #FAFAFA;
+    background-color: #D0342C;
+    color: #FAFAFA;
 }
 
 .delete-btn:disabled {
-  background-color: #e89a96 !important;
-  color: #ffffff !important;
-  opacity: 1; /* prevents Bootstrap from fading it */
-  cursor: not-allowed;
+    background-color: #e89a96 !important;
+    color: #ffffff !important;
+    opacity: 1;
+    /* prevents Bootstrap from fading it */
+    cursor: not-allowed;
 }
 
 .form-check-input {
     background-color: #171717;
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .form-check-input:checked {
@@ -55,7 +56,7 @@
     transition: color 0.2s ease;
 }
 
-.form-check-input:checked + .form-check-label {
+.form-check-input:checked+.form-check-label {
     color: #FAFAFA;
 }
 
@@ -69,16 +70,42 @@
 }
 
 .chat-image {
-  max-width: 250px;
-  max-height: 350px;
-  border-radius: 12px;
-  object-fit: cover;
-  cursor: pointer;
+    max-width: 250px;
+    max-height: 350px;
+    border-radius: 12px;
+    object-fit: cover;
+    cursor: pointer;
 }
 
 .red-btn {
-  color: #FAFAFA;
-  font-family: 'Poppins', sans-serif;
-  font-weight: normal;
-  background: #D0342C;
+    color: #FAFAFA;
+    font-family: 'Poppins', sans-serif;
+    font-weight: normal;
+    background: #D0342C;
+}
+
+.report-contact {
+    margin: 12px 0 4px 0;
+    padding: 12px 14px;
+    border: 1px solid #2f2f2f;
+    border-radius: 8px;
+    background: #191919;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.report-contact span {
+    display: block;
+    color: #9a9a9a;
+    margin-bottom: 3px;
+}
+
+.report-contact a {
+    color: #4da3ff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.report-contact a:hover {
+    text-decoration: underline;
 }

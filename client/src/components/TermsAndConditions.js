@@ -157,11 +157,15 @@ function TermsAndConditions() {
                 abuse prevention, backups, legal compliance, and platform operation.
             </p>
 
-            {/* <h3 className="post-title pt-3">16. Contact</h3>
+            <h3 className="post-title pt-3">16. Contact</h3>
             <p className="terms-para">
                 If you have questions regarding these Terms and Conditions, please
-                contact Mennist through the available support channels.
-            </p> */}
+                contact Mennist at{" "}
+                <a href="mailto:vibetalks@mennist.com">
+                    vibetalks@mennist.com
+                </a>
+                .
+            </p>
         </div>
     )
 }
