@@ -12,30 +12,30 @@ function ReportPostComponent(props) {
 
   // Report the post
   const reportPost = async () => {
-    if(!chatId || selectedMsg.length <= 0 || !postId){
+    if (!chatId || selectedMsg.length <= 0 || !postId) {
       props.alert("Tell us why you're reporting this", "alert")
       return;
     }
 
     const data = {
-      postId:postId,
+      postId: postId,
       reason: selectedMsg,
-      postOwnerChatId:chatId
+      postOwnerChatId: chatId
     }
 
     try {
       setDisablity(true);
       await axios.post(`${process.env.REACT_APP_API_URL}/report`, data);
       props.alert("Thanks for helping keep Mennist safe.", "success");
-    } 
+    }
     catch (reportErr) {
       props.alert("Something went wrong!", "alert");
-    } 
+    }
     finally {
       setDisablity(false);
       closeReportRef.current.click();
     }
-    
+
   }
 
   return (
@@ -64,8 +64,8 @@ function ReportPostComponent(props) {
                   type="radio"
                   name="radioDefault"
                   id="harmful"
-                  value={"Harmful or dangerous content"} 
-                  onChange={(e) => setSelectedMsg(e.target.value)}/>
+                  value={"Harmful or dangerous content"}
+                  onChange={(e) => setSelectedMsg(e.target.value)} />
                 <label className="form-check-label" htmlFor="harmful">
                   Harmful or dangerous content
                 </label>
@@ -76,9 +76,9 @@ function ReportPostComponent(props) {
                   className="form-check-input"
                   type="radio"
                   name="radioDefault"
-                  id="spam" 
+                  id="spam"
                   value={"Spam or misleading"}
-                  onChange={(e) => setSelectedMsg(e.target.value)}/>
+                  onChange={(e) => setSelectedMsg(e.target.value)} />
                 <label className="form-check-label" htmlFor="spam">
                   Spam or misleading
                 </label>
@@ -89,9 +89,9 @@ function ReportPostComponent(props) {
                   className="form-check-input"
                   type="radio"
                   name="radioDefault"
-                  id="hate" 
+                  id="hate"
                   value={"Hate speech or harassment"}
-                  onChange={(e) => setSelectedMsg(e.target.value)}/>
+                  onChange={(e) => setSelectedMsg(e.target.value)} />
                 <label className="form-check-label" htmlFor="hate">
                   Hate speech or harassment
                 </label>
@@ -102,9 +102,9 @@ function ReportPostComponent(props) {
                   className="form-check-input"
                   type="radio"
                   name="radioDefault"
-                  id="explicit" 
+                  id="explicit"
                   value={"Explicit or inappropriate content"}
-                  onChange={(e) => setSelectedMsg(e.target.value)}/>
+                  onChange={(e) => setSelectedMsg(e.target.value)} />
                 <label className="form-check-label" htmlFor="explicit">
                   Explicit or inappropriate content
                 </label>
@@ -115,14 +115,21 @@ function ReportPostComponent(props) {
                   className="form-check-input"
                   type="radio"
                   name="radioDefault"
-                  id="else" 
+                  id="else"
                   value={"Something else"}
-                  onChange={(e) => setSelectedMsg(e.target.value)}/>
+                  onChange={(e) => setSelectedMsg(e.target.value)} />
                 <label className="form-check-label" htmlFor="else">
                   Something else
                 </label>
               </div>
-
+              {/* Contact Email */}
+              {/* Contact Email */}
+              <div className="report-contact">
+                <span>Need help with something else?</span>
+                <a href="mailto:vibetalks@mennist.com">
+                  vibetalks@mennist.com
+                </a>
+              </div>
             </div>
             <div className="d-flex modal-footer">
               <button ref={closeReportRef} type="button" className="btn w-50" data-bs-dismiss="modal" style={{ background: "#FAFAFA", color: "#0D0D0D" }}>Close</button>
