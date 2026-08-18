@@ -191,11 +191,19 @@ ${content}
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",
     contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
 
   const text = response.text;
+  const cleanedText = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
 
-  return JSON.parse(text);
+  return JSON.parse(cleanedText);
 };
 
 
