@@ -193,6 +193,33 @@ ${content}
     contents: prompt,
     config: {
       responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          category: {
+            type: "STRING",
+            enum: [
+              "Love",
+              "Friendship",
+              "Family",
+              "Education",
+              "Career",
+              "Finance",
+              "Mental Health",
+              "Technology",
+              "Gaming",
+              "Entertainment",
+              "Politics",
+              "Health",
+              "Confession",
+              "Motivation",
+              "Other",
+            ],
+          },
+          nsfw: {type: "BOOLEAN"},
+        },
+        required: ["category", "nsfw"],
+      },
     },
   });
 
