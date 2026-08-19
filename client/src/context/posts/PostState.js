@@ -81,6 +81,9 @@ const PostState = (props) => {
         catch (SimilarPostsError) {
             console.log("Failed to load similar posts")
         }
+        finally{
+            isSimilarPostsFetchingRef.current = false;
+        }
     }
 
     // Reset the value for Re-Fetch the data
