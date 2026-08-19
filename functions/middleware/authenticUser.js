@@ -125,7 +125,7 @@ const createSession = async (req, res, publicKey, deviceFingerprint) => {
     secure: true,
     sameSite: "none",
     path: "/",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
   });
 
   return {userId, sessionId};
