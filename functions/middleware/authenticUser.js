@@ -105,7 +105,7 @@ const createSession = async (req, res, publicKey, deviceFingerprint) => {
   const userId = generateUserId(publicKey);
   const sessionId = crypto.randomBytes(8).toString("hex");
 
-  const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+  const expiresAt = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000
 
   await db.ref(`sessions/${sessionId}`).set({
     userId,
