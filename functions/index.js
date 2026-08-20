@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const {onTaskDispatched} = require("firebase-functions/tasks");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
@@ -16,7 +17,8 @@ const app = express();
 const allowedOrigins = [
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
-  "https://www.mennist.com"];
+  "https://www.mennist.com",
+  "http://localhost:3000"];
 const corsOptions = {
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -60,3 +62,16 @@ app.use("/api/chats", require("./routes/chats"));
 app.use("/api/actions", require("./routes/postTracking"));
 
 exports.api = functions.https.onRequest(app);
+
+// Working on background task
+exports.processPostTask = onTaskDispatched({
+  retryConfig: {
+    maxAttempts: 3,
+  },
+  rateLimits: {
+    maxConcurrentDispatches: 10,
+  }},
+async (data) => {
+  console.log("Background task executed----------");
+},
+);
