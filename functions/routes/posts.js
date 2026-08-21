@@ -8,9 +8,6 @@ const {validate} = require("express-validation");
 const {postValidation, reportValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
 const {GoogleGenAI} = require("@google/genai");
-const {getFunctions} = require("firebase-admin/functions");
-
-const taskQueue = getFunctions().taskQueue("processPostTask");
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -58,11 +55,6 @@ router.get("/posts/:postId", globalLimiter, isLoggedIn, async (req, res) => {
       id: snapshot.key,
       ...data,
     };
-
-    // Background task
-    await taskQueue.enqueue({
-      postId: postId,
-    });
 
     return res.status(200).send(post);
   } catch (fetchErr) {

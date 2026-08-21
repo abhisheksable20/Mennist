@@ -13,8 +13,10 @@ if (!admin.apps.length) {
 }
 
 const app = express();
+const db = admin.database();
 
 const allowedOrigins = [
+  "https://drumkit-5b886.web.app",
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
   "https://www.mennist.com",
@@ -63,15 +65,28 @@ app.use("/api/actions", require("./routes/postTracking"));
 
 exports.api = functions.https.onRequest(app);
 
-// Working on background task
-exports.processPostTask = onTaskDispatched({
+/*
+  Delete the user data when the users session expires
+  But keeping the global posts as it is
+  But removing access to the posts from the user
+  Also deleting the chats of the user
+*/
+exports.deleteUserData = onTaskDispatched({
   retryConfig: {
     maxAttempts: 3,
   },
   rateLimits: {
     maxConcurrentDispatches: 10,
-  }},
-async (data) => {
-  console.log("Background task executed----------");
+  },
+},
+async (request) => {
+  console.log("Bg Triggered-----------");
+  const {userId, sessionId} = request.data;
+  await Promise.all([
+    db.ref(`sessions/${sessionId}`).remove(),
+    db.ref(`users/${userId}`).remove(),
+    db.ref(`chats/${userId}`).remove(),
+  ]);
+  console.log("Bg Ended-----------");
 },
 );

@@ -1,6 +1,9 @@
 const admin = require("firebase-admin");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
+const {getFunctions} = require("firebase-admin/functions");
+
+const taskQueue = getFunctions().taskQueue("deleteUserData");
 
 const db = admin.database();
 
@@ -24,12 +27,12 @@ const isLoggedIn = async (req, res, next) => {
 
   if (!data) {
     res.clearCookie("__session");
+    await deleteUserData(data.userId, sessionId);
     return res.status(401).send({error: "Session expired"});
   }
 
   if (Date.now() > data.expiresAt) {
-    await deleteUserData(data.userId);
-    await db.ref(`sessions/${sessionId}`).remove();
+    await deleteUserData(data.userId, sessionId);
     res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
@@ -73,6 +76,7 @@ const authUser = async (req, res, next) => {
       sameSite: "none",
     });
 
+    await deleteUserData(session.userId, sessionId);
     const session = await createSession(req, res, publicKey, deviceFingerprint);
 
     const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
@@ -88,8 +92,7 @@ const authUser = async (req, res, next) => {
 
   // check expiry if expired then delete the user
   if (Date.now() > data.expiresAt) {
-    await deleteUserData(data.userId);
-    await db.ref(`sessions/${sessionId}`).remove();
+    await deleteUserData(data.userId, sessionId);
     res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
@@ -104,12 +107,13 @@ const authUser = async (req, res, next) => {
 };
 
 // Delete the user data when the session is expired
-const deleteUserData = async (userId) => {
-  if (!userId) {
+const deleteUserData = async (userId, sessionId) => {
+  if (!userId || !sessionId) {
     return;
   }
 
-  await db.ref(`users/${userId}`).remove();
+  // Background task
+  await taskQueue.enqueue({userId, sessionId});
 };
 
 const createSession = async (req, res, publicKey, deviceFingerprint) => {
