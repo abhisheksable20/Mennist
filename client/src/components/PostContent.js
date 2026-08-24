@@ -10,6 +10,13 @@ import fullLikeSVG from '../assets/heart_fullsvg.svg'
 import vibeHeartSVG from "../assets/vibe_heart_full.svg"
 import saveSVG from '../assets/save_svg.svg'
 import removeSave from '../assets/remove_save_svg.svg'
+import funnySVG from '../assets/funny_svg.svg'
+import emotionalSVG from '../assets/emotional_svg.svg'
+import racistSVG from '../assets/racist_svg.svg'
+import relatableSVG from '../assets/relatable_svg.svg'
+import sadSVG from '../assets/sad_svg.svg'
+import toxicSVG from '../assets/toxic_svg.svg'
+import wholesomeSVG from '../assets/wholesome_svg.svg'
 import Spinner from './Spinner'
 import reportPost from "../assets/report_svg.svg"
 import ReportPostComponent from './ReportPostComponent'
@@ -19,7 +26,7 @@ import { postActions } from '../dataProcessing/postsActions'
 function PostContent(props) {
     const [searchParams] = useSearchParams();
     const { id } = useParams();
-    const {similarPosts, fetchSimilarPosts} = useContext(PostContext)
+    const { similarPosts, fetchSimilarPosts } = useContext(PostContext)
     const navigate = useNavigate();
     const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null });
     const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +55,7 @@ function PostContent(props) {
         }
     }
 
-    
+
 
     // Calculate the read time
     const calculateReadTime = (content) => {
@@ -61,7 +68,7 @@ function PostContent(props) {
         document.title = postData.title;
         postActions("viewed", postData.id);
 
-        if(postData.category)
+        if (postData.category)
             fetchSimilarPosts(postData.category, postData.id);
     }, [postData]);
 
@@ -80,7 +87,7 @@ function PostContent(props) {
             const vibeCount = (await axios.get(`${process.env.REACT_APP_API_URL}/vibes/${id}`)).data.count;
             setTotalVibes(vibeCount);
         }
-        catch (vibeCountError) {}
+        catch (vibeCountError) { }
     }
 
     // Handle Vibe Btn 
@@ -254,6 +261,53 @@ Share your own vibe on Mennist.`;
                 <div className='my-5'>
                     <p className='post-content fs-5'>{postData.content}</p>
                 </div>
+                {/* Post vibe check section */}
+                <div className="vibe-check">
+                    <div className="vibe-check-title">POST VIBE </div>
+
+                    <div className="vibe-options">
+
+                        <button className="vibe-option">
+                            <img src={funnySVG} alt="Funny_Icon" />
+                            Funny
+                            <small>42</small>
+                        </button>
+
+                        <button className="vibe-option active">
+                            <img src={relatableSVG} alt="Relatable_Icon" />
+                            Relatable
+                            <small>128</small>
+                        </button>
+
+                        <button className="vibe-option">
+                            <img src={emotionalSVG} alt="Emotional_Icon" />
+                            Emotional
+                            <small>9</small>
+                        </button>
+
+                        <button className="vibe-option">
+                            <img src={wholesomeSVG} alt="Wholesome_Icon" />
+                            Wholesome
+                            <small>17</small>
+                        </button>
+
+                        <button className="vibe-option">
+                            <img src={sadSVG} alt="Sad_Icon" />
+                            Sad
+                            <small>3</small>
+                        </button>
+                        <button className="vibe-option">
+                            <img src={toxicSVG} alt="Toxic_Icon" />
+                            Toxic
+                            <small>3</small>
+                        </button>
+                        <button className="vibe-option">
+                            <img src={racistSVG} alt="Racist_Icon" />
+                            Racist
+                            <small>3</small>
+                        </button>
+                    </div>
+                </div>
                 {/* Divider */}
                 <div className="post-divider"></div>
                 {/* Report Post section */}
@@ -266,7 +320,7 @@ Share your own vibe on Mennist.`;
                 </div>
                 <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
                 {/* Show more posts section */}
-                <ShowSimilarPosts similarPosts={similarPosts}/>
+                <ShowSimilarPosts similarPosts={similarPosts} />
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">

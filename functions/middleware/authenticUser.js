@@ -27,7 +27,6 @@ const isLoggedIn = async (req, res, next) => {
 
   if (!data) {
     res.clearCookie("__session");
-    await deleteUserData(data.userId, sessionId);
     return res.status(401).send({error: "Session expired"});
   }
 
@@ -76,7 +75,6 @@ const authUser = async (req, res, next) => {
       sameSite: "none",
     });
 
-    await deleteUserData(session.userId, sessionId);
     const session = await createSession(req, res, publicKey, deviceFingerprint);
 
     const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
