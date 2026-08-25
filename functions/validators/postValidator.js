@@ -15,4 +15,11 @@ const reportValidation = {
   }),
 };
 
-module.exports = {postValidation, reportValidation};
+const vibeCheckValidation = {
+  body: Joi.object({
+    postId: Joi.string().required(),
+    postVibe: Joi.string().valid("funny", "relatable", "emotional", "wholesome", "sad", "toxic", "racist").required(),
+  }),
+};
+
+module.exports = {postValidation, reportValidation, vibeCheckValidation};

@@ -64,7 +64,7 @@ const PostState = (props) => {
 
         isSimilarPostsFetchingRef.current = true;
         if (abortSimilarPostsControllerRef.current)
-            abortControllerRef.current.abort();
+            abortSimilarPostsControllerRef.current.abort();
 
         const controller = new AbortController();
         abortSimilarPostsControllerRef.current = controller;

@@ -5,9 +5,12 @@ const jwt = require("jsonwebtoken");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
-const {postValidation, reportValidation} = require("../validators/postValidator");
+const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
 const {GoogleGenAI} = require("@google/genai");
+const {getFunctions} = require("firebase-admin/functions");
+
+const taskQueue = getFunctions().taskQueue("postVibeCheck");
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -91,6 +94,7 @@ router.get("/suggestPost/:category", globalLimiter, async (req, res) => {
       const post = child.val();
       delete post.postActions;
       delete post.category;
+      delete post.vibeCheck;
 
       data.push({
         id: child.key,
@@ -260,6 +264,35 @@ router.put("/vibes/:postId", globalLimiter, isLoggedIn, async (req, res) => {
   } catch (relError) {
     console.log("vibe marking error: ", relError);
     return res.status(500).send({error: "Internal server error"});
+  }
+});
+
+// Vibe check the post
+router.post("/vibeCheck", postLimiter, isLoggedIn, validate(vibeCheckValidation), async (req, res) => {
+  const userId = req.user.uid;
+  const {postId, postVibe} = req.body;
+
+  await taskQueue.enqueue({postId, userId, postVibe});
+  return res.status(200).send({Message: "Vibe registered sucessfully!"});
+});
+
+// Send the type of vibe check to client side
+router.get("/vibeCheck/:postId", globalLimiter, isLoggedIn, async (req, res) => {
+  const userId = req.user.uid;
+  const postId = req.params.postId;
+
+  if (!postId) {
+    return res.status(400).send({error: "Failed to process your request!"});
+  }
+
+  try {
+    const snapshot = await db.ref(`postVibeChecks/${postId}/${userId}`).get();
+    const postVibe = snapshot.exists() ? snapshot.val() : null;
+
+    return res.status(200).send({postVibe});
+  } catch (postVibeError) {
+    console.log("Failed to get post vibe check type: ", postVibeError);
+    return res.status(500).send("Internal server error!");
   }
 });
 

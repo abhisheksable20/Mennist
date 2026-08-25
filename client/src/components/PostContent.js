@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useContext } from 'react'
+import { useEffect, useState, useRef, useContext } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords, convertTimestampToReadable } from '../dataProcessing/dataProcessing'
@@ -28,11 +28,12 @@ function PostContent(props) {
     const { id } = useParams();
     const { similarPosts, fetchSimilarPosts } = useContext(PostContext)
     const navigate = useNavigate();
-    const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null });
+    const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null, vibeCheck: null });
     const [isLoading, setIsLoading] = useState(false);
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
+    const [postVibe, setPostVibe] = useState(null);
 
     const reportBtnRef = useRef(null);
 
@@ -74,12 +75,33 @@ function PostContent(props) {
 
     useEffect(() => {
         if (id) {
+            setPostData({id: id, title: "Loading...", content: "", timestamp: 0, chatId: null, vibeCheck: null});
             fetchPost();
             getTotalVibeCount();
+            getPostsVibeCheck();
             isAlreadyVibed();
             isPostSaved();
         }
     }, [id]);
+
+    // Get posts vibe check type from local storage and also from server side
+    const getPostsVibeCheck = async () => {
+        const postsVibe = JSON.parse(localStorage.getItem("postsVibeCheck") || "{}");
+        const existingVibe = postsVibe[id] || null;
+
+        if (existingVibe) {
+            setPostVibe(existingVibe);
+            return;
+        }
+
+        const postVibeCheck = (await axios.get(`${process.env.REACT_APP_API_URL}/vibeCheck/${id}`)).data.postVibe;
+        setPostVibe(postVibeCheck);
+    }
+
+    // get the post vibe count 
+    const getPostVibeCount = (vibe) => {
+        return postData.vibeCheck?.[vibe] || "";
+    }
 
     // Fetch total vibe count
     const getTotalVibeCount = async () => {
@@ -88,6 +110,43 @@ function PostContent(props) {
             setTotalVibes(vibeCount);
         }
         catch (vibeCountError) { }
+    }
+
+    // Handle post vibe check button
+    const postVibeCheckBtn = async (postVibe) => {
+        if (hasPostVibeCheck(id, postVibe)) {
+            return;
+        }
+
+        try {
+            const vibeCheckBody = {
+                postId: id,
+                postVibe: postVibe
+            }
+
+            setPostVibe(postVibe);
+            await axios.post(`${process.env.REACT_APP_API_URL}/vibeCheck`, vibeCheckBody);
+        }
+        catch (vibeCheckError) {
+            console.log(vibeCheckError)
+        }
+    }
+
+    // Check wheather the post vibe check is already selected
+    const hasPostVibeCheck = (postId, postVibe) => {
+        const postsVibeCheck = JSON.parse(localStorage.getItem("postsVibeCheck") || "{}");
+        if (postsVibeCheck[postId]) {
+            return true;
+        }
+
+        postsVibeCheck[postId] = postVibe;
+
+        localStorage.setItem(
+            "postsVibeCheck",
+            JSON.stringify(postsVibeCheck)
+        );
+
+        return false;
     }
 
     // Handle Vibe Btn 
@@ -267,44 +326,58 @@ Share your own vibe on Mennist.`;
 
                     <div className="vibe-options">
 
-                        <button className="vibe-option">
+                        <button
+                            className={`vibe-option ${postVibe === "funny" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("funny")}>
                             <img src={funnySVG} alt="Funny_Icon" />
                             Funny
-                            <small>42</small>
+                            <small>{getPostVibeCount("funny")}</small>
                         </button>
 
-                        <button className="vibe-option active">
+                        <button
+                            className={`vibe-option ${postVibe === "relatable" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("relatable")}>
                             <img src={relatableSVG} alt="Relatable_Icon" />
                             Relatable
-                            <small>128</small>
+                            <small>{getPostVibeCount("relatable")}</small>
                         </button>
 
-                        <button className="vibe-option">
+                        <button
+                            className={`vibe-option ${postVibe === "emotional" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("emotional")}>
                             <img src={emotionalSVG} alt="Emotional_Icon" />
                             Emotional
-                            <small>9</small>
+                            <small>{getPostVibeCount("emotional")}</small>
                         </button>
 
-                        <button className="vibe-option">
+                        <button
+                            className={`vibe-option ${postVibe === "wholesome" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("wholesome")}>
                             <img src={wholesomeSVG} alt="Wholesome_Icon" />
                             Wholesome
-                            <small>17</small>
+                            <small>{getPostVibeCount("wholesome")}</small>
                         </button>
 
-                        <button className="vibe-option">
+                        <button
+                            className={`vibe-option ${postVibe === "sad" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("sad")}>
                             <img src={sadSVG} alt="Sad_Icon" />
                             Sad
-                            <small>3</small>
+                            <small>{getPostVibeCount("sad")}</small>
                         </button>
-                        <button className="vibe-option">
+                        <button
+                            className={`vibe-option ${postVibe === "toxic" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("toxic")}>
                             <img src={toxicSVG} alt="Toxic_Icon" />
                             Toxic
-                            <small>3</small>
+                            <small>{getPostVibeCount("toxic")}</small>
                         </button>
-                        <button className="vibe-option">
+                        <button
+                            className={`vibe-option ${postVibe === "racist" ? "active" : ""}`}
+                            onClick={() => postVibeCheckBtn("racist")}>
                             <img src={racistSVG} alt="Racist_Icon" />
                             Racist
-                            <small>3</small>
+                            <small>{getPostVibeCount("racist")}</small>
                         </button>
                     </div>
                 </div>

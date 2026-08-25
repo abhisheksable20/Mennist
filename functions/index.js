@@ -80,13 +80,35 @@ exports.deleteUserData = onTaskDispatched({
   },
 },
 async (request) => {
-  console.log("Bg Triggered-----------");
   const {userId, sessionId} = request.data;
   await Promise.all([
     db.ref(`sessions/${sessionId}`).remove(),
     db.ref(`users/${userId}`).remove(),
     db.ref(`chats/${userId}`).remove(),
   ]);
-  console.log("Bg Ended-----------");
+},
+);
+
+// background work for vibe check for the post
+exports.postVibeCheck = onTaskDispatched({
+  retryConfig: {
+    maxAttempts: 3,
+  },
+},
+async (request) => {
+  const {postId, userId, postVibe} = request.data;
+  try {
+    const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
+    const snapshot = await vibeChecksRef.get();
+    if (snapshot.exists() && snapshot.val() === postVibe) {
+      return;
+    }
+
+    await vibeChecksRef.set(postVibe);
+    await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
+  } catch (error) {
+    console.error("Error processing post vibe check:", error);
+    throw error;
+  }
 },
 );
