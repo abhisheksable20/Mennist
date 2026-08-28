@@ -1,7 +1,6 @@
 import PostContext from "./postContext";
-import { useState, useContext, useRef } from "react";
+import { useState, useRef } from "react";
 import axios from "axios";
-import React from 'react'
 
 const PostState = (props) => {
     const [posts, setPosts] = useState([]);
@@ -59,30 +58,38 @@ const PostState = (props) => {
 
     // Fetch the similar posts according to their category
     const fetchSimilarPosts = async (category, currentPostId) => {
-        if (!category || isSimilarPostsFetchingRef.current)
+        setSimilarPosts([]);
+        if (!category)
             return;
 
-        isSimilarPostsFetchingRef.current = true;
         if (abortSimilarPostsControllerRef.current)
             abortSimilarPostsControllerRef.current.abort();
 
         const controller = new AbortController();
         abortSimilarPostsControllerRef.current = controller;
+        isSimilarPostsFetchingRef.current = true;
 
         try {
             const data = (await axios.get(`${process.env.REACT_APP_API_URL}/suggestPost/${category}`,
                 { signal: controller.signal })).data
-            
-            if(data){
+
+            if (controller.signal.aborted)
+                return;
+
+            if (data) {
                 const filteredSimilarPosts = data.filter((post) => post.id !== currentPostId)
                 setSimilarPosts(filteredSimilarPosts);
             }
         }
         catch (SimilarPostsError) {
+            if (axios.isCancel(SimilarPostsError))
+                return;
             console.log("Failed to load similar posts")
         }
-        finally{
-            isSimilarPostsFetchingRef.current = false;
+        finally {
+            if (abortSimilarPostsControllerRef.current === controller) {
+                isSimilarPostsFetchingRef.current = false;
+            }
         }
     }
 

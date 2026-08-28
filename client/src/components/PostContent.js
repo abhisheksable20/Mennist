@@ -68,8 +68,7 @@ function PostContent(props) {
         document.title = postData.title;
         postActions("viewed", postData.id);
 
-        if (postData.category)
-            fetchSimilarPosts(postData.category, postData.id);
+        fetchSimilarPosts(postData.category, postData.id);
     }, [postData]);
 
     useEffect(() => {
