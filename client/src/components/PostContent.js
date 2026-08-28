@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useContext } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { totalWords, convertTimestampToReadable } from '../dataProcessing/dataProcessing'
 import PostContext from '../context/posts/postContext'
@@ -24,7 +24,6 @@ import { db } from '../internalDatabase/db'
 import { postActions } from '../dataProcessing/postsActions'
 
 function PostContent(props) {
-    const [searchParams] = useSearchParams();
     const { id } = useParams();
     const { similarPosts, fetchSimilarPosts } = useContext(PostContext)
     const navigate = useNavigate();
@@ -75,7 +74,7 @@ function PostContent(props) {
 
     useEffect(() => {
         if (id) {
-            setPostData({id: id, title: "Loading...", content: "", timestamp: 0, chatId: null, vibeCheck: null});
+            setPostData({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null, vibeCheck: null });
             fetchPost();
             getTotalVibeCount();
             getPostsVibeCheck();
@@ -94,8 +93,13 @@ function PostContent(props) {
             return;
         }
 
-        const postVibeCheck = (await axios.get(`${process.env.REACT_APP_API_URL}/vibeCheck/${id}`)).data.postVibe;
-        setPostVibe(postVibeCheck);
+        try {
+            const postVibeCheck = (await axios.get(`${process.env.REACT_APP_API_URL}/vibeCheck/${id}`)).data.postVibe;
+            setPostVibe(postVibeCheck);
+        } catch (error) {
+            console.log(error);
+        }
+
     }
 
     // get the post vibe count 
@@ -125,6 +129,7 @@ function PostContent(props) {
             }
 
             setPostVibe(postVibe);
+
             await axios.post(`${process.env.REACT_APP_API_URL}/vibeCheck`, vibeCheckBody);
         }
         catch (vibeCheckError) {
@@ -322,7 +327,9 @@ Share your own vibe on Mennist.`;
                 </div>
                 {/* Post vibe check section */}
                 <div className="vibe-check">
-                    <div className="vibe-check-title">POST VIBE </div>
+                    <div className="vibe-check-title">
+                        VIBE CHECK
+                    </div>
 
                     <div className="vibe-options">
 
