@@ -45,7 +45,11 @@ function LandingPage(props) {
         await db.transaction("rw", db.chatUser, db.chats, async () => {
           await db.chatUser.clear();
           await db.chats.clear();
+          await db.postActions.clear();
         })
+
+        localStorage.removeItem("postsVibeCheck");
+        localStorage.removeItem("savedPosts");
       }
 
       props.alert("You're now anonymous.", "success");
