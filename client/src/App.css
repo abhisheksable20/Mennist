@@ -390,6 +390,21 @@ body {
   color: #22C55E;
 }
 
+.vibe-option-alert:hover{
+  border-color: #D0342C;
+  color: #FAFAFA;
+}
+
+.vibe-option-alert.active {
+  border-color: #D0342C;
+  background: rgba(208, 52, 44, 0.08);
+  color: #D0342C;
+}
+
+.vibe-option-alert.active small {
+  color: #D0342C;
+}
+
 .report-btn {
   color: #FAFAFA;
   font-family: 'Poppins', sans-serif;

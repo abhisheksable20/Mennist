@@ -359,21 +359,21 @@ Share your own vibe on Mennist.`;
                         </button>
 
                         <button
-                            className={`vibe-option ${postVibe === "sad" ? "active" : ""}`}
+                            className={`vibe-option vibe-option-alert ${postVibe === "sad" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("sad")}>
                             <img src={sadSVG} alt="Sad_Icon" />
                             Sad
                             <small>{getPostVibeCount("sad")}</small>
                         </button>
                         <button
-                            className={`vibe-option ${postVibe === "toxic" ? "active" : ""}`}
+                            className={`vibe-option vibe-option-alert ${postVibe === "toxic" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("toxic")}>
                             <img src={toxicSVG} alt="Toxic_Icon" />
                             Toxic
                             <small>{getPostVibeCount("toxic")}</small>
                         </button>
                         <button
-                            className={`vibe-option ${postVibe === "racist" ? "active" : ""}`}
+                            className={`vibe-option vibe-option-alert ${postVibe === "racist" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("racist")}>
                             <img src={racistSVG} alt="Racist_Icon" />
                             Racist
