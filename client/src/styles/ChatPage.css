@@ -42,7 +42,7 @@
 
 .chat-item-layout {
     display: grid;
-    grid-template-columns: 1fr 60px;
+    grid-template-columns: minmax(0, 1fr) 60px;
     align-items: center;
     min-height: 90px;
 }

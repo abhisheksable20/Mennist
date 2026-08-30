@@ -44,6 +44,10 @@ body {
 }
 
 .navbar-title {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   cursor: pointer;
 }
 
@@ -322,7 +326,7 @@ body {
   margin-top: 35px;
   padding: 24px 0;
   background-color: #171717;
-  border-radius: 12px;  
+  border-radius: 12px;
 }
 
 .vibe-check-title {
@@ -364,9 +368,9 @@ body {
 }
 
 .vibe-option img {
-    width: 15px;
-    height: 15px;
-    object-fit: contain;
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
 }
 
 .vibe-option small {
@@ -390,7 +394,7 @@ body {
   color: #22C55E;
 }
 
-.vibe-option-alert:hover{
+.vibe-option-alert:hover {
   border-color: #D0342C;
   color: #FAFAFA;
 }

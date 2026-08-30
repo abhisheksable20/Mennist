@@ -1,9 +1,7 @@
-import React from 'react'
 import "../styles/ChatPage.css"
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing'
 import { Link } from 'react-router-dom'
 import deleteSVG from '../assets/delete_svg_icon.svg'
-import ChatsContext from '../context/chats/chatsContext'
 
 function ChatItem(props) {
     const { username, timestamp, lastMsg, chatId, deleteChat } = props;
