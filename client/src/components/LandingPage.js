@@ -42,7 +42,7 @@ function LandingPage(props) {
 
       // Delete all the data in index db
       if (data.isNew) {
-        await db.transaction("rw", db.chatUser, db.chats, async () => {
+        await db.transaction("rw", db.chatUser, db.chats, db.postActions,async () => {
           await db.chatUser.clear();
           await db.chats.clear();
           await db.postActions.clear();
@@ -62,7 +62,7 @@ function LandingPage(props) {
         props.alert("Please try again.", "alert");
         return;
       }
-
+      console.log("Error: ", setupErr)
       props.alert("Internal server error", "alert");
     }
     finally {

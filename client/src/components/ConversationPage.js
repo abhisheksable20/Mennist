@@ -163,10 +163,31 @@ function ConversationPage() {
   // Handle file attachement
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+
     if (!file) return;
 
     fileDownloadFlag.current = false;
-    setSelectedFile(file);
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const copiedFile = new File(
+        [reader.result],
+        file.name,
+        {
+          type: file.type,
+          lastModified: file.lastModified
+        }
+      );
+
+      setSelectedFile(copiedFile);
+    };
+
+    reader.onerror = () => {
+      console.error("Failed to read selected file:", reader.error);
+    };
+
+    reader.readAsArrayBuffer(file);
   }
 
   // Handle file download

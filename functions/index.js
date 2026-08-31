@@ -18,7 +18,9 @@ const db = admin.database();
 const allowedOrigins = [
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
-  "https://www.mennist.com"];
+  "https://www.mennist.com",
+  "http://localhost:3000",
+  "https://drumkit-5b886.web.app"];
 const corsOptions = {
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {

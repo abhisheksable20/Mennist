@@ -11,7 +11,7 @@ function FilePreview(props) {
     if (!selectedFile || !selectedFile.type.startsWith("image/")) {
       return;
     }
-
+    
     const url = URL.createObjectURL(selectedFile);
     setImageUrl(url);
 
@@ -26,8 +26,8 @@ function FilePreview(props) {
   }
 
   // User has confirm to send the attachement
-  const handleSendBtn = () => {
-    sendAttachment();
+  const handleSendBtn = async () => {
+    await sendAttachment();
     closeModalRef.current.click();
   }
 

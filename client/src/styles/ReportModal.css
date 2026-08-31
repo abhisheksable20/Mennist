@@ -7,6 +7,21 @@
 
 .modal-header {
     border-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+}
+
+.modal-header .modal-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+
+.modal-header .btn-close {
+    flex-shrink: 0;
 }
 
 .modal-footer {

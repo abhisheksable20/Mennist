@@ -311,17 +311,21 @@ const ChatsState = (props) => {
              *  fileType
              * }
              */
+
             const keys = await db.keys.get("user-keypair");
 
             const buffer = await file.arrayBuffer();
             const imageByte = new Uint8Array(buffer);
+            const fileExtension = file.name.split(".").pop();
+            const fileName = `Mennist_${Date.now()}.${fileExtension}`
 
             const encryptedFileData = await encryptedFile(imageByte, receiverPublicKey);
+
             const chatBody = {
                 ...encryptedFileData,
                 chatId: chatIdRef.current,
                 senderPublicKey: keys.publicKey,
-                name: file.name,
+                name: fileName,
                 type: file.type,
                 size: file.size
             }
@@ -335,7 +339,7 @@ const ChatsState = (props) => {
                 chatId: chatIdRef.current,
                 timestamp,
                 imageBlob: file,
-                plainMsg: file.name,
+                plainMsg: fileName,
                 type: file.type,
                 fromMe: true,
             }
@@ -346,7 +350,7 @@ const ChatsState = (props) => {
             // Updating last msg in chatUser table in dexie
             const DBData = {
                 chatId: chatIdRef.current,
-                plainMsg: file.name,
+                plainMsg: fileName,
                 senderPublicKey: receiverPublicKey,
                 timestamp,
                 type: file.type
@@ -442,7 +446,7 @@ const ChatsState = (props) => {
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
             setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment,
-            chatFlag,changeChatFlag, setChatFlag, chatFlag
+            chatFlag, changeChatFlag, setChatFlag, chatFlag
         }}>
             {props.children}
         </ChatsContext.Provider>
