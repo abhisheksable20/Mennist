@@ -7,7 +7,7 @@ function SubmitButton(props) {
     const navigate = useNavigate();
     const location = useLocation();
     const [btnDisabled, setDisability] = useState(false);
-    const { content, submitPost } = useContext(PostContext);
+    const { content, submitPost, contentType } = useContext(PostContext);
 
     // The user is submit post page change the button to submit to submit post
     const currentPath = location.pathname === "/submit-secret";
@@ -26,7 +26,7 @@ function SubmitButton(props) {
                 await submitPost();
                 props.alert("Confession delivered successfully", "success");
                 navigate("/")
-            } 
+            }
             catch (submitErr) {
                 props.alert("Something went wrong!", "alert");
             }
@@ -44,16 +44,28 @@ function SubmitButton(props) {
         }
 
         // validate the data before submitting
-        if (content.title.trim().length < 3 || content.content.trim().length < 3) {
-            setDisability(true);
-        } else {
-            setDisability(false);
+        if (contentType === 0) {
+            if (content.title.trim().length < 3 || content.content.trim().length < 3) {
+                setDisability(true);
+            }
+            else {
+                setDisability(false);
+            }
+        }
+        
+        if(contentType === 1) {
+            if(content.content.trim().length < 3){
+                setDisability(true);
+            }
+            else {
+                setDisability(false);
+            }
         }
 
     }, [content, currentPath]);
 
     return (
-        <div className={`${location.pathname==='/terms-and-conditions'?"d-none":""}`}>
+        <div className={`${location.pathname === '/terms-and-conditions' ? "d-none" : ""}`}>
             <button className="btn submit-button d-flex align-items-center justify-content-center gap-2 w-100"
                 onClick={navigateToSubmitSecret} disabled={btnDisabled}>
                 <img src={submitSVG} alt="submitButton" width="24px" height="24px" />

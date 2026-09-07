@@ -7,6 +7,10 @@ const PostState = (props) => {
     const [hasNext, setHasNext] = useState(true);
     const [content, setContent] = useState({ title: "", content: "" });
     const [loading, setLoading] = useState(false);
+    // State to set content type
+    // 0 Vibe (Default)
+    // 1 Dream
+    const [contentType, setContentType] = useState(0);
     const [similarPosts, setSimilarPosts] = useState([]);
 
     const isFetchingRef = useRef(false);
@@ -156,8 +160,8 @@ const PostState = (props) => {
 
     return (
         <PostContext.Provider value={{
-            posts, hasNext, content, loading, similarPosts,
-            setContent, getAllPosts, submitPost, resetPostFetching, fetchSimilarPosts
+            posts, hasNext, content, loading, similarPosts, contentType,
+            setContent, getAllPosts, submitPost, resetPostFetching, fetchSimilarPosts, setContentType
         }}>
             {props.children}
         </PostContext.Provider>
