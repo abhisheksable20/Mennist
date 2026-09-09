@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
-const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
+const {postValidation, dreamValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
 const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
@@ -155,7 +155,7 @@ router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (
 });
 
 // Submit people dreams
-router.post("/submitDreams", postLimiter, async (req, res) => {
+router.post("/submitDreams", postLimiter, isLoggedIn, validate(dreamValidation), async (req, res) => {
   try {
     const userId = req.user.uid;
     const {dream} = req.body;

@@ -140,12 +140,20 @@ const PostState = (props) => {
     const submitPost = async () => {
         try {
             // Validated data for submitting to the server
-            const data = {
-                title: content.title,
-                content: content.content
+            const data = {}
+            let subApi = "";
+            if (contentType === 0) {
+                data.title = content.title;
+                data.content = content.content;
+                subApi = "posts"
             }
 
-            const res = (await axios.post(`${process.env.REACT_APP_API_URL}/posts`, data)).data;
+            if (contentType === 1) {
+                data.dream = content.content;
+                subApi = "submitDreams"
+            }
+            console.log("Data-----", data, contentType);
+            await axios.post(`${process.env.REACT_APP_API_URL}/${subApi}`, data)
             setContent({
                 title: "",
                 content: ""

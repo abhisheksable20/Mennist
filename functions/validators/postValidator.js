@@ -7,6 +7,12 @@ const postValidation = {
   }),
 };
 
+const dreamValidation = {
+  body: Joi.object({
+    dream: Joi.string().min(3).max(2000).required(),
+  }),
+};
+
 const reportValidation = {
   body: Joi.object({
     postId: Joi.string().required(),
@@ -22,4 +28,4 @@ const vibeCheckValidation = {
   }),
 };
 
-module.exports = {postValidation, reportValidation, vibeCheckValidation};
+module.exports = {postValidation, dreamValidation, reportValidation, vibeCheckValidation};
