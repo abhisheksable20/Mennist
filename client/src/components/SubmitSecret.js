@@ -37,7 +37,7 @@ function SubmitSecret(props) {
       <div className='d-flex align-items-center'>
         {/* Green dash */}
         <div className="card-accent" />
-        <h5 className="ms-3 custom-primary-text">{`NEW ${contentType===0?"VIBE":"DREAM"}`}</h5>
+        <h5 className="ms-3 custom-primary-text">{`NEW ${contentType===0?"VIBE":"ECHO"}`}</h5>
       </div>
 
       {/* Content type selector button */}
@@ -60,7 +60,7 @@ function SubmitSecret(props) {
           <div className="secret-type-icon">
             <img src={dreamSVG} width="34px" height="34px"/>
           </div>
-          <div className="secret-type-name">Dream</div>
+          <div className="secret-type-name">Echo</div>
         </button>
 
       </div>
@@ -78,14 +78,14 @@ function SubmitSecret(props) {
 
       {/* Input form Content */}
       <div className="mt-5 mb-4">
-        <label for="exampleFormControlTextarea1" className="form-label custom-label">{`MY ${contentType===0?"VIBE":"DREAM"}`}</label>
+        <label for="exampleFormControlTextarea1" className="form-label custom-label">{`MY ${contentType===0?"VIBE":"ECHO"}`}</label>
         <textarea className="form-control form-control-lg custom-input auto-grow-textarea"
           id="content"
           name='content'
           value={content.content}
           onChange={handleInputOnChange}
           rows="12"
-          placeholder={`Write your ${contentType===0?"vibe":"dream"} here...`}>
+          placeholder={`Write your ${contentType===0?"vibe":"echo"} here...`}>
         </textarea>
 
         {/* Divider */}

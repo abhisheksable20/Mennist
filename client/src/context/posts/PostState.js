@@ -9,7 +9,7 @@ const PostState = (props) => {
     const [loading, setLoading] = useState(false);
     // State to set content type
     // 0 Vibe (Default)
-    // 1 Dream
+    // 1 Echo
     const [contentType, setContentType] = useState(0);
     const [similarPosts, setSimilarPosts] = useState([]);
 
@@ -136,23 +136,25 @@ const PostState = (props) => {
     }
 
     // Submit post from user
-    // I have to work on this after fixing submit btn
+    // Submiting both vibe and echo
     const submitPost = async () => {
         try {
             // Validated data for submitting to the server
             const data = {}
             let subApi = "";
+            // Submit vibe
             if (contentType === 0) {
                 data.title = content.title;
                 data.content = content.content;
                 subApi = "posts"
             }
 
+            // Submit Echo
             if (contentType === 1) {
-                data.dream = content.content;
-                subApi = "submitDreams"
+                data.echo = content.content;
+                subApi = "echoes/submitEcho"
             }
-            console.log("Data-----", data, contentType);
+
             await axios.post(`${process.env.REACT_APP_API_URL}/${subApi}`, data)
             setContent({
                 title: "",

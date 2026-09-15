@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
-const {postValidation, dreamValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
+const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
 const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
@@ -151,27 +151,6 @@ router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (
   } catch (submitError) {
     console.error("Submit Error:", submitError);
     return res.status(500).send("Internal Server Error.");
-  }
-});
-
-// Submit people dreams
-router.post("/submitDreams", postLimiter, isLoggedIn, validate(dreamValidation), async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const {dream} = req.body;
-
-    const timestamp = Date.now();
-
-    const snapshotRef = db.ref(`dreams/${userId}`).push();
-    await snapshotRef.set({
-      dream,
-      timestamp,
-    });
-
-    return res.status(200).send("Save successfully!");
-  } catch (dreamSubmitError) {
-    console.log("Dream Submittion Error: ", dreamSubmitError);
-    return res.status(500).send("Internal server error!");
   }
 });
 

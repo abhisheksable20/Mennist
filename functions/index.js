@@ -1,10 +1,10 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const {onTaskDispatched} = require("firebase-functions/tasks");
+const { onTaskDispatched } = require("firebase-functions/tasks");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const {ValidationError} = require("express-validation");
+const { ValidationError } = require("express-validation");
 
 require("dotenv").config();
 
@@ -22,7 +22,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://drumkit-5b886.web.app"];
 const corsOptions = {
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -54,6 +54,9 @@ app.use((err, req, res, next) => {
 // Post CRUD operation route
 app.use("/api", require("./routes/posts"));
 
+// Echoes operation route
+app.use("/api/echoes", require("./routes/echoes"));
+
 // Post CRUD operation route for user
 app.use("/api/user", require("./routes/userPosts"));
 
@@ -79,14 +82,14 @@ exports.deleteUserData = onTaskDispatched({
     maxConcurrentDispatches: 10,
   },
 },
-async (request) => {
-  const {userId, sessionId} = request.data;
-  await Promise.all([
-    db.ref(`sessions/${sessionId}`).remove(),
-    db.ref(`users/${userId}`).remove(),
-    db.ref(`chats/${userId}`).remove(),
-  ]);
-},
+  async (request) => {
+    const { userId, sessionId } = request.data;
+    await Promise.all([
+      db.ref(`sessions/${sessionId}`).remove(),
+      db.ref(`users/${userId}`).remove(),
+      db.ref(`chats/${userId}`).remove(),
+    ]);
+  },
 );
 
 // background work for vibe check for the post
@@ -95,20 +98,78 @@ exports.postVibeCheck = onTaskDispatched({
     maxAttempts: 3,
   },
 },
-async (request) => {
-  const {postId, userId, postVibe} = request.data;
+  async (request) => {
+    const { postId, userId, postVibe } = request.data;
+    try {
+      const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
+      const snapshot = await vibeChecksRef.get();
+      if (snapshot.exists() && snapshot.val() === postVibe) {
+        return;
+      }
+
+      await vibeChecksRef.set(postVibe);
+      await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
+    } catch (error) {
+      console.error("Error processing post vibe check:", error);
+      throw error;
+    }
+  },
+);
+
+// background work for checking echo similarities
+exports.matchEchoes = onTaskDispatched({
+  retryConfig: {
+    maxAttempts: 3,
+  },
+  rateLimits: {
+    maxConcurrentDispatches: 5,
+  },
+}, async (req) => {
+  const { userId, echoId, echo } = req.data;
+
   try {
-    const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
-    const snapshot = await vibeChecksRef.get();
-    if (snapshot.exists() && snapshot.val() === postVibe) {
+    const snapshot = await db.ref("echoes").once("value");
+
+    if (!snapshot.exists()) {
+      await markEchoCompleted(userId, echoId, []);
       return;
     }
 
-    await vibeChecksRef.set(postVibe);
-    await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
-  } catch (error) {
-    console.error("Error processing post vibe check:", error);
-    throw error;
+    const candidates = [];
+
+    snapshot.forEach((userSnapshot) => {
+      const candidateUserId = userSnapshot.key;
+      if (candidateUserId === userId) {
+        return;
+      }
+
+      userSnapshot.forEach((echoSnapshot) => {
+        const candidateEcho = echoSnapshot.val();
+        if (!candidateEcho || !candidateEcho.echo) {
+          return;
+        }
+
+        candidates.push({
+          echoId: echoSnapshot.key,
+          userId: candidateUserId,
+          echo: candidateEcho.echo,
+        });
+      })
+    })
+
+    if (candidates.length === 0) {
+      await markEchoCompleted(userId, dreamId, []);
+      return;
+    }
+
+    const matches = await findEchoMatches(
+      echo,
+      candidates
+    );
+
   }
-},
-);
+  catch (error) {
+
+  }
+})
+
