@@ -1,10 +1,11 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const { onTaskDispatched } = require("firebase-functions/tasks");
+const {onTaskDispatched} = require("firebase-functions/tasks");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const { ValidationError } = require("express-validation");
+const {ValidationError} = require("express-validation");
+const {findEchoMatches} = require("./dataProcessing/geminiProcessing");
 
 require("dotenv").config();
 
@@ -22,7 +23,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://drumkit-5b886.web.app"];
 const corsOptions = {
-  origin: function (origin, callback) {
+  origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -66,6 +67,21 @@ app.use("/api/chats", require("./routes/chats"));
 // Post tracking operations route
 app.use("/api/actions", require("./routes/postTracking"));
 
+const markEchoCompleted = async (userId, echoId, matches) => {
+  await db.ref(
+      `echoMatches/${userId}/${echoId}`,
+  ).set({
+    status: "completed",
+    completedAt: Date.now(),
+    matches,
+  });
+
+  await db.ref(
+      `echoes/${userId}/${echoId}/status`,
+  ).set("completed");
+};
+
+
 exports.api = functions.https.onRequest(app);
 
 /*
@@ -82,14 +98,14 @@ exports.deleteUserData = onTaskDispatched({
     maxConcurrentDispatches: 10,
   },
 },
-  async (request) => {
-    const { userId, sessionId } = request.data;
-    await Promise.all([
-      db.ref(`sessions/${sessionId}`).remove(),
-      db.ref(`users/${userId}`).remove(),
-      db.ref(`chats/${userId}`).remove(),
-    ]);
-  },
+async (request) => {
+  const {userId, sessionId} = request.data;
+  await Promise.all([
+    db.ref(`sessions/${sessionId}`).remove(),
+    db.ref(`users/${userId}`).remove(),
+    db.ref(`chats/${userId}`).remove(),
+  ]);
+},
 );
 
 // background work for vibe check for the post
@@ -98,22 +114,22 @@ exports.postVibeCheck = onTaskDispatched({
     maxAttempts: 3,
   },
 },
-  async (request) => {
-    const { postId, userId, postVibe } = request.data;
-    try {
-      const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
-      const snapshot = await vibeChecksRef.get();
-      if (snapshot.exists() && snapshot.val() === postVibe) {
-        return;
-      }
-
-      await vibeChecksRef.set(postVibe);
-      await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
-    } catch (error) {
-      console.error("Error processing post vibe check:", error);
-      throw error;
+async (request) => {
+  const {postId, userId, postVibe} = request.data;
+  try {
+    const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
+    const snapshot = await vibeChecksRef.get();
+    if (snapshot.exists() && snapshot.val() === postVibe) {
+      return;
     }
-  },
+
+    await vibeChecksRef.set(postVibe);
+    await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
+  } catch (error) {
+    console.error("Error processing post vibe check:", error);
+    throw error;
+  }
+},
 );
 
 // background work for checking echo similarities
@@ -125,7 +141,7 @@ exports.matchEchoes = onTaskDispatched({
     maxConcurrentDispatches: 5,
   },
 }, async (req) => {
-  const { userId, echoId, echo } = req.data;
+  const {userId, echoId, echo} = req.data;
 
   try {
     const snapshot = await db.ref("echoes").once("value");
@@ -154,22 +170,51 @@ exports.matchEchoes = onTaskDispatched({
           userId: candidateUserId,
           echo: candidateEcho.echo,
         });
-      })
-    })
+      });
+    });
 
     if (candidates.length === 0) {
-      await markEchoCompleted(userId, dreamId, []);
+      await markEchoCompleted(userId, echoId, []);
       return;
     }
 
     const matches = await findEchoMatches(
-      echo,
-      candidates
+        echo,
+        candidates,
     );
 
-  }
-  catch (error) {
+    matches.sort(
+        (a, b) => b.similarityScore - a.similarityScore,
+    );
 
+    const top10 = matches.slice(0, 10);
+
+    await db.ref(
+        `echoMatches/${userId}/${echoId}`,
+    ).set({
+      status: "completed",
+      completedAt: Date.now(),
+      matches: top10,
+    });
+
+    await db.ref(
+        `echoes/${userId}/${echoId}/status`,
+    ).set("completed");
+  } catch (error) {
+    console.error(`Echo matching failed: ${echoId}`, error);
+    await db.ref(
+        `echoMatches/${userId}/${echoId}`,
+    ).update({
+      status: "failed",
+      error: "Echo matching failed",
+      updatedAt: Date.now(),
+    });
+
+    await db.ref(
+        `echoes/${userId}/${echoId}/status`,
+    ).set("failed");
+
+    throw error;
   }
-})
+});
 

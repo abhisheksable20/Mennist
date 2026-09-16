@@ -5,6 +5,9 @@ const {isLoggedIn} = require("../middleware/authenticUser");
 const {validate} = require("express-validation");
 const {echoValidation} = require("../validators/postValidator");
 const {postLimiter} = require("../middleware/rateLimiter");
+const {getFunctions} = require("firebase-admin/functions");
+
+const echoMatchingQueue = getFunctions().taskQueue("matchEchoes");
 
 const db = admin.database();
 
@@ -20,12 +23,19 @@ router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), as
     const echoData = {
       echo,
       timestamp,
-      status:"processing"
-    }
-    
+      status: "processing",
+    };
+
     await snapshotRef.set(echoData);
 
     const echoId = snapshotRef.key;
+
+    // Queue Gemini matching
+    await echoMatchingQueue.enqueue({
+      userId,
+      echoId,
+      echo,
+    });
 
     return res.status(200).send("Save successfully!");
   } catch (echoSubmitError) {
