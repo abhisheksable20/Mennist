@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from 'react'
 import SubmitButton from './SubmitButton'
 import PostContext from '../context/posts/postContext'
-import dreamSVG from '../assets/sleep_mask_svg.svg'
+import echoSVG from '../assets/echo_svg.svg'
 import hearFillSVG from "../assets/heart_fill_svg.svg"
 
 function SubmitSecret(props) {
@@ -48,7 +48,7 @@ function SubmitSecret(props) {
           className={`secret-type-option ${contentType===0?"active":""}`}
           onClick={()=>setContentType(0)}>
           <div className="secret-type-icon">
-            <img src={hearFillSVG} width="30px" height="30px"/>
+            <img src={hearFillSVG} width="30px" height="30px" alt='vibe_icon'/>
           </div>
           <div className="secret-type-name">Vibe</div>
         </button>
@@ -58,7 +58,7 @@ function SubmitSecret(props) {
           className={`secret-type-option ${contentType===1?"active":""}`}
           onClick={()=>setContentType(1)}>
           <div className="secret-type-icon">
-            <img src={dreamSVG} width="34px" height="34px"/>
+            <img src={echoSVG} width="30px" height="30px" alt='echo_icon'/>
           </div>
           <div className="secret-type-name">Echo</div>
         </button>

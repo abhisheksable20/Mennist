@@ -13,6 +13,7 @@ import ChatsPage from './components/ChatsPage';
 import ConversationPage from './components/ConversationPage';
 import ChatsState from './context/chats/ChatsState';
 import TermsAndConditions from './components/TermsAndConditions';
+import EchoesComponent from './components/EchoesComponent';
 
 
 function Layout(props) {
@@ -71,6 +72,7 @@ function App() {
               <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
               <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
               <Route path='/user-chat/:chatId' element={<ConversationPage />} />
+              <Route path='/echoes' element={<EchoesComponent/>}/>
             </Route>
           </Routes>
         </ChatsState>
