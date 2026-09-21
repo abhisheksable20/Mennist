@@ -13,7 +13,7 @@ import ChatsPage from './components/ChatsPage';
 import ConversationPage from './components/ConversationPage';
 import ChatsState from './context/chats/ChatsState';
 import TermsAndConditions from './components/TermsAndConditions';
-import EchoesComponent from './components/EchoesComponent';
+import EchoesComponent from './components/Echoes/EchoesComponent';
 
 
 function Layout(props) {
