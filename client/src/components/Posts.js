@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import PostContext from '../context/posts/postContext';
 import PostItem from './PostItem';
 import useInfiniteScroll from "react-infinite-scroll-hook";

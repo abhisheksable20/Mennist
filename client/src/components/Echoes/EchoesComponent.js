@@ -1,6 +1,12 @@
 import EchoPostItem from "./EchoPostItem"
+import { useEffect, useState, useContext } from 'react'
+import EchoContext from "../../context/posts/EchoContext";
+import useInfiniteScroll from "react-infinite-scroll-hook";
+import Spinner from './Spinner';
 
 function EchoesComponent() {
+    const {hasNext, loading, echoes, fetchUserEchoes} = useContext(EchoContext);
+
     return (
         <div className="container my-5 posts-container">
             {/* Section Heading */}
