@@ -1,4 +1,6 @@
 function EchoPostItem(props) {
+    
+
     return (
         <div className="col-12 col-md-6 col-lg-4">
             <div className="card h-100">
@@ -14,7 +16,7 @@ function EchoPostItem(props) {
                     <div className='d-flex justify-content-between mt-auto'>
                         {/* Display date when the post was uploaded */}
                         <p className="card-text my-1"><small className="text-body-secondary">{"20 May 2026"}</small></p>
-                        <p className="card-text my-1"><small className="text-body-secondary">{"Seccess"}</small></p>
+                        <p className="card-text my-1"><small style={{color:"#ff0000"}}>{"Success"}</small></p>
                     </div>
                 </div>
             </div>

@@ -1,25 +1,43 @@
 const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
-const { isLoggedIn } = require("../middleware/authenticUser");
-const { validate } = require("express-validation");
-const { echoValidation } = require("../validators/postValidator");
-const { postLimiter, globalLimiter } = require("../middleware/rateLimiter");
-const { getFunctions } = require("firebase-admin/functions");
+const {isLoggedIn} = require("../middleware/authenticUser");
+const {validate} = require("express-validation");
+const {echoValidation} = require("../validators/postValidator");
+const {postLimiter, globalLimiter} = require("../middleware/rateLimiter");
+const {getFunctions} = require("firebase-admin/functions");
+const {userEchoesFetching} = require("../dataProcessing/postsProcessing");
 
 const echoMatchingQueue = getFunctions().taskQueue("matchEchoes");
 
 const db = admin.database();
 
-// Fetch echoes from the database
-router.get("/echoes/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
+const retrieveLimit = 10;
+
+// Fetch only user echoes from the database
+router.get("/", globalLimiter, isLoggedIn, async (req, res) => {
+  const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
+  const userId = req.user.uid;
+  try {
+    const ref = db.ref(`echoes/${userId}`);
+    const data = await userEchoesFetching(ref, endAt, retrieveLimit);
+
+    return res.status(200).send(data);
+  } catch (fetchEchoErr) {
+    console.log("User echoes fetching error: ", fetchEchoErr);
+    return res.status(500).send("Something went wrong!");
+  }
+});
+
+// Fetch echoes matches from the database
+router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
   try {
     const userId = req.user.uid;
     const echoId = req.params.echoId;
 
     if (!echoId) {
       return res.status(400).send({
-        error: "Echo Id is required!"
+        error: "Echo Id is required!",
       });
     }
 
@@ -29,22 +47,21 @@ router.get("/echoes/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
       return res.status(404).send({
         status: "processing",
         message: "Dream matching is still processing.",
-      })
+      });
     }
 
     const data = snapshot.val();
     return res.status(200).send(data);
+  } catch (echoFetchError) {
+    console.log("Error while fetching the echo matches: ", echoFetchError);
   }
-  catch (echoFetchError) {
-    console.log("Error while fetching the echo matches: ", echoFetchError)
-  }
-})
+});
 
 // Submit people echoes
 router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { echo } = req.body;
+    const {echo} = req.body;
 
     const timestamp = Date.now();
 

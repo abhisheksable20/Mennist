@@ -40,4 +40,37 @@ const postFetching = async (ref, endAt, limitToLast) => {
   return postsData;
 };
 
-module.exports = {postFetching};
+const userEchoesFetching = async (ref, endAt, limitToLast) => {
+  const snapshot = await ref
+      .orderByChild("timestamp")
+      .endAt(endAt)
+      .limitToLast(limitToLast)
+      .once("value");
+
+  const data = [];
+
+  if (!snapshot.exists()) {
+    return {
+      lastTimestamp: -1,
+      echoesData: data,
+    };
+  }
+
+  snapshot.forEach((child) => {
+    const echo = child.val();
+    data.push({
+      id: echo.key,
+      ...echo,
+    });
+  });
+
+  const filteredData = data.reverse();
+  const echoData = {
+    lastTimestamp: filteredData[filteredData.length - 1].timestamp,
+    echoesData: filteredData,
+  };
+
+  return echoData;
+};
+
+module.exports = {postFetching, userEchoesFetching};

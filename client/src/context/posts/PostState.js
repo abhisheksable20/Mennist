@@ -167,6 +167,11 @@ const PostState = (props) => {
         }
     }
 
+    // Fetching echoes from the database
+    const getUserEchoes = () => {
+        
+    }
+
 
     return (
         <PostContext.Provider value={{
