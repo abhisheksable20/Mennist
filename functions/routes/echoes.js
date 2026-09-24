@@ -29,6 +29,34 @@ router.get("/", globalLimiter, isLoggedIn, async (req, res) => {
   }
 });
 
+// Fetch single echo from the database
+router.get("/echo/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
+  const userId = req.user.uid;
+  const echoId = req.params.echoId;
+
+  if (!echoId) {
+    return res.status(400).send({error: "Something went wrong!"});
+  }
+
+  try {
+    const snapshot = await db.ref(`echoes/${userId}/${echoId}`).once("value");
+    if (!snapshot.exists()) {
+      return res.status(404).send({error: "No echo found!"});
+    }
+
+    const data = snapshot.val();
+    const echo = {
+      id: snapshot.key,
+      ...data,
+    };
+
+    return res.status(200).send(echo);
+  } catch (echoFetchErr) {
+    console.log("Single Echo Fetching Error: ", echoFetchErr);
+    return res.status(500).send("Something went wrong!");
+  }
+});
+
 // Fetch echoes matches from the database
 router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
   try {

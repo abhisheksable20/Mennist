@@ -59,7 +59,7 @@ const userEchoesFetching = async (ref, endAt, limitToLast) => {
   snapshot.forEach((child) => {
     const echo = child.val();
     data.push({
-      id: echo.key,
+      id: child.key,
       ...echo,
     });
   });

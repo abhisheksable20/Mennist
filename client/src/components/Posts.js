@@ -89,7 +89,7 @@ function Posts(props) {
                     </li>
                 </ul>
             </div>
-            {
+            {  
                 loading && posts.length === 0 ? (<Spinner />) :
                     (
                         <>

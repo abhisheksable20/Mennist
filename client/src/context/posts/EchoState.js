@@ -1,4 +1,4 @@
-import EchoContext from "./EchoContext";
+import EchoContext from "../../context/posts/echoContext";
 import { useState, useRef } from "react";
 import axios from "axios";
 
@@ -24,11 +24,11 @@ const EchoState = (props) => {
 
         try {
             const data = (await axios.get(`${process.env.REACT_APP_API_URL}/echoes?endAt=${lastTimestampRef.current - 1}`, { signal: controller.signal })).data;
-            setEchoes((prev) => [...prev, data.echoesData]);
-
+            setEchoes((prev) => [...prev, ...data.echoesData]);
+            console.log("Echoes Data: ", data.echoesData);
             lastTimestampRef.current = data.lastTimestamp;
             // No new posts to fetch stop here
-            if (data.postsData.length < PAGE_SIZE) {
+            if (data.echoesData.length < PAGE_SIZE) {
                 setHasNext(false);
             }
         }
