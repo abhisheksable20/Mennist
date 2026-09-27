@@ -135,7 +135,7 @@ async (request) => {
 // background work for checking echo similarities
 exports.matchEchoes = onTaskDispatched({
   retryConfig: {
-    maxAttempts: 3,
+    maxAttempts: 1,
   },
   rateLimits: {
     maxConcurrentDispatches: 5,
@@ -169,6 +169,7 @@ exports.matchEchoes = onTaskDispatched({
           echoId: echoSnapshot.key,
           userId: candidateUserId,
           echo: candidateEcho.echo,
+          timestamp: candidateEcho.timestamp,
         });
       });
     });

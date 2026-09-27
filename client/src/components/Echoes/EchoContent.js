@@ -3,10 +3,13 @@ import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import { convertTimestampToReadable } from '../../dataProcessing/dataProcessing';
 import Spinner from '../Spinner';
+import MatchingEchoesItems from './MatchingEchoesItems';
+import "../../styles/Echo.css"
 
 function EchoContent(props) {
     const { id } = useParams();
-    const [echoData, setEchoData] = useState({ id: id, echo: "", timestamp: 0, status: "Checking..." });
+    const [echoData, setEchoData] = useState({ id: id, echo: "", timestamp: 0, status: "Checking..."});
+    const [matchingEchoes, setMatchingEchoes] = useState([]);
     const [loading, setLoading] = useState(false)
 
     const loadEcho = async () => {
@@ -19,15 +22,26 @@ function EchoContent(props) {
             }));
         }
         catch (echoLoadingError) {
-            props.alert("Something went wrong!", "alert");
+            props.alert("Something Went Wrong!", "alert");
         }
         finally {
             setLoading(false);
         }
     }
 
+    const loadMatchingEchoes = async () => {
+        try {
+            const data = (await axios.get(`${process.env.REACT_APP_API_URL}/echoes/${id}`)).data;
+            setMatchingEchoes(data);
+        } 
+        catch (matchingError) {
+            props.alert("Failed To Load Matching Echoes!", "alert");
+        }
+    }
+
     useEffect(() => {
         loadEcho();
+        loadMatchingEchoes();
     }, [])
 
     return (
@@ -44,7 +58,7 @@ function EchoContent(props) {
                                 ? "#22C55E"
                                 : echoData.status === "failed"
                                     ? "#D0342C"
-                                    : "#A3A3A34"
+                                    : "#A3A3A3"
                         }}>
                             {echoData.status.charAt(0).toUpperCase() + echoData.status.slice(1)}
                         </span>
@@ -64,6 +78,21 @@ function EchoContent(props) {
 
                 {/* Divider */}
                 <div className="post-divider"></div>
+
+                {/* Matching Echoes */}
+                <div className="matching-echoes-section" >
+                    <h3 className="matching-echoes-title">
+                        Matching Echoes
+                    </h3>
+                    <h6 className="matching-echoes-description">
+                        Echoes that share similar thoughts, feelings, or experiences.
+                    </h6>
+
+                    {matchingEchoes.map((echo, index) => {
+                        return <MatchingEchoesItems echo={echo} key={index}/>
+                    })}
+                </div>
+
             </div>
         </>
     )

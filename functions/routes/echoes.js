@@ -79,7 +79,9 @@ router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
     }
 
     const data = snapshot.val();
-    return res.status(200).send(data);
+    const matches = data.matches.map(({userId, echoId, ...match}) => match);
+
+    return res.status(200).send(matches);
   } catch (echoFetchError) {
     console.log("Error while fetching the echo matches: ", echoFetchError);
   }
@@ -98,6 +100,7 @@ router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), as
       echo,
       timestamp,
       status: "processing",
+      chatId: req.user.chatId,
     };
 
     await snapshotRef.set(echoData);
