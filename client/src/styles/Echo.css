@@ -88,13 +88,10 @@
 
 .echo-modal-content {
     position: relative;
-
+    font-family: "Open Sans", sans-serif;
     background: #111113;
-
     border: 1px solid #2d2d31;
-
     border-radius: 17px;
-
     box-shadow:
         0 25px 70px rgba(0, 0, 0, 0.65);
 }
@@ -111,16 +108,11 @@
 
 .echo-modal-close {
     position: absolute;
-
     top: 24px;
     right: 25px;
-
     z-index: 10;
-
     filter: invert(1);
-
     opacity: 0.65;
-
     width: 14px;
     height: 14px;
 }
