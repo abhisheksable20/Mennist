@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { convertTimestampToReadable } from '../../dataProcessing/dataProcessing';
 import Spinner from '../Spinner';
 import MatchingEchoesItems from './MatchingEchoesItems';
+import SimilarEchoModal from './SimilarEchoModal';
+import { db } from '../../internalDatabase/db'
 import "../../styles/Echo.css"
 
 function EchoContent(props) {
     const { id } = useParams();
-    const [echoData, setEchoData] = useState({ id: id, echo: "", timestamp: 0, status: "Checking..."});
+    const navigate = useNavigate();
+    const [echoData, setEchoData] = useState({ id: id, echo: "", timestamp: 0, status: "Checking..." });
     const [matchingEchoes, setMatchingEchoes] = useState([]);
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(false);
+    const [selectedEcho, setSelectedEcho] = useState(null);
 
     const loadEcho = async () => {
         try {
@@ -33,9 +37,22 @@ function EchoContent(props) {
         try {
             const data = (await axios.get(`${process.env.REACT_APP_API_URL}/echoes/${id}`)).data;
             setMatchingEchoes(data);
-        } 
+        }
         catch (matchingError) {
             props.alert("Failed To Load Matching Echoes!", "alert");
+        }
+    }
+
+    // Start the conversation with the user
+    const startConversation = async (echo) => {
+        if (echo.chatId) {
+            const userChatId = (await db.keys.get("user-keypair")).chatId;
+            if (echo.chatId === userChatId) {
+                navigate('/my-chats');
+                return;
+            }
+
+            navigate(`/user-chat/${echo.chatId}`)
         }
     }
 
@@ -82,17 +99,25 @@ function EchoContent(props) {
                 {/* Matching Echoes */}
                 <div className="matching-echoes-section" >
                     <h3 className="matching-echoes-title">
-                        Matching Echoes
+                        {matchingEchoes.length === 0 ? "No Echoes In Sync Yet" : "Matching Echoes"}
+
                     </h3>
                     <h6 className="matching-echoes-description">
-                        Echoes that share similar thoughts, feelings, or experiences.
+                        {matchingEchoes.length === 0
+                            ? "This echo hasn't found its match. Maybe the next one will."
+                            : "Echoes that share similar thoughts, feelings, or experiences."}
                     </h6>
 
                     {matchingEchoes.map((echo, index) => {
-                        return <MatchingEchoesItems echo={echo} key={index}/>
+                        return <MatchingEchoesItems
+                            echo={echo}
+                            key={index}
+                            onClick={() => setSelectedEcho(echo)} />
                     })}
+
                 </div>
 
+                <SimilarEchoModal echo={selectedEcho} startConversation={startConversation}/>
             </div>
         </>
     )

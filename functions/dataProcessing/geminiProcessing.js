@@ -147,7 +147,6 @@ const formatEchoMatches = (results, candidates) => {
     );
   }
 
-  console.log("This is echo=================", candidates);
   return results
       .map((result) => {
         const candidate = candidateMap.get(
@@ -173,7 +172,7 @@ const formatEchoMatches = (results, candidates) => {
 
         return {
           echoId: candidate.echoId,
-          userId: candidate.userId,
+          chatId: candidate.chatId,
           similarityScore: Math.round(score),
           echo: candidate.echo,
           timestamp: candidate.timestamp,

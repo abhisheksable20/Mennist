@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import submitSVG from "../assets/anonymous_svg_icon.svg"
 import PostContext from '../context/posts/postContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -22,10 +22,16 @@ function SubmitButton(props) {
         else {
             setDisability(true);
             try {
-                props.alert("Shhh... your secret is on its way", "primary");
+                props.alert("Shhh... delivering your post", "primary");
                 await submitPost();
-                props.alert("Confession delivered successfully", "success");
-                navigate("/")
+                if (contentType === 0) {
+                    props.alert("Your vibe was sent.", "success");
+                    navigate("/")
+                }
+                else if (contentType === 1) {
+                    props.alert("Your echo was sent.", "success");
+                    navigate("/echoes")
+                }
             }
             catch (submitErr) {
                 props.alert("Something went wrong!", "alert");
@@ -52,9 +58,9 @@ function SubmitButton(props) {
                 setDisability(false);
             }
         }
-        
-        if(contentType === 1) {
-            if(content.content.trim().length < 3){
+
+        if (contentType === 1) {
+            if (content.content.trim().length < 3) {
                 setDisability(true);
             }
             else {

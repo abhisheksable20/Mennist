@@ -167,9 +167,9 @@ exports.matchEchoes = onTaskDispatched({
 
         candidates.push({
           echoId: echoSnapshot.key,
-          userId: candidateUserId,
           echo: candidateEcho.echo,
           timestamp: candidateEcho.timestamp,
+          chatId: candidateEcho.chatId,
         });
       });
     });

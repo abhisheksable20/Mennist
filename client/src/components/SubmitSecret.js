@@ -58,7 +58,7 @@ function SubmitSecret(props) {
           className={`secret-type-option ${contentType===1?"active":""}`}
           onClick={()=>setContentType(1)}>
           <div className="secret-type-icon">
-            <img src={echoSVG} width="30px" height="30px" alt='echo_icon'/>
+            <img src={echoSVG} width="27px" height="27px" alt='echo_icon'/>
           </div>
           <div className="secret-type-name">Echo</div>
         </button>

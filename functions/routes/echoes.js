@@ -79,7 +79,7 @@ router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
     }
 
     const data = snapshot.val();
-    const matches = data.matches.map(({userId, echoId, ...match}) => match);
+    const matches = data.matches.map(({echoId, ...match}) => match);
 
     return res.status(200).send(matches);
   } catch (echoFetchError) {
@@ -92,6 +92,7 @@ router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), as
   try {
     const userId = req.user.uid;
     const {echo} = req.body;
+    const chatId = req.user.chatId;
 
     const timestamp = Date.now();
 
@@ -100,7 +101,7 @@ router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), as
       echo,
       timestamp,
       status: "processing",
-      chatId: req.user.chatId,
+      chatId,
     };
 
     await snapshotRef.set(echoData);

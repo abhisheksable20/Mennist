@@ -6,7 +6,13 @@ function MatchingEchoesItems(props) {
     const truncatedEcho = echo.length > 150 ? echo.slice(0, 150) + "..." : echo;
 
     return (
-        <div className="matching-echo-item">
+        <div
+            className="matching-echo-item px-2"
+            onClick={props.onClick}
+            role="button"
+            tabIndex="0"
+            data-bs-toggle="modal"
+            data-bs-target="#echoModal">
             {/* Similarity */}
             <div className="matching-echo-score">
                 <strong>{similarityScore}%</strong>
