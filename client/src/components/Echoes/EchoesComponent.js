@@ -55,8 +55,8 @@ function EchoesComponent(props) {
             ) : echoes.length === 0 ? (
                 <NoContent
                     svgType={1}
-                    title="TOO QUIET IN HERE"
-                    text="Tell the story nobody knows about."
+                    title="NO ECHOES YET"
+                    text="Leave an echo and you might find someone thinking the same thing."
                 />
             ) : (
                 <div className="row g-5">

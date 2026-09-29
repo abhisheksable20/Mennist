@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react'
-import submitSVG from "../assets/anonymous_svg_icon.svg"
+import addSVG from "../assets/add_svg_icon.svg"
 import PostContext from '../context/posts/postContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -72,10 +72,10 @@ function SubmitButton(props) {
 
     return (
         <div className={`${location.pathname === '/terms-and-conditions' ? "d-none" : ""}`}>
-            <button className="btn submit-button d-flex align-items-center justify-content-center gap-2 w-100"
+            <button className="btn submit-button d-flex align-items-center justify-content-center gap-1 w-100"
                 onClick={navigateToSubmitSecret} disabled={btnDisabled}>
-                <img src={submitSVG} alt="submitButton" width="24px" height="24px" />
-                {currentPath ? "Submit" : "Post Secret"}
+                {currentPath ? "" : <img src={addSVG} alt="submitButton" width="24px" height="24px" />}
+                {currentPath ? "Submit" : "Post"}
             </button>
         </div>
     )

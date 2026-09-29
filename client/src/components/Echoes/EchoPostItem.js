@@ -29,9 +29,9 @@ function EchoPostItem(props) {
                         <p className="card-text my-1"><small style={{
                             color: status === "completed"
                                 ? "#22C55E"
-                                : props.status === "failed"
+                                : status === "failed"
                                     ? "#D0342C"
-                                    : "#A3A3A34"
+                                    : "#A3A3A3"
                         }}>{status.charAt(0).toUpperCase() + status.slice(1)}</small></p>
                     </div>
                 </div>
