@@ -1,6 +1,5 @@
-import React from 'react'
 import '../styles/LandingPage.css'
-import creatAcc from "../assets/anonymous_svg_icon.svg"
+import creatAccSVG from "../assets/right_arrow_svg.svg"
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import { useState, useEffect } from 'react'
@@ -127,8 +126,8 @@ function LandingPage(props) {
 
         {/* Create account button */}
         <button className="btn create-acc justify-content-center gap-2 mt-4" onClick={setupUser} disabled={btnDisabled}>
-          <img src={creatAcc} alt="submitButton" width="28px" height="28px" />
           Get Started
+          <img src={creatAccSVG} alt="submitButton" width="28px" height="28px" />
         </button>
 
         <p className="mt-3">

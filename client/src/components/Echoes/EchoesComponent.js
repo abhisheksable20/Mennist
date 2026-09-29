@@ -28,7 +28,7 @@ function EchoesComponent(props) {
 
     useEffect(() => {
         document.title = "Echoes"
-
+        loadEchoes();
     }, [])
 
     // Infinite scroll hook
