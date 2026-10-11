@@ -79,7 +79,7 @@ router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
     }
 
     const data = snapshot.val();
-    const matches = data.matches.map(({echoId, ...match}) => match);
+    const matches = data.matches.map(({...match}) => match);
 
     return res.status(200).send(matches);
   } catch (echoFetchError) {

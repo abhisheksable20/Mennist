@@ -117,7 +117,7 @@ function EchoContent(props) {
 
                 </div>
 
-                <SimilarEchoModal echo={selectedEcho} startConversation={startConversation}/>
+                <SimilarEchoModal echo={selectedEcho} startConversation={startConversation} alert={props.alert}/>
             </div>
         </>
     )
