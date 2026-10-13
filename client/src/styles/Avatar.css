@@ -1,0 +1,419 @@
+.mennist-avatar-editor {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #f5f5f5;
+    background: #171717;
+    border: 1px solid #303030;
+    border-radius: 16px;
+    box-sizing: border-box
+}
+
+.mennist-avatar-editor p,
+.mennist-avatar-editor button,
+.mennist-avatar-option-label,
+.mennist-avatar-section-label {
+    font-family: 'Open Sans', sans-serif;
+}
+
+.mennist-avatar-header h1,
+.mennist-avatar-header h2,
+.mennist-avatar-editor h1,
+.mennist-avatar-editor h2 .mennist-avatar-editor h3 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+}
+
+.mennist-avatar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px
+}
+
+.mennist-avatar-header h2 {
+    margin: 0 0 8px;
+    font-size: 22px
+}
+
+.mennist-avatar-header p {
+    margin: 0;
+    color: #a3a3a3
+}
+
+.mennist-avatar-preview {
+    flex: 0 0 auto;
+    padding: 8px;
+    background: #0d0d0d;
+    border: 1px solid #303030;
+    border-radius: 12px
+}
+
+.mennist-avatar-preview svg,
+.mennist-avatar-option svg {
+    display: block
+}
+
+.mennist-avatar-category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px
+}
+
+.mennist-avatar-category {
+    padding: 9px 12px;
+    color: #ddd;
+    background: #0d0d0d;
+    border: 1px solid #383838;
+    border-radius: 8px;
+    cursor: pointer
+}
+
+.mennist-avatar-category.is-active {
+    color: #22c55e;
+    border-color: #22c55e
+}
+
+.mennist-avatar-section-label {
+    margin: 0 0 10px;
+    color: #bdbdbd;
+    font-size: 13px
+}
+
+.mennist-hair-colors {
+    margin-bottom: 18px
+}
+
+.mennist-hair-color-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px
+}
+
+.mennist-hair-color {
+    width: 30px;
+    height: 30px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    cursor: pointer
+}
+
+.mennist-hair-color.is-active {
+    outline: 2px solid #22c55e;
+    outline-offset: 3px
+}
+
+.mennist-avatar-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px
+}
+
+.mennist-avatar-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 112px;
+    padding: 10px 6px;
+    color: #eee;
+    background: #0d0d0d;
+    border: 1px solid #303030;
+    border-radius: 10px;
+    cursor: pointer
+}
+
+.mennist-avatar-option:hover {
+    border-color: #777
+}
+
+.mennist-avatar-option.is-selected {
+    background: #18221b;
+    border: 2px solid #22c55e
+}
+
+.mennist-avatar-option-label {
+    font-size: 13px;
+    text-align: center
+}
+
+.mennist-skin-swatch {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #555;
+    border-radius: 50%
+}
+
+.mennist-avatar-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px
+}
+
+.mennist-avatar-save,
+.mennist-avatar-reset {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer
+}
+
+.mennist-avatar-save {
+    flex: 1;
+    color: #FAFAFA;
+    background: #22c55e;
+    border: 1px solid #22c55e
+}
+
+.mennist-avatar-save:hover:not(:disabled) {
+    background: #16a34a
+}
+
+.mennist-avatar-reset {
+    color: #FAFAFA;
+    background: transparent;
+    border: 1px solid #454545
+}
+
+.mennist-avatar-save:disabled,
+.mennist-avatar-reset:disabled {
+    opacity: .6;
+    cursor: not-allowed
+}
+
+.mennist-avatar-error {
+    margin: 14px 0 0;
+    color: #f87171
+}
+
+.mennist-avatar-success {
+    margin: 14px 0 0;
+    color: #22c55e
+}
+
+.mennist-avatar-message {
+    padding: 20px;
+    color: #aaa
+}
+
+.mennist-avatar-editor button:focus-visible {
+    outline: 2px solid #22c55e;
+    outline-offset: 3px
+}
+
+/* Avatar Loading */
+
+/* Avatar editor loading state */
+.mennist-avatar-loading {
+    overflow: hidden;
+}
+
+.mennist-avatar-loading-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.mennist-skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #252525;
+    border-radius: 7px;
+}
+
+.mennist-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.07),
+            transparent);
+    animation: mennist-skeleton-shimmer 1.5s infinite;
+}
+
+.mennist-skeleton-title {
+    width: 190px;
+    height: 27px;
+    margin-bottom: 12px;
+}
+
+.mennist-skeleton-description {
+    width: 230px;
+    max-width: 100%;
+    height: 14px;
+}
+
+.mennist-avatar-loading-preview {
+    display: grid;
+    place-items: center;
+    width: 144px;
+    height: 144px;
+    flex: 0 0 auto;
+    background: #0d0d0d;
+    border: 1px solid #303030;
+    border-radius: 12px;
+}
+
+.mennist-avatar-loading-icon {
+    position: relative;
+    width: 66px;
+    height: 66px;
+    background: #222;
+    border: 2px solid #22c55e;
+    border-radius: 12px;
+    animation: mennist-avatar-pulse 1.4s ease-in-out infinite;
+}
+
+.mennist-loading-dot {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 13px;
+    height: 13px;
+    background: #22c55e;
+    border: 3px solid #0d0d0d;
+    border-radius: 50%;
+}
+
+.mennist-avatar-loading-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.mennist-skeleton-category {
+    width: 76px;
+    height: 36px;
+}
+
+.mennist-skeleton-label {
+    width: 90px;
+    height: 14px;
+    margin-bottom: 14px;
+}
+
+.mennist-avatar-loading-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.mennist-avatar-loading-option {
+    display: flex;
+    min-height: 112px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 6px;
+    background: #0d0d0d;
+    border: 1px solid #303030;
+    border-radius: 10px;
+}
+
+.mennist-skeleton-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 10px;
+}
+
+.mennist-skeleton-option-label {
+    width: 55px;
+    height: 11px;
+}
+
+.mennist-avatar-loading-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.mennist-skeleton-button {
+    flex: 1;
+    height: 44px;
+    background: #252525;
+    border-radius: 8px;
+}
+
+.mennist-skeleton-button-primary {
+    background: #203b29;
+    border: 1px solid #286d3d;
+}
+
+.mennist-avatar-loading-text {
+    display: block;
+    margin-top: 18px;
+    color: #a3a3a3;
+    font-family: "Open Sans", sans-serif;
+    font-size: 13px;
+    text-align: center;
+}
+
+@keyframes mennist-skeleton-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes mennist-avatar-pulse {
+    50% {
+        opacity: 0.55;
+        transform: scale(0.94);
+    }
+}
+
+@media (max-width: 480px) {
+    .mennist-avatar-loading-preview {
+        width: 104px;
+        height: 104px;
+    }
+
+    .mennist-skeleton-title {
+        width: 155px;
+    }
+
+    .mennist-skeleton-description {
+        width: 175px;
+    }
+
+    .mennist-avatar-loading-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .mennist-skeleton::after,
+    .mennist-avatar-loading-icon {
+        animation: none;
+    }
+}
+
+
+@media(max-width:480px) {
+    .mennist-avatar-editor {
+        padding: 14px
+    }
+
+    .mennist-avatar-header h2 {
+        font-size: 18px
+    }
+
+    .mennist-avatar-preview svg {
+        width: 96px;
+        height: 96px
+    }
+
+    .mennist-avatar-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr))
+    }
+}

@@ -16,6 +16,7 @@ import TermsAndConditions from './components/TermsAndConditions';
 import EchoesComponent from './components/Echoes/EchoesComponent';
 import EchoState from './context/posts/EchoState';
 import EchoContent from './components/Echoes/EchoContent';
+import VeilProfile from './components/Avatar/VeilProfile';
 
 
 function Layout(props) {
@@ -77,6 +78,7 @@ function App() {
                 <Route path='/user-chat/:chatId' element={<ConversationPage />} />
                 <Route path='/echoes' element={<EchoesComponent alert={showAlert}/>} />
                 <Route path='/echoes/:id' element={<EchoContent alert={showAlert}/>}/>
+                <Route path='/veil' element={<VeilProfile alert={showAlert}/>}/>
               </Route>
             </Routes>
           </ChatsState>

@@ -1,6 +1,11 @@
 import React from 'react'
 
 function ToastComponent(props) {
+    // Types of toast
+    // Alert(alert) :- Red
+    // Primary (primary) :- Blue
+    // Success (success) :- Green
+
     return (
         props.alert &&
         <div ref={props.toastRef}

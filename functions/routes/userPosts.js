@@ -3,6 +3,8 @@ const admin = require("firebase-admin");
 const {authUser, isLoggedIn} = require("../middleware/authenticUser");
 const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
 const {globalLimiter} = require("../middleware/rateLimiter");
+const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
 const db = admin.database();
@@ -13,6 +15,80 @@ router.post("/create-user", authUser, globalLimiter, async (req, res) => {
   const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
 });
+
+// Get the user avatar
+router.get("/avatar/:chatId", isLoggedIn, globalLimiter, async (req, res) => {
+  const chatId = req.params.chatId;
+  if (!chatId) {
+    return res.status(400).send({
+      success: "false",
+      message: "Failed to load your avatar",
+    });
+  }
+
+  const userId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+  console.log("User ID For Avatar:-----------------------", userId);
+
+  try {
+    const snapshot = await db.ref(`users/${userId}/userDetail/avatar`).get();
+    if (!snapshot.exists()) {
+      return res.status(200).json({
+        success: true,
+        avatar: {...DEFAULT_AVATAR},
+      });
+    }
+
+    const result = validateAvatar(snapshot.val());
+
+    // Return defaults if previously stored data is invalid.
+    return res.status(200).json({
+      success: true,
+      avatar: result.valid ?
+        result.avatar :
+        {...DEFAULT_AVATAR},
+    });
+  } catch (avatarFetchErr) {
+    console.error("Get avatar error:", avatarFetchErr);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to load avatar.",
+    });
+  }
+});
+
+// Set the user avatar
+router.post("/set-avatar", globalLimiter, isLoggedIn, async (req, res) => {
+  const userId = req.user.uid;
+  const {avatar} = req.body || {};
+
+  const result = validateAvatar(avatar);
+
+  if (!result.valid) {
+    return res.status(400).json({
+      success: false,
+      message: result.message,
+    });
+  }
+
+  try {
+    await db.ref(`users/${userId}/userDetail`).update(
+        {avatar: result.avatar},
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Avatar saved successfully.",
+      avatar: result.avatar,
+    });
+  } catch (avatarSetErr) {
+    console.error("Save avatar error:", avatarSetErr);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to save avatar.",
+    });
+  }
+});
+
 
 // Enable or Disable chat flag
 router.post("/chatFlag", isLoggedIn, globalLimiter, async (req, res) => {
