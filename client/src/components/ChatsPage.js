@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useRef } from 'react'
+import { useEffect, useState, useContext, useRef } from 'react'
 import "../styles/ChatPage.css"
 import ChatItem from './ChatItem'
 import ChatsContext from '../context/chats/chatsContext'
