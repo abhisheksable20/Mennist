@@ -6,6 +6,7 @@ import ChatLoading from './ChatLoading'
 import NoContent from './NoContent'
 import DeleteChatComponent from './DeleteChatComponent'
 import ChatFeatureAlert from './ChatFeatureAlert'
+import PostHeaders from './utils/PostHeaders'
 
 function ChatsPage(props) {
   const { fetchAllChats, allMessages, loading, chatFlag } = useContext(ChatsContext);
@@ -41,12 +42,12 @@ function ChatsPage(props) {
   return (
     <>
       {loading ? <ChatLoading /> : ""}
-      {!chatFlag && (<ChatFeatureAlert/>)}
+      {!chatFlag && (<ChatFeatureAlert />)}
+
       <DeleteChatComponent deleteBtnRef={deleteBtnRef} setSelectedChatId={setSelectedChatId} selectedChatId={selectedChatId} />
+
       <div className='container my-5'>
-        <h6 className='special-text'>PRIVATE CHATS</h6>
-        <h2 className='card-text'>Your Conversations</h2>
-        <h6 className='text-body-secondary'>Every secret has a conversation.</h6>
+        <PostHeaders splText={"PRIVATE CHATS"} heading={"Your Conversations"} subHeading={"Every secret has a conversation."} />
 
         {/* Display my all chats */}
         <div className='list-group mt-4'>
