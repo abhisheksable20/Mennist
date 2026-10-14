@@ -27,7 +27,6 @@ router.get("/avatar/:chatId", isLoggedIn, globalLimiter, async (req, res) => {
   }
 
   const userId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
-  console.log("User ID For Avatar:-----------------------", userId);
 
   try {
     const snapshot = await db.ref(`users/${userId}/userDetail/avatar`).get();
