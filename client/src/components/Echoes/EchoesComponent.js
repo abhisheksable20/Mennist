@@ -5,6 +5,7 @@ import useInfiniteScroll from "react-infinite-scroll-hook";
 import { useNavigate } from 'react-router-dom';
 import Spinner from '../Spinner';
 import NoContent from '../NoContent';
+import PostHeaders from "../utils/PostHeaders";
 
 function EchoesComponent(props) {
     const { hasNext, loading, echoes, fetchUserEchoes } = useContext(EchoContext);
@@ -42,12 +43,7 @@ function EchoesComponent(props) {
 
     return (
         <div className="container my-5 posts-container">
-            {/* Section Heading */}
-            <div>
-                <h6 className='special-text'>LATEST ECHOES</h6>
-                <h2 className='card-text'>Share Your Echo, Secretly!</h2>
-                <h6 className='text-body-secondary mb-5'>Your dreams, your stories.</h6>
-            </div>
+            <PostHeaders splText={"LATEST ECHOES"} heading={"Share Your Echo, Secretly!"} subHeading={"Your dreams, your stories."}/>
 
             {/* Echo Items */}
             {loading && echoes.length === 0 ? (

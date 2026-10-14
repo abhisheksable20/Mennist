@@ -25,6 +25,7 @@ function normalizeAvatar(value) {
   return result;
 }
 
+// Load avatar function is used to load avatar for all the user
 export async function loadAvatar(chatId) {
   if (typeof chatId !== "string" || !chatId.trim()) {
     throw new Error("A valid chat ID is required.");
@@ -40,6 +41,7 @@ export async function loadAvatar(chatId) {
   }
 }
 
+// This function will only save the current active user avatar
 export async function saveAvatar(avatar) {
   if (!avatar || typeof avatar !== "object" || Array.isArray(avatar)) {
     throw new Error("Invalid avatar data.");
@@ -47,6 +49,7 @@ export async function saveAvatar(avatar) {
 
   try {
     const response = await axios.post(`${process.env.REACT_APP_API_URL}/user/set-avatar`, { avatar });
+    localStorage.setItem("mennist-avatar", JSON.stringify(response.data.avatar));
     return response.data.avatar;
   }
   catch (saveAvatarErr) {

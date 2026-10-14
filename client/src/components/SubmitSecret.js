@@ -8,7 +8,7 @@ function SubmitSecret(props) {
   const { content, setContent, contentType, setContentType } = useContext(PostContext);
 
   useEffect(() => {
-    document.title = "Share My Vibe"
+    document.title = "Share Content"
   }, [])
 
   // Handle imput changing its texts

@@ -9,10 +9,14 @@ import ChatFeatureAlert from "./ChatFeatureAlert";
 import RecieverChatFlagAlert from "./RecieverChatFlagAlert";
 import { db } from '../internalDatabase/db';
 import { generateUsername } from "unique-username-generator";
+import { loadAvatar } from "./Avatar/avatarService";
 import axios from "axios";
 import ChatLoading from './ChatLoading';
+import Avatar from "./Avatar/Avatar";
 import NoContent from './NoContent';
 import FilePreview from "./FilePreview";
+
+import { DEFAULT_AVATAR } from "./Avatar/avatarOptions";
 
 function ConversationPage() {
   const { chatId } = useParams();
@@ -24,6 +28,7 @@ function ConversationPage() {
   const [userName, setUsername] = useState("");
   const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [userAvatar, setUserAvatar] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
   // If this is true sender can send messages and attachments
@@ -88,6 +93,7 @@ function ConversationPage() {
 
         setUsername(user.username);
         userChatServer(controller.signal);
+        getUserAvatar();
       }
       catch (error) {
         if (error.name !== "AbortError" && error.code !== "ERR_CANCELED") {
@@ -121,6 +127,17 @@ function ConversationPage() {
     previewBtnRef.current.click();
 
   }, [selectedFile]);
+
+  // Fetch the user avatar from the server
+  const getUserAvatar = async () => {
+    try {
+      const avatar = await loadAvatar(chatId);
+      setUserAvatar(avatar);
+    }
+    catch (fetchAvatarErr) {
+      console.log("Failed to load the avatar: ", fetchAvatarErr)
+    }
+  }
 
   // Handling text message input change
   const handleInputOnChange = (e) => {
@@ -234,10 +251,19 @@ function ConversationPage() {
       {!isReceiverAvail && (<RecieverChatFlagAlert />)}
       <div className='conversation-page'>
         <div className='content-wrapper'>
-          {/* Converation Header */}
-          <div className='mb-4'>
-            <h2 className='card-text'>{userName}</h2>
-            <h6 className='text-body-secondary mb-5'>Hope it's the opposite of your gender.</h6>
+          {/* Conversation Header */}
+          <div className="conversation-header mb-4">
+            <div className="mennist-avatar-preview">
+              {userAvatar ? <Avatar avatar={userAvatar} size={64} className="conversation-avatar" /> : ""}
+            </div>
+            <div className="conversation-user-info">
+              <h2 className="card-text mb-2">
+                {userName}
+              </h2>
+              <h6 className="text-body-secondary mb-3">
+                Hope it's the opposite of your gender.
+              </h6>
+            </div>
           </div>
           <div>
             {userMessages.length === 0 ? <NoContent svgType={3} title={"NO MESSAGES YET"} text={"Every great conversation starts with a single awkward message."} /> : ""}

@@ -1,9 +1,12 @@
 import { useEffect, useState, useRef, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import "../styles/Avatar.css"
 import { totalWords, convertTimestampToReadable } from '../dataProcessing/dataProcessing'
+import PostContentSkeleton from './LoadingSkeleton/PostContentSkeleton'
 import PostContext from '../context/posts/postContext'
 import ShowSimilarPosts from './ShowSimilarPosts'
+import Avatar from './Avatar/Avatar'
 import chatSVG from '../assets/chat_round-svg.svg'
 import shareSVG from '../assets/share_svg.svg'
 import fullLikeSVG from '../assets/heart_fullsvg.svg'
@@ -22,6 +25,7 @@ import reportPost from "../assets/report_svg.svg"
 import ReportPostComponent from './ReportPostComponent'
 import { db } from '../internalDatabase/db'
 import { postActions } from '../dataProcessing/postsActions'
+import { loadAvatar } from './Avatar/avatarService'
 
 function PostContent(props) {
     const { id } = useParams();
@@ -33,6 +37,7 @@ function PostContent(props) {
     const [totalVibes, setTotalVibes] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
     const [postVibe, setPostVibe] = useState(null);
+    const [userAvatar, setUserAvatar] = useState({})
 
     const reportBtnRef = useRef(null);
 
@@ -55,7 +60,18 @@ function PostContent(props) {
         }
     }
 
+    // Fetch user avatar from the server
+    const getUserAvatar = async (chatId) => {
+        if (!chatId) return;
+        try {
+            const avatar = await loadAvatar(chatId);
+            setUserAvatar(avatar);
+        }
+        catch (userAvatarErr) {
+            console.log("Failed to load avatar:", userAvatarErr)
+        }
 
+    }
 
     // Calculate the read time
     const calculateReadTime = (content) => {
@@ -66,8 +82,8 @@ function PostContent(props) {
 
     useEffect(() => {
         document.title = postData.title;
+        getUserAvatar(postData.chatId)
         postActions("viewed", postData.id);
-
         fetchSimilarPosts(postData.category, postData.id);
     }, [postData]);
 
@@ -303,23 +319,50 @@ Share your own vibe on Mennist.`;
         reportBtnRef.current.click();
     }
 
+    // Show loading screen while fetching the post
+    if (isLoading) {
+        return <PostContentSkeleton />;
+    }
+
     return (
         <>
-            {isLoading && <Spinner isCenter={true} />}
+            {/* {isLoading && <Spinner isCenter={true} />} */}
             <div className='container mt-5'>
                 {/* Post header section */}
-                <div>
-                    <p className="card-text my-1">
-                        <span className='text-body-secondary'>{convertTimestampToReadable(postData.timestamp)}</span>
-                        <span className="text-body-secondary mx-3">{`\u00B7`}</span>
-                        <span className='text-body-secondary'>{`${calculateReadTime(postData.content)} min read`}</span>
-                    </p>
-                    {/* Green dash */}
-                    <div className="card-accent mt-4" />
-                    <h2 className='post-title mt-4'>{postData.title}</h2>
-                    {/* Divider */}
-                    <div className="post-divider"></div>
+                <div className="post-header">
+                    <div className="post-header-main">
+                        <div className="post-header-meta">
+                            <p className="card-text my-1">
+                                <span className="text-body-secondary">
+                                    {convertTimestampToReadable(postData.timestamp)}
+                                </span>
+
+                                <span className="text-body-secondary mx-3">
+                                    {"\u00B7"}
+                                </span>
+
+                                <span className="text-body-secondary">
+                                    {`${calculateReadTime(postData.content)} min read`}
+                                </span>
+                            </p>
+                        </div>
+
+                        {/* Green dash */}
+                        <div className="card-accent mt-4" />
+
+                        <h2 className="post-title mt-4">
+                            {postData.title}
+                        </h2>
+                    </div>
+
+                    {/* Avatar at the far right */}
+                    <div className="post-header-avatar">
+                        <div className="mennist-avatar-preview">
+                            {userAvatar ? <Avatar avatar={userAvatar} size={64} /> : ""}
+                        </div>
+                    </div>
                 </div>
+                <div className="post-divider"></div>
                 {/* Post body section */}
                 <div className='my-5'>
                     <p className='post-content fs-5'>{postData.content}</p>

@@ -49,11 +49,12 @@ function LandingPage(props) {
 
         localStorage.removeItem("postsVibeCheck");
         localStorage.removeItem("savedPosts");
+        localStorage.removeItem("mennist-avatar")
       }
 
       props.alert("You're now anonymous.", "success");
       setTimeout(() => {
-        navigate("/");
+        navigate("/veil");
       }, 1000);
     }
     catch (setupErr) {

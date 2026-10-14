@@ -5,6 +5,7 @@ import useInfiniteScroll from "react-infinite-scroll-hook";
 import Spinner from './Spinner';
 import { useNavigate } from 'react-router-dom';
 import NoContent from './NoContent';
+import PostHeaders from './utils/PostHeaders';
 
 function Posts(props) {
     const { posts, hasNext, getAllPosts, resetPostFetching, loading } = useContext(PostContext)
@@ -29,7 +30,7 @@ function Posts(props) {
     }
 
     useEffect(() => {
-        document.title = "Mennist | Home"
+        document.title = "Mennist | Home";
     }, [])
 
     // Trigger when state of the pill change
@@ -62,11 +63,8 @@ function Posts(props) {
 
     return (
         <div className="container my-5 posts-container">
-            <div>
-                <h6 className='special-text'>LATEST VIBES</h6>
-                <h2 className='card-text'>Share Your Vibe, Secretly!</h2>
-                <h6 className='text-body-secondary mb-4'>Speak freely, stay anonymous.</h6>
-            </div>
+
+            <PostHeaders splText={"LATEST VIBES"} heading={"Share Your Vibe, Secretly!"} subHeading={"Speak freely, stay anonymous."}/>
 
             {/* Nav Pills */}
             <div className='mb-4'>
@@ -89,7 +87,7 @@ function Posts(props) {
                     </li>
                 </ul>
             </div>
-            {  
+            {
                 loading && posts.length === 0 ? (<Spinner />) :
                     (
                         <>

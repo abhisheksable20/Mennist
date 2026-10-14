@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { db } from '../../internalDatabase/db'
 import AvatarEditor from './AvatarEditor'
+import { useNavigate } from 'react-router-dom'
 
 function VeilProfile(props) {
     const [chatId, setChatId] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         document.title = "Mennist | Veil Profile"
@@ -24,6 +26,8 @@ function VeilProfile(props) {
 
     const showToast = (msg, type) => {
         props.alert(msg, type);
+        if(type === "success")
+            navigate("/");
     }
 
     return (
