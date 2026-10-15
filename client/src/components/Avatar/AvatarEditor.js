@@ -44,9 +44,9 @@ export default function AvatarEditor({ chatId, alert }) {
     try {
       const saved = await saveAvatar(avatar);
       setAvatar(saved);
-      alert("Avatar saved successfully.", "success");
+      alert("Veil Profile Saved Successfully.", "success");
     } catch (err) {
-      alert("Failed to your save avatar!", "alert");
+      alert("Failed To Save Your Veil Profile!", "alert");
     } finally {
       setSaving(false);
     }
@@ -63,7 +63,7 @@ export default function AvatarEditor({ chatId, alert }) {
     <section className="mennist-avatar-editor">
       <header className="mennist-avatar-header">
         <div>
-          <h2>Create Your Avatar</h2>
+          <h2>Create Your Veil</h2>
           <p>Make a pixel identity for Mennist.</p>
         </div>
         <div className="mennist-avatar-preview">
@@ -132,7 +132,7 @@ export default function AvatarEditor({ chatId, alert }) {
       <div className="mennist-avatar-actions">
         <button type="button" className="mennist-avatar-reset" onClick={resetAvatar} disabled={saving}>Reset</button>
         <button type="button" className="mennist-avatar-save" onClick={handleSave} disabled={saving || !chatId}>
-          {saving ? "Saving..." : "Save avatar"}
+          {saving ? "Saving..." : "Save Veil"}
         </button>
       </div>
     </section>

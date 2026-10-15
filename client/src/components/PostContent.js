@@ -364,7 +364,7 @@ Share your own vibe on Mennist.`;
                 </div>
                 <div className="post-divider"></div>
                 {/* Post body section */}
-                <div className='my-5'>
+                <div className='my-4'>
                     <p className='post-content fs-5'>{postData.content}</p>
                 </div>
                 {/* Post vibe check section */}
@@ -431,7 +431,7 @@ Share your own vibe on Mennist.`;
                     </div>
                 </div>
                 {/* Divider */}
-                <div className="post-divider"></div>
+                <div className="post-divider mt-5"></div>
                 {/* Report Post section */}
                 <div className='d-flex justify-content-between align-items-center mt-4'>
                     <p className='text-body-secondary'>Report this post</p>
