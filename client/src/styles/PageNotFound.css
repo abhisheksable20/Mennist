@@ -1,0 +1,115 @@
+
+.not-found {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: #0d0d0d;
+    color: #fff;
+}
+
+.not-found-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    max-width: 800px;
+    width: 100%;
+}
+
+.not-found-logo-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.not-found-logo {
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+}
+
+.not-found-divider {
+    width: 1px;
+    align-self: stretch;
+    min-height: 240px;
+    background: #383838;
+}
+
+.not-found-content {
+    flex: 1;
+    text-align: left;
+}
+
+.not-found-content h1 {
+    font-size: 100px;
+    font-weight: 800;
+    font-family: "Poppins", sans-serif;
+    color: #A3A3A3;
+    line-height: 1.1;
+    margin: 0;
+}
+
+.not-found-content h2 {
+    font-size: 26px;
+    margin: 8px 0;
+    font-family: "Open Sans", sans-serif;
+}
+
+.not-found-content p {
+    color: #999;
+    margin: 0 0 24px;
+    font-family: "Open Sans", sans-serif;
+}
+
+.not-found-content a {
+    display: inline-block;
+    background: #22c55e;
+    color: #fafafa;
+    padding: 12px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-family: "Open Sans", sans-serif;
+    transition: background 0.2s ease;
+}
+
+.not-found-content a:hover {
+    background: #16a34a;
+}
+
+/* Mobile responsive */
+@media (max-width: 576px) {
+    .not-found-container {
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+    }
+
+    .not-found-logo {
+        width: 120px;
+        height: 120px;
+    }
+
+    .not-found-divider {
+        width: 100px;
+        min-height: 1px;
+        height: 1px;
+        align-self: center;
+    }
+
+    .not-found-content {
+        text-align: center;
+    }
+
+    .not-found-content h1 {
+        font-size: 76px;
+    }
+
+    .not-found-content h2 {
+        font-size: 23px;
+    }
+}

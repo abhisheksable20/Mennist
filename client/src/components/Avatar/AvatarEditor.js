@@ -67,7 +67,7 @@ export default function AvatarEditor({ chatId, alert }) {
           <p>Make a pixel identity for Mennist.</p>
         </div>
         <div className="mennist-avatar-preview">
-          <Avatar avatar={avatar} size={128} title="Avatar preview" />
+          <Avatar avatar={avatar} size={128} title="Veil Preview" />
         </div>
       </header>
 

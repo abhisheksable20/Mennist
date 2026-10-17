@@ -44,7 +44,7 @@ function PostHeaders(props) {
 
             <div className="posts-heading-avatar">
                 <div className="posts-avatar-tile">
-                    {userAvatar ? <Avatar avatar={userAvatar} size={64} title="Your avatar" /> : ""}
+                    {userAvatar ? <Avatar avatar={userAvatar} size={64} title="Your Veil" /> : ""}
                 </div>
             </div>
         </div>

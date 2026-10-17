@@ -122,5 +122,55 @@ router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), as
   }
 });
 
+// Router to reinitiate the echo matching of the echo post
+router.get("/rematch/:echoId", postLimiter, isLoggedIn, async (req, res) => {
+  try {
+    const echoId = req.params.echoId;
+    const userId = req.user.uid;
+
+    const echoRef = db.ref(`echoes/${userId}/${echoId}`);
+
+    const snapshot = await echoRef.once("value");
+
+    if (!snapshot.exists()) {
+      return res.status(404).send({
+        success: false,
+        error: "Echo not found!",
+      });
+    }
+
+    const echoData = snapshot.val();
+
+    if (!echoData.echo) {
+      return res.status(400).send({
+        success: false,
+        error: "Echo content is missing!",
+      });
+    }
+
+    await db.ref(`echoMatches/${userId}/${echoId}`).update({
+      status: "processing",
+    });
+
+    await echoMatchingQueue.enqueue({
+      userId,
+      echoId,
+      echo: echoData.echo,
+    });
+
+    return res.status(202).send({
+      success: true,
+      status: "processing",
+      message: "Echo matching started.",
+    });
+  } catch (rematchErr) {
+    console.log("Echo Rematching Error: ", rematchErr);
+    return res.status(500).send({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
 
 module.exports = router;

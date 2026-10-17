@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { convertTimestampToReadable } from '../../dataProcessing/dataProcessing';
 import Spinner from '../Spinner';
+import ReloadSVG from "../../assets/reload_svg.svg";
 import MatchingEchoesItems from './MatchingEchoesItems';
 import SimilarEchoModal from './SimilarEchoModal';
 import { db } from '../../internalDatabase/db'
@@ -15,6 +16,7 @@ function EchoContent(props) {
     const [matchingEchoes, setMatchingEchoes] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedEcho, setSelectedEcho] = useState(null);
+    const [rematching, setRematching] = useState(false);
 
     const loadEcho = async () => {
         try {
@@ -56,6 +58,29 @@ function EchoContent(props) {
         }
     }
 
+    // Rechecking the echo matches of the echo post
+    const recheckEchoMatches = async () => {
+        if (!id) {
+            console.log("Echo ID is missing.")
+            return
+        }
+
+        try {
+            setRematching(true);
+            await axios.get(`${process.env.REACT_APP_API_URL}/echoes/rematch/${id}`);
+            setEchoData(prev => ({
+                ...prev,
+                status: "processing"
+            }));
+        }
+        catch (error) {
+            console.log(error);
+        }
+        finally {
+            setRematching(false);
+        }
+    }
+
     useEffect(() => {
         loadEcho();
         loadMatchingEchoes();
@@ -66,7 +91,7 @@ function EchoContent(props) {
             {loading && <Spinner isCenter={true} />}
             <div className='container mt-5'>
                 {/* Post header section */}
-                <div>
+                <div className="echo-header">
                     <p className="card-text my-1">
                         <span className='text-body-secondary'>{convertTimestampToReadable(echoData.timestamp)}</span>
                         <span className="text-body-secondary mx-3">{`\u00B7`}</span>
@@ -80,6 +105,16 @@ function EchoContent(props) {
                             {echoData.status.charAt(0).toUpperCase() + echoData.status.slice(1)}
                         </span>
                     </p>
+
+                    <button
+                        type="button"
+                        className={`echo-rematch-button ${rematching ? 'is-rematching' : ''}`}
+                        aria-label="Rematch echo"
+                        title={rematching ? "Checking..." : "Rematch Echo"}
+                        onClick={recheckEchoMatches}
+                        disabled={rematching}>
+                        <img src={ReloadSVG} alt="Reload Echo" />
+                    </button>
                 </div>
 
                 {/* Green dash */}
@@ -117,7 +152,7 @@ function EchoContent(props) {
 
                 </div>
 
-                <SimilarEchoModal echo={selectedEcho} startConversation={startConversation} alert={props.alert}/>
+                <SimilarEchoModal echo={selectedEcho} startConversation={startConversation} alert={props.alert} />
             </div>
         </>
     )

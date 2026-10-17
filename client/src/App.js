@@ -1,22 +1,27 @@
 import './App.css';
 import Navbar from './components/Navbar';
-import Home from './components/Home';
-import SubmitSecret from './components/SubmitSecret';
 import PostState from './context/posts/PostState';
 import { Routes, Route, Outlet } from "react-router-dom";
-import PostContent from './components/PostContent';
-import LandingPage from './components/LandingPage';
 import ToastComponent from './components/ToastComponent';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Toast as BSToast } from 'bootstrap'
-import ChatsPage from './components/ChatsPage';
-import ConversationPage from './components/ConversationPage';
 import ChatsState from './context/chats/ChatsState';
-import TermsAndConditions from './components/TermsAndConditions';
-import EchoesComponent from './components/Echoes/EchoesComponent';
 import EchoState from './context/posts/EchoState';
-import EchoContent from './components/Echoes/EchoContent';
-import VeilProfile from './components/Avatar/VeilProfile';
+import LazyLoader from './components/utils/LazyLoader';
+
+
+// Pages that lazy loaded
+const Home = lazy(() => import('./components/Home'));
+const SubmitSecret = lazy(() => import('./components/SubmitSecret'));
+const PostContent = lazy(() => import('./components/PostContent'));
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const ChatsPage = lazy(() => import('./components/ChatsPage'));
+const ConversationPage = lazy(() => import('./components/ConversationPage'));
+const TermsAndConditions = lazy(() => import('./components/TermsAndConditions'));
+const EchoesComponent = lazy(() => import('./components/Echoes/EchoesComponent'));
+const EchoContent = lazy(() => import('./components/Echoes/EchoContent'));
+const VeilProfile = lazy(() => import('./components/Avatar/VeilProfile'));
+const PageNotFound = lazy(() => import('./components/utils/PageNotFound'));
 
 
 function Layout(props) {
@@ -65,22 +70,25 @@ function App() {
                 })
               }
             </div>
-            <Routes>
-              {/* This is landing page */}
-              <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
+            <Suspense fallback={<LazyLoader />}>
+              <Routes>
+                {/* This is landing page */}
+                <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
+                <Route path="*" element={<PageNotFound />} />
 
-              <Route element={<Layout alert={showAlert} />}>
-                <Route path='/' element={<Home alert={showAlert} />} />
-                <Route path='/terms-and-conditions' element={<TermsAndConditions />} />
-                <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
-                <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
-                <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
-                <Route path='/user-chat/:chatId' element={<ConversationPage />} />
-                <Route path='/echoes' element={<EchoesComponent alert={showAlert}/>} />
-                <Route path='/echoes/:id' element={<EchoContent alert={showAlert}/>}/>
-                <Route path='/veil' element={<VeilProfile alert={showAlert}/>}/>
-              </Route>
-            </Routes>
+                <Route element={<Layout alert={showAlert} />}>
+                  <Route path='/' element={<Home alert={showAlert} />} />
+                  <Route path='/terms-and-conditions' element={<TermsAndConditions />} />
+                  <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
+                  <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
+                  <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
+                  <Route path='/user-chat/:chatId' element={<ConversationPage />} />
+                  <Route path='/echoes' element={<EchoesComponent alert={showAlert} />} />
+                  <Route path='/echoes/:id' element={<EchoContent alert={showAlert} />} />
+                  <Route path='/veil' element={<VeilProfile alert={showAlert} />} />
+                </Route>
+              </Routes>
+            </Suspense>
           </ChatsState>
         </EchoState>
       </PostState>

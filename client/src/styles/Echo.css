@@ -16,6 +16,68 @@
     margin-bottom: 30px;
 }
 
+/* Echo header with rematch button */
+.echo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Rematch button */
+.echo-rematch-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #292929;
+    border-radius: 8px;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+/* Reload SVG */
+.echo-rematch-button img {
+    display: block;
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+/* Hover effect */
+.echo-rematch-button:hover:not(:disabled) {
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: #22C55E;
+}
+
+/* Disabled state */
+.echo-rematch-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Rotate icon while rematching */
+.echo-rematch-button.is-rematching img {
+    animation: echo-rematch-spin 0.9s linear infinite;
+}
+
+@keyframes echo-rematch-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .matching-echo-item {
     display: grid;
     grid-template-columns: 90px 1fr 30px;
@@ -81,6 +143,8 @@
 .matching-echo-arrow:hover {
     color: #FAFAFA;
 }
+
+
 
 /* =========================================
    ECHO BOOTSTRAP MODAL
@@ -306,5 +370,16 @@
     .echo-modal-meta {
         margin-top: 25px;
         margin-bottom: 27px;
+    }
+
+    .echo-rematch-button {
+        width: 42px;
+        height: 42px;
+        padding: 10px;
+    }
+
+    .echo-rematch-button img {
+        width: 20px;
+        height: 20px;
     }
 }
