@@ -22,7 +22,7 @@ const EchoesComponent = lazy(() => import('./components/Echoes/EchoesComponent')
 const EchoContent = lazy(() => import('./components/Echoes/EchoContent'));
 const VeilProfile = lazy(() => import('./components/Avatar/VeilProfile'));
 const PageNotFound = lazy(() => import('./components/utils/PageNotFound'));
-
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
 
 function Layout(props) {
   return (
@@ -79,6 +79,7 @@ function App() {
                 <Route element={<Layout alert={showAlert} />}>
                   <Route path='/' element={<Home alert={showAlert} />} />
                   <Route path='/terms-and-conditions' element={<TermsAndConditions />} />
+                  <Route path='/privacy-policy' element={<PrivacyPolicy />} />
                   <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
                   <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
                   <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />

@@ -41,7 +41,7 @@ function LandingPage(props) {
 
       // Delete all the data in index db
       if (data.isNew) {
-        await db.transaction("rw", db.chatUser, db.chats, db.postActions,async () => {
+        await db.transaction("rw", db.chatUser, db.chats, db.postActions, async () => {
           await db.chatUser.clear();
           await db.chats.clear();
           await db.postActions.clear();
@@ -131,9 +131,11 @@ function LandingPage(props) {
           <img src={creatAccSVG} alt="submitButton" width="28px" height="28px" />
         </button>
 
-        <p className="mt-3">
+        <p className="mt-3 px-2">
           By clicking <strong>Get Started</strong>, you agree to our{" "}
-          <Link className='terms-link' to="/terms-and-conditions">Terms & Conditions</Link>.
+          <Link className='terms-link' to="/terms-and-conditions">Terms & Conditions</Link>
+          {" "}and acknowledge our{" "}
+          <Link className="terms-link" to="/privacy-policy">Privacy Policy</Link>.
         </p>
 
         {/* Bottom text */}
