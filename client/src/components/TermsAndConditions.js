@@ -7,7 +7,7 @@ function TermsAndConditions() {
             <h1 className="mb-4 post-title">Terms and Conditions</h1>
 
             <p className="post-title">
-                <strong>Last Updated:</strong> Oct 15, 2026
+                <strong>Last Updated:</strong> Oct 19, 2026
             </p>
 
             <p className="testing-notice my-4">
@@ -42,6 +42,7 @@ function TermsAndConditions() {
                 through Mennist. This includes text, titles, images, files, messages,
                 Echoes, Veil choices or customizations, and any other material.
             </p>
+
             <ul className="terms-para">
                 <li>Your content must comply with applicable laws and these Terms.</li>
                 <li>You must own or have permission to use and share the content.</li>
@@ -54,6 +55,7 @@ function TermsAndConditions() {
                 You may not use Mennist to post, send, create, or share content or
                 engage in conduct that:
             </p>
+
             <ul className="terms-para">
                 <li>Harasses, threatens, bullies, or promotes hatred or discrimination.</li>
                 <li>Encourages violence, criminal activity, or harm to others.</li>
@@ -92,12 +94,14 @@ function TermsAndConditions() {
                 representation for personalization and self-expression; it does not
                 verify your real-world identity.
             </p>
+
             <ul className="terms-para">
                 <li>Do not use a Veil to impersonate another person or mislead, threaten, or harass others.</li>
                 <li>Do not create or use Veils that contain unlawful, hateful, sexually exploitative, or otherwise prohibited material.</li>
                 <li>You are responsible for any images, assets, or other material you upload or use when customizing a Veil, including having the necessary rights or permissions.</li>
                 <li>Do not use Veils to suggest that another person or organization endorses you when they do not.</li>
             </ul>
+
             <p className="terms-para">
                 Veil availability, appearance, and customization options may change.
                 Mennist may remove or restrict a Veil that violates these Terms.
@@ -112,6 +116,7 @@ function TermsAndConditions() {
                 to identify similar content. You are responsible for what you submit
                 and should avoid including private information about yourself or others.
             </p>
+
             <ul className="terms-para">
                 <li>Only submit content you have the right to share and that complies with these Terms.</li>
                 <li>Echo similarity scores and matches are automated estimates, not proof that two users had the same experience, know each other, or share a particular identity or relationship.</li>
@@ -119,6 +124,7 @@ function TermsAndConditions() {
                 <li>Echoes may be processed or compared using automated systems and, where enabled, third-party services to provide the feature.</li>
                 <li>Do not use Echoes to harass, identify, threaten, or make harmful claims about another user.</li>
             </ul>
+
             <p className="terms-para">
                 Echoes and their matching results are provided for informational and
                 community purposes only. Do not treat similarity results as professional
@@ -144,6 +150,7 @@ function TermsAndConditions() {
                 for those purposes, subject to applicable law and any applicable
                 retention obligations.
             </p>
+
             <p className="terms-para">
                 You confirm that you have the rights needed to grant this license.
                 Content may remain in backups, logs, or records for a limited period
@@ -227,7 +234,41 @@ function TermsAndConditions() {
                 by law.
             </p>
 
-            <h3 className="post-title pt-3">17. Changes to These Terms</h3>
+            <h3 className="post-title pt-3">17. Delete My Profile</h3>
+            <p className="terms-para">
+                If the Delete My Profile feature is available to you, you may use it to
+                initiate deletion of your Mennist profile and the user data associated
+                with it. Depending on the deletion process and the data linked to your
+                profile, this may include profile details, Veil avatar settings, posts
+                linked to your profile, Echoes and matching data, chat-related records,
+                and other associated user data.
+            </p>
+
+            <p className="terms-para">
+                Profile deletion is intended to be permanent. After deletion has been
+                completed, your profile and data removed through the process may not
+                be recoverable. Some deletion tasks may run asynchronously, so it may
+                take time for associated information to disappear from all parts of
+                Mennist.
+            </p>
+
+            <p className="terms-para">
+                You are responsible for saving anything you want to keep before
+                confirming deletion. Deletion may not remove copies that other users
+                have already viewed, saved, copied, or captured, and temporary copies
+                may remain in backups, caches, or security logs for a limited period
+                where needed for technical, security, or legal reasons.
+            </p>
+
+            <p className="terms-para">
+                Profile deletion may not automatically clear information stored on your
+                own device, including local storage or IndexedDB data. You may need to
+                clear Mennist site data in your browser separately. Content submitted
+                anonymously or not reliably linked to your profile may not be
+                identifiable for deletion through the profile deletion feature.
+            </p>
+
+            <h3 className="post-title pt-3">18. Changes to These Terms</h3>
             <p className="terms-para">
                 We may update these Terms as Mennist changes. The revised version will
                 show an updated date. Your continued use of the platform after changes
@@ -235,7 +276,7 @@ function TermsAndConditions() {
                 permitted by applicable law.
             </p>
 
-            <h3 className="post-title pt-3">18. Contact</h3>
+            <h3 className="post-title pt-3">19. Contact</h3>
             <p className="terms-para">
                 If you have questions regarding these Terms and Conditions, contact
                 Mennist at{" "}

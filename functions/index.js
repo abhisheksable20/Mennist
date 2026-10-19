@@ -57,7 +57,7 @@ app.use("/api", require("./routes/posts"));
 app.use("/api/echoes", require("./routes/echoes"));
 
 // Post CRUD operation route for user
-app.use("/api/user", require("./routes/userPosts"));
+app.use("/api/user", require("./routes/userOperation"));
 
 // Chats operation route
 app.use("/api/chats", require("./routes/chats"));
@@ -84,9 +84,7 @@ exports.api = functions.https.onRequest(app);
 
 /*
   Delete the user data when the users session expires
-  But keeping the global posts as it is
-  But removing access to the posts from the user
-  Also deleting the chats of the user
+  Also when user wants to delete its own data
 */
 exports.deleteUserData = onTaskDispatched({
   retryConfig: {
@@ -98,11 +96,31 @@ exports.deleteUserData = onTaskDispatched({
 },
 async (request) => {
   const {userId, sessionId} = request.data;
-  await Promise.all([
-    db.ref(`sessions/${sessionId}`).remove(),
-    db.ref(`users/${userId}`).remove(),
-    db.ref(`chats/${userId}`).remove(),
-  ]);
+
+  try {
+    const userPostsSnapshot = await db.ref(`users/${userId}/posts`).get();
+
+    const updates = {
+      [`sessions/${sessionId}`]: null,
+      [`users/${userId}`]: null,
+      [`chats/${userId}`]: null,
+      [`echoMatches/${userId}`]: null,
+      [`echoes/${userId}`]: null,
+      [`postActions/${userId}`]: null,
+    };
+
+    if (userPostsSnapshot.exists()) {
+      userPostsSnapshot.forEach((postSnapshot) => {
+        const postId = postSnapshot.key;
+        updates[`posts/${postId}`] = null;
+      });
+    }
+
+    await db.ref().update(updates);
+  } catch (deleteError) {
+    console.log("Failed to delete user data: ", deleteError);
+    throw deleteError;
+  }
 },
 );
 

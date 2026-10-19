@@ -5,9 +5,12 @@ const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
 const {globalLimiter} = require("../middleware/rateLimiter");
 const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
+const {getFunctions} = require("firebase-admin/functions");
 
 const router = express.Router();
 const db = admin.database();
+
+const taskQueue = getFunctions().taskQueue("deleteUserData");
 
 const retrieveLimit = 10;
 
@@ -151,6 +154,27 @@ router.delete("/posts/:postId", isLoggedIn, async (req, res) => {
   } catch (delError) {
     console.log("Post deletion error: ", delError);
     return res.status(500).send({error: "Internal server error!"});
+  }
+});
+
+// Delete user related whole data
+router.delete("/delete-account", isLoggedIn, async (req, res) => {
+  const sessionId = req.cookies.__session;
+  const userId = req.user.uid;
+
+  try {
+    await taskQueue.enqueue({userId, sessionId});
+    res.clearCookie("__session");
+    return res.status(200).send({
+      message: "Your data deletion has been initiated.",
+      success: true,
+    });
+  } catch (userDataDeleteError) {
+    console.log("Failed to delete the user data: ", userDataDeleteError);
+    return res.status(500).send({
+      success: false,
+      error: "Internal server error!",
+    });
   }
 });
 

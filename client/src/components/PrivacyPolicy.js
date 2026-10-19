@@ -6,7 +6,7 @@ function PrivacyPolicy() {
             <h1 className="mb-4 post-title">Privacy Policy</h1>
 
             <p className="post-title">
-                <strong>Last Updated:</strong> Oct 17, 2026
+                <strong>Last Updated:</strong> Oct 19, 2026
             </p>
 
             <p className="testing-notice my-4">
@@ -134,6 +134,7 @@ function PrivacyPolicy() {
                 provide their services, subject to their applicable terms and
                 privacy policies.
             </p>
+
             <p className="terms-para">
                 Mennist uses Google Firebase services for parts of its infrastructure.
                 You can read more in{" "}
@@ -189,6 +190,7 @@ function PrivacyPolicy() {
                 provide features, maintain security, troubleshoot issues, and meet
                 legal obligations. Retention can vary by feature and data type.
             </p>
+
             <ul className="terms-para">
                 <li>Posts and Echoes may remain available until removed or taken down.</li>
                 <li>Veil settings may remain associated with the relevant profile until changed or deleted.</li>
@@ -196,12 +198,49 @@ function PrivacyPolicy() {
                 <li>Saved posts and other browser data may remain on your device until you remove them or clear the relevant browser storage.</li>
                 <li>Backups, cached copies, or security logs may persist for a limited period where necessary.</li>
             </ul>
+
+            <h4 className="post-title pt-3">Delete My Profile</h4>
+            <p className="terms-para">
+                If the Delete My Profile feature is available to you, you can use it to
+                initiate deletion of your Mennist profile and data associated with that
+                profile. This may include profile details, Veil avatar settings, posts
+                linked to your profile, Echoes and related matching data, chat-related
+                records, and other user data associated with the profile, according to
+                the deletion process implemented by Mennist.
+            </p>
+
+            <p className="terms-para">
+                Profile deletion is intended to be permanent. Once deletion has been
+                completed, the profile and data removed through this process may not
+                be recoverable. Some deletion work may be processed asynchronously, so
+                related information may not disappear from every part of the service
+                immediately after you initiate deletion.
+            </p>
+
+            <p className="terms-para">
+                Deleting your profile does not necessarily remove copies already saved
+                by other users, screenshots, content copied outside Mennist, or data
+                held temporarily in backups, caches, or security logs. Information may
+                be retained for a limited period where necessary for security,
+                troubleshooting, dispute resolution, or legal compliance, as permitted
+                by applicable law.
+            </p>
+
+            <p className="terms-para">
+                Profile deletion may not automatically clear information stored only
+                in your browser, such as local storage or IndexedDB data. If you want
+                to remove local copies, clear the relevant Mennist site data in your
+                browser after deletion. Public or anonymous content that cannot
+                reliably be linked to your profile may require a separate request and
+                may not always be identifiable as yours.
+            </p>
+
             <p className="terms-para">
                 Deleting information in one place may not immediately remove every
-                copy. If you wish to request deletion of personal information, contact
-                us using the details below. Because Mennist supports anonymous use,
-                we may need a post link or relevant identifier to locate content, and
-                we may not always be able to determine which content belongs to you.
+                copy. If you need help with a deletion request, contact us using the
+                details below. We may need a relevant post link or identifier to locate
+                content, and we may not always be able to determine which content
+                belongs to you.
             </p>
 
             <h3 className="post-title pt-3">9. Your Privacy Choices and Rights</h3>
