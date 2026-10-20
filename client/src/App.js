@@ -37,18 +37,16 @@ function App() {
   const [alerts, setAlerts] = useState([]);
   const toastRef = useRef(null);
 
+  const removeAlert = (id) => {
+    setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+  };
+
   const showAlert = (msg, type) => {
     const id = Date.now();
-
-    setAlerts((prev) => [
-      ...prev,
-      { id, msg, type }
-    ]);
+    setAlerts((prev) => [...prev, { id, msg, type }]);
 
     // auto remove after 3 sec
-    setTimeout(() => {
-      setAlerts((prev) => prev.filter(alert => alert.id !== id));
-    }, 3000)
+    setTimeout(() => removeAlert(id), 3000);
   }
 
   useEffect(() => {

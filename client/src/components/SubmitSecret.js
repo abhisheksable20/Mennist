@@ -94,7 +94,7 @@ function SubmitSecret(props) {
         {/* Bottom stats */}
         <div className="d-flex justify-content-between mt-2">
           <span className='custom-submit-span'>{`Characters: ${totalCharacters()}`}</span>
-          <span className='custom-submit-span'>{content && `Words: ${totalWords(content.content)}`}</span>
+          <span className='custom-submit-span'>{content && `Words: ${totalWords()}`}</span>
         </div>
 
       </div>

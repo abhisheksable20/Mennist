@@ -16,8 +16,6 @@ import Avatar from "./Avatar/Avatar";
 import NoContent from './NoContent';
 import FilePreview from "./FilePreview";
 
-import { DEFAULT_AVATAR } from "./Avatar/avatarOptions";
-
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
@@ -25,8 +23,8 @@ function ConversationPage() {
   const userData = useRef(null);
   const fileDownloadFlag = useRef(false);
   const previewBtnRef = useRef(null);
-  const [userName, setUsername] = useState("");
-  const [isSendBtnDisabled, setSendBtnDisability] = useState(false);
+  const [username, setUsername] = useState("");
+  const [isSendBtnDisabled, setIsSendBtnDisabled] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -112,9 +110,9 @@ function ConversationPage() {
 
   useEffect(() => {
     if (inputMessage.trim().length <= 0) {
-      setSendBtnDisability(true);
+      setIsSendBtnDisabled(true);
     } else {
-      setSendBtnDisability(false);
+      setIsSendBtnDisabled(false);
     }
 
   }, [inputMessage])
@@ -150,7 +148,7 @@ function ConversationPage() {
 
   // sending attachments to server side using context method
   const handleAttachmentInput = async () => {
-    setSendBtnDisability(true);
+    setIsSendBtnDisabled(true);
 
     try {
       if (!selectedFile || !chatIdRef || !userData.current) {
@@ -158,7 +156,7 @@ function ConversationPage() {
       }
 
       await sendAttachment(selectedFile, userData.current.recieverPublicKey);
-      setSendBtnDisability(false);
+      setIsSendBtnDisabled(false);
       setInputMessage("");
     }
     catch (attachmentError) {
@@ -172,7 +170,7 @@ function ConversationPage() {
         textarea.style.height = "auto";
       }
 
-      setSendBtnDisability(false);
+      setIsSendBtnDisabled(false);
       setInputMessage("")
     }
   }
@@ -218,14 +216,14 @@ function ConversationPage() {
 
   // Send the message to the reciever side
   const sendMsg = async () => {
-    setSendBtnDisability(true);
+    setIsSendBtnDisabled(true);
     try {
       if (!chatIdRef || !userData.current) {
         return;
       }
 
       await sendChat(userData.current.recieverPublicKey);
-      setSendBtnDisability(false);
+      setIsSendBtnDisabled(false);
       setInputMessage("");
     }
     catch (error) {
@@ -239,7 +237,7 @@ function ConversationPage() {
         textarea.style.height = "auto";
       }
 
-      setSendBtnDisability(false);
+      setIsSendBtnDisabled(false);
       setInputMessage("")
     }
   }
@@ -258,7 +256,7 @@ function ConversationPage() {
             </div>
             <div className="conversation-user-info">
               <h2 className="card-text mb-2">
-                {userName}
+                {username}
               </h2>
               <h6 className="text-body-secondary mb-3">
                 Hope it's the opposite of your gender.

@@ -143,14 +143,12 @@ const ChatsState = (props) => {
 
         try {
             await userChatIndexDB(chatId);
-
             const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId }, signal })).data;
             if (!rawData.messages) {
                 return;
             }
 
             const delChatsKeys = [];
-            const newChats = [];
 
             const keys = (await db.keys.get("user-keypair"));
 
@@ -160,56 +158,65 @@ const ChatsState = (props) => {
                     chatId: "",
                     senderPublicKey: "",
                     messages: [{
-                                encryptedFile,
-                                encryptedKey,
-                                name,
-                                size,
-                                type
-                                encryptedMsg,
-                                timestamp,
-                                nounce
-                              }]
+                    encryptedFile,
+                    encryptedKey,
+                    name,
+                    size,
+                    type
+                    encryptedMsg,
+                    timestamp,
+                    nounce
+                }]
                 } 
             **/
-            for (const chat of rawData.messages) {
-                const data = {
-                    firebaseId: chat.id,
-                    chatId: rawData.chatId,
-                    timestamp: chat.timestamp,
-                    type: chat.type,
-                    fromMe: false
-                }
+            const newChats = await Promise.all(
+                rawData.messages.map(async (chat) => {
+                    const data = {
+                        firebaseId: chat.id,
+                        chatId: rawData.chatId,
+                        timestamp: chat.timestamp,
+                        type: chat.type,
+                        fromMe: false
+                    };
 
-                let decryptedMsg = null;
-                if (chat.type.startsWith("image")) {
-                    decryptedMsg = await decryptFile(chat.encryptedFile, chat.encryptedFileKey, chat.nounce, keys.publicKey, keys.privateKey);
-                    const imageBlob = new Blob([decryptedMsg], { type: chat.type })
+                    if (chat.type.startsWith("image")) {
+                        const decryptedMsg = await decryptFile(
+                            chat.encryptedFile,
+                            chat.encryptedFileKey,
+                            chat.nounce,
+                            keys.publicKey,
+                            keys.privateKey
+                        );
 
-                    data["imageBlob"] = imageBlob;
-                    data["plainMsg"] = chat.name;
-                }
-                else {
-                    decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, rawData.senderPublicKey, keys.privateKey);
-                    data["plainMsg"] = decryptedMsg;
-                }
+                        data.imageBlob = new Blob([decryptedMsg], { type: chat.type });
+                        data.plainMsg = chat.name;
+                    } else {
+                        data.plainMsg = await decryptMessage(
+                            chat.encryptedMsg,
+                            chat.nounce,
+                            rawData.senderPublicKey,
+                            keys.privateKey);
+                    }
 
-                newChats.push(data);
-                delChatsKeys.push(chat.id);
+                    return data;
+                })
+            );
 
-            }
 
+            delChatsKeys.push(...rawData.messages.map(chat => chat.id));
             await db.chats.bulkPut(newChats);
+
             const delData = {
                 chatId: rawData.chatId,
                 messagesKeys: delChatsKeys
-            }
+            };
 
             await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
                 data: delData,
                 withCredentials: true
             });
 
-            userChatIndexDB(chatId);
+            await userChatIndexDB(chatId);
         }
         catch (fetchError) {
             console.log(fetchError);
@@ -446,7 +453,7 @@ const ChatsState = (props) => {
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
             setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment,
-            chatFlag, changeChatFlag, setChatFlag, chatFlag
+            chatFlag, changeChatFlag, setChatFlag
         }}>
             {props.children}
         </ChatsContext.Provider>

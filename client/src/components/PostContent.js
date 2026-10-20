@@ -326,7 +326,6 @@ Share your own vibe on Mennist.`;
 
     return (
         <>
-            {/* {isLoading && <Spinner isCenter={true} />} */}
             <div className='container mt-5'>
                 {/* Post header section */}
                 <div className="post-header">
