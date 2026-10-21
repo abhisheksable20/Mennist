@@ -1,11 +1,9 @@
 import { useState, useEffect, useContext } from 'react'
 import "../styles/LandingPage.css"
 import ChatsContext from '../context/chats/chatsContext'
-import { db } from '../internalDatabase/db'
 
 function ChatFlagButton(props) {
     const {changeChatFlag, setChatFlag, chatFlag} = useContext(ChatsContext);
-    const [isChatEnabled, setChatEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {

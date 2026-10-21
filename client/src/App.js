@@ -57,41 +57,39 @@ function App() {
   }, [alerts]);
 
   return (
-    <>
-      <PostState>
-        <EchoState>
-          <ChatsState>
-            <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
-              {
-                alerts.map((alert) => {
-                  return <ToastComponent key={alert.id} toastRef={toastRef} alert={alert} />
-                })
-              }
-            </div>
-            <Suspense fallback={<LazyLoader />}>
-              <Routes>
-                {/* This is landing page */}
-                <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
-                <Route path="*" element={<PageNotFound />} />
+    <PostState>
+      <EchoState>
+        <ChatsState>
+          <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 99999 }}>
+            {
+              alerts.map((alert) => {
+                return <ToastComponent key={alert.id} toastRef={toastRef} alert={alert} />
+              })
+            }
+          </div>
+          <Suspense fallback={<LazyLoader />}>
+            <Routes>
+              {/* This is landing page */}
+              <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
+              <Route path="*" element={<PageNotFound />} />
 
-                <Route element={<Layout alert={showAlert} />}>
-                  <Route path='/' element={<Home alert={showAlert} />} />
-                  <Route path='/terms-and-conditions' element={<TermsAndConditions />} />
-                  <Route path='/privacy-policy' element={<PrivacyPolicy />} />
-                  <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
-                  <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
-                  <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
-                  <Route path='/user-chat/:chatId' element={<ConversationPage />} />
-                  <Route path='/echoes' element={<EchoesComponent alert={showAlert} />} />
-                  <Route path='/echoes/:id' element={<EchoContent alert={showAlert} />} />
-                  <Route path='/veil' element={<VeilProfile alert={showAlert} />} />
-                </Route>
-              </Routes>
-            </Suspense>
-          </ChatsState>
-        </EchoState>
-      </PostState>
-    </>
+              <Route element={<Layout alert={showAlert} />}>
+                <Route path='/' element={<Home alert={showAlert} />} />
+                <Route path='/terms-and-conditions' element={<TermsAndConditions />} />
+                <Route path='/privacy-policy' element={<PrivacyPolicy />} />
+                <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
+                <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
+                <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
+                <Route path='/user-chat/:chatId' element={<ConversationPage />} />
+                <Route path='/echoes' element={<EchoesComponent alert={showAlert} />} />
+                <Route path='/echoes/:id' element={<EchoContent alert={showAlert} />} />
+                <Route path='/veil' element={<VeilProfile alert={showAlert} />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </ChatsState>
+      </EchoState>
+    </PostState>
   );
 }
 

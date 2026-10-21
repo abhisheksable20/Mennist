@@ -107,9 +107,8 @@ function SimilarEchoModal(props) {
                                 className="echo-modal-chat-button"
                                 onClick={() => startConversation(echo)}
                                 data-bs-dismiss="modal">
-
                                 <img src={chatSVG} alt="Chat Button" width="24px" height="24px" />
-
+                                {" "}
                                 Start Conversation
                             </button>
 

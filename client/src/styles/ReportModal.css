@@ -26,6 +26,8 @@
 
 .modal-footer {
     border-color: rgba(255, 255, 255, 0.2);
+    flex-wrap: nowrap;
+    gap: 10px;
 }
 
 .report-icon {
@@ -77,11 +79,6 @@
 
 .report-msg {
     color: #D4D4D4;
-}
-
-.modal-footer {
-    flex-wrap: nowrap;
-    gap: 10px;
 }
 
 .chat-image {

@@ -7,16 +7,15 @@ import '../styles/Home.css';
 
 function Home(props) {
   return (
-    <>
-      <div>
-        <Posts alert={props.alert}/>
-        <div className="floating-action-bar">
+    <div>
+      <Posts alert={props.alert} />
+      <div className="floating-action-bar">
         <EchoBtn />
         <ChatBtn />
         <VeilBtn />
-        </div>
       </div>
-    </>
+    </div>
+
   )
 }
 

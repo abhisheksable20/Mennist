@@ -8,7 +8,7 @@ function ReportPostComponent(props) {
   const { reportBtnRef, chatId, postId } = props;
   const closeReportRef = useRef(null);
   const [selectedMsg, setSelectedMsg] = useState("");
-  const [isDisable, setDisablity] = useState(false);
+  const [isDisable, setIsDisable] = useState(false);
 
   // Report the post
   const reportPost = async () => {
@@ -24,7 +24,7 @@ function ReportPostComponent(props) {
     }
 
     try {
-      setDisablity(true);
+      setIsDisable(true);
       await axios.post(`${process.env.REACT_APP_API_URL}/report`, data);
       props.alert("Thanks for helping keep Mennist safe.", "success");
     }
@@ -32,7 +32,7 @@ function ReportPostComponent(props) {
       props.alert("Something went wrong!", "alert");
     }
     finally {
-      setDisablity(false);
+      setIsDisable(false);
       closeReportRef.current.click();
     }
 
@@ -44,13 +44,13 @@ function ReportPostComponent(props) {
         Launch report modal
       </button>
 
-      <div className="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div className="modal-dialog modal-dialog-scrollable">
           <div className="modal-content">
             <div className="modal-header">
               <h6 className="modal-title d-flex align-items-center gap-2" id="exampleModalLabel">
                 <img className='report-icon' src={reportFillSVG} alt='Report Icon' width="28px" height="28px" />
-                Report this post
+                {" "}Report this post
               </h6>
               <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 function SubmitButton(props) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [btnDisabled, setDisability] = useState(false);
+    const [btnDisabled, setBtnDisabled] = useState(false);
     const { content, submitPost, contentType } = useContext(PostContext);
 
     // The user is submit post page change the button to submit to submit post
@@ -20,7 +20,7 @@ function SubmitButton(props) {
 
         // Submit post we are in submit secret page
         else {
-            setDisability(true);
+            setBtnDisabled(true);
             try {
                 props.alert("Shhh... delivering your post", "primary");
                 await submitPost();
@@ -37,7 +37,7 @@ function SubmitButton(props) {
                 props.alert("Something went wrong!", "alert");
             }
             finally {
-                setDisability(false);
+                setBtnDisabled(false);
             }
         }
     }
@@ -45,26 +45,26 @@ function SubmitButton(props) {
     // Handle content validation submit btn
     useEffect(() => {
         if (!currentPath) {
-            setDisability(false);
+            setBtnDisabled(false);
             return;
         }
 
         // validate the data before submitting
         if (contentType === 0) {
             if (content.title.trim().length < 3 || content.content.trim().length < 3) {
-                setDisability(true);
+                setBtnDisabled(true);
             }
             else {
-                setDisability(false);
+                setBtnDisabled(false);
             }
         }
 
         if (contentType === 1) {
             if (content.content.trim().length < 3) {
-                setDisability(true);
+                setBtnDisabled(true);
             }
             else {
-                setDisability(false);
+                setBtnDisabled(false);
             }
         }
 

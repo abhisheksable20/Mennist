@@ -7,7 +7,7 @@ function DeleteChatComponent(props) {
   const { deleteBtnRef, setSelectedChatId, selectedChatId } = props;
   const { deleteUserChats } = useContext(ChatsContext);
   const closeBtnRef = useRef(null);
-  const [isBtnDisabled, setBtnDisablity] = useState(false);
+  const [isBtnDisabled, setIsBtnDisablity] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState("Delete Chat");
 
   // This function will trigger when the delete chat button is clicked
@@ -17,7 +17,7 @@ function DeleteChatComponent(props) {
         return;
       }
 
-      setBtnDisablity(true);
+      setIsBtnDisablity(true);
       setDeleteMsg("Deleting...")
 
       await deleteUserChats(selectedChatId);
@@ -29,7 +29,7 @@ function DeleteChatComponent(props) {
       console.log("Failed to delete the chat!")
     }
     finally {
-      setBtnDisablity(false);
+      setIsBtnDisablity(false);
       setDeleteMsg("Delete Chat")
     }
 
@@ -42,7 +42,7 @@ function DeleteChatComponent(props) {
       </button>
 
       <div className="modal-dialog modal-dialog-centered">
-        <div className="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
           <div className="modal-dialog" data-bs-backdrop="static" data-bs-keyboard="false">
             <div className="modal-content">
               <div className="modal-header">

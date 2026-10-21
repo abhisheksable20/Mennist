@@ -64,7 +64,7 @@ function Posts(props) {
     return (
         <div className="container my-5 posts-container">
 
-            <PostHeaders splText={"LATEST VIBES"} heading={"Share Your Vibe, Secretly!"} subHeading={"Speak freely, stay anonymous."}/>
+            <PostHeaders splText={"LATEST VIBES"} heading={"Share Your Vibe, Secretly!"} subHeading={"Speak freely, stay anonymous."} />
 
             {/* Nav Pills */}
             <div className='mb-4'>
@@ -90,17 +90,16 @@ function Posts(props) {
             {
                 loading && posts.length === 0 ? (<Spinner />) :
                     (
-                        <>
-                            <div className="row g-5">
-                                {!loading && posts.length === 0 ? (
-                                    <NoContent svgType={1} title={"TOO QUIET IN HERE"} text={"Tell the story nobody knows about."} />
-                                ) : (
-                                    posts.map(post => (
-                                        <PostItem key={post.id} post={post} />
-                                    ))
-                                )}
-                            </div>
-                        </>
+                        <div className="row g-5">
+                            {!loading && posts.length === 0 ? (
+                                <NoContent svgType={1} title={"TOO QUIET IN HERE"} text={"Tell the story nobody knows about."} />
+                            ) : (
+                                posts.map(post => (
+                                    <PostItem key={post.id} post={post} />
+                                ))
+                            )}
+                        </div>
+
                     )}
 
             {/* Sentinel — always render this at the bottom */}

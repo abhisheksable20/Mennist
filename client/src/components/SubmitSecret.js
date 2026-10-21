@@ -67,7 +67,7 @@ function SubmitSecret(props) {
 
       {/* Input form Title */}
       <div className={`mt-5 ${contentType===1?"d-none":""}`}>
-        <label for="exampleFormControlInput1" className="form-label custom-label">TITLE</label>
+        <label htmlFor="exampleFormControlInput1" className="form-label custom-label">TITLE</label>
         <input type="text"
           className="form-control form-control-lg custom-input"
           id="title" name='title'
@@ -78,7 +78,7 @@ function SubmitSecret(props) {
 
       {/* Input form Content */}
       <div className="mt-5 mb-4">
-        <label for="exampleFormControlTextarea1" className="form-label custom-label">{`MY ${contentType===0?"VIBE":"ECHO"}`}</label>
+        <label htmlFor="exampleFormControlTextarea1" className="form-label custom-label">{`MY ${contentType===0?"VIBE":"ECHO"}`}</label>
         <textarea className="form-control form-control-lg custom-input auto-grow-textarea"
           id="content"
           name='content'

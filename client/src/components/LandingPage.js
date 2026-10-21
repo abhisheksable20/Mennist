@@ -9,7 +9,7 @@ import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { deleteUserInternalData } from '../internalDatabase/UserData'
 
 function LandingPage(props) {
-  const [btnDisabled, setDisablility] = useState(false);
+  const [btnDisabled, setBtnDisabled] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,7 +18,7 @@ function LandingPage(props) {
 
   // Setup the user
   const setupUser = async () => {
-    setDisablility(true);
+    setBtnDisabled(true);
     props.alert("Preparing your safe space...", "primary");
     try {
       const keys = await generateKeys();
@@ -59,7 +59,7 @@ function LandingPage(props) {
       props.alert("Internal server error", "alert");
     }
     finally {
-      setDisablility(false);
+      setBtnDisabled(false);
     }
   }
 
@@ -102,6 +102,7 @@ function LandingPage(props) {
         {/* Custom Badge */}
         <div className="badge-custom mb-4">
           <span className="dot"></span>
+          {" "}
           Share anonymously
         </div>
 
@@ -121,6 +122,7 @@ function LandingPage(props) {
         {/* Create account button */}
         <button className="btn create-acc justify-content-center gap-2 mt-4" onClick={setupUser} disabled={btnDisabled}>
           Get Started
+          {" "}
           <img src={creatAccSVG} alt="submitButton" width="28px" height="28px" />
         </button>
 

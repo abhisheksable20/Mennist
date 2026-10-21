@@ -128,7 +128,9 @@ function PostContent(props) {
             const vibeCount = (await axios.get(`${process.env.REACT_APP_API_URL}/vibes/${id}`)).data.count;
             setTotalVibes(vibeCount);
         }
-        catch (vibeCountError) { }
+        catch (vibeCountError) {
+            console.log("Failed to vibe this post.", vibeCountError)
+         }
     }
 
     // Handle post vibe check button
@@ -378,6 +380,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option ${postVibe === "funny" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("funny")}>
                             <img src={funnySVG} alt="Funny_Icon" />
+                            {" "}
                             Funny
                             <small>{getPostVibeCount("funny")}</small>
                         </button>
@@ -386,6 +389,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option ${postVibe === "relatable" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("relatable")}>
                             <img src={relatableSVG} alt="Relatable_Icon" />
+                            {" "}
                             Relatable
                             <small>{getPostVibeCount("relatable")}</small>
                         </button>
@@ -394,6 +398,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option ${postVibe === "emotional" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("emotional")}>
                             <img src={emotionalSVG} alt="Emotional_Icon" />
+                            {" "}
                             Emotional
                             <small>{getPostVibeCount("emotional")}</small>
                         </button>
@@ -402,6 +407,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option ${postVibe === "wholesome" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("wholesome")}>
                             <img src={wholesomeSVG} alt="Wholesome_Icon" />
+                            {" "}
                             Wholesome
                             <small>{getPostVibeCount("wholesome")}</small>
                         </button>
@@ -410,6 +416,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option vibe-option-alert ${postVibe === "sad" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("sad")}>
                             <img src={sadSVG} alt="Sad_Icon" />
+                            {" "}
                             Sad
                             <small>{getPostVibeCount("sad")}</small>
                         </button>
@@ -417,6 +424,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option vibe-option-alert ${postVibe === "toxic" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("toxic")}>
                             <img src={toxicSVG} alt="Toxic_Icon" />
+                            {" "}
                             Toxic
                             <small>{getPostVibeCount("toxic")}</small>
                         </button>
@@ -424,6 +432,7 @@ Share your own vibe on Mennist.`;
                             className={`vibe-option vibe-option-alert ${postVibe === "racist" ? "active" : ""}`}
                             onClick={() => postVibeCheckBtn("racist")}>
                             <img src={racistSVG} alt="Racist_Icon" />
+                            {" "}
                             Racist
                             <small>{getPostVibeCount("racist")}</small>
                         </button>
@@ -436,6 +445,7 @@ Share your own vibe on Mennist.`;
                     <p className='text-body-secondary'>Report this post</p>
                     <button type="button" className="btn report-btn d-flex align-items-center justify-content-center gap-2" onClick={reportPostBtn}>
                         <img src={reportPost} alt="Report Posts Icon" width="24px" height="24px" />
+                        {" "}
                         Report
                     </button>
                 </div>
