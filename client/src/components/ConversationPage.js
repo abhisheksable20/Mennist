@@ -2,7 +2,7 @@ import "../styles/ChatPage.css"
 import sendSVG from "../assets/send_svg.svg"
 import uploadFileSVG from "../assets/add_svg_icon.svg"
 import { useEffect, useContext, useRef, useCallback, useState } from 'react'
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
 import ChatFeatureAlert from "./ChatFeatureAlert";
@@ -27,11 +27,12 @@ function ConversationPage() {
   const [isSendBtnDisabled, setIsSendBtnDisabled] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
 
   // If this is true sender can send messages and attachments
   // If this is false sender cannot send messages and attachments
   const [isReceiverAvail, setIsReceiverAvail] = useState(true);
+
+  const navigate = useNavigate();
 
   const getUserData = useCallback(async (signal) => {
     if (!chatIdRef.current)
@@ -96,6 +97,9 @@ function ConversationPage() {
       catch (error) {
         if (error.name !== "AbortError" && error.code !== "ERR_CANCELED") {
           console.error(error);
+        }
+        if (error.response?.status === 401) {
+          navigate("/setup-user");
         }
       }
     }

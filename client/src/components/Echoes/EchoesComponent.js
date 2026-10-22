@@ -19,7 +19,7 @@ function EchoesComponent(props) {
         catch (loadingError) {
             // Check wheather the session is expired
             if (loadingError.response && loadingError.response.status === 401) {
-                props.alert("Session expired", "alert");
+                props.alert("Please start a new session.", "alert");
                 navigate("/setup-user");
                 return;
             }

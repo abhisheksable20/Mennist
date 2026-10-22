@@ -34,6 +34,11 @@ function VeilProfile(props) {
             navigate("/");
     }
 
+    // Calling this method when session of the user is expired
+    const sessionIsExpired = () => {
+        navigate("/setup-user");
+    }
+
     const openDeleteProfileModal = () => {
         deleteBtnRef.current.click();
     }
@@ -47,7 +52,7 @@ function VeilProfile(props) {
 
     return (
         <div className="container mt-5 mb-5">
-            {chatId ? <AvatarEditor chatId={chatId} alert={showToast} /> : ""}
+            {chatId ? <AvatarEditor chatId={chatId} alert={showToast} sessionExpired={sessionIsExpired}/> : ""}
             <section
                 className="mennist-delete-profile"
                 aria-labelledby="mennist-delete-profile-title"

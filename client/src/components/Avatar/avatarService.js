@@ -36,8 +36,7 @@ export async function loadAvatar(chatId) {
     return response.data.avatar || { ...DEFAULT_AVATAR };
   }
   catch (loadAvatarErr) {
-    const message = loadAvatarErr.response?.data?.message || "Couldn't load your avatar. Please try again.";
-    throw new Error(message);
+    throw loadAvatarErr;
   }
 }
 

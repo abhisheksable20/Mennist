@@ -1,4 +1,3 @@
-import React from 'react'
 import "../styles/ReportModal.css"
 import { useContext, useRef, useState } from 'react';
 import ChatsContext from '../context/chats/chatsContext';

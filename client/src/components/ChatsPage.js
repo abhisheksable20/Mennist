@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext, useRef } from 'react'
+import { useNavigate } from 'react-router-dom';
 import "../styles/ChatPage.css"
 import ChatItem from './ChatItem'
 import ChatsContext from '../context/chats/chatsContext'
@@ -13,18 +14,23 @@ function ChatsPage(props) {
   const deleteBtnRef = useRef(null);
   const [selectedChatId, setSelectedChatId] = useState(null);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     document.title = "Mennist | My Chats"
-    if (!chatFlag)
-      return;
-
-    fetchAllChats();
   }, []);
 
   // If chat flag change to true trigger fetch all the chats
   useEffect(() => {
-    if (chatFlag)
-      fetchAllChats();
+    if (chatFlag) {
+      try {
+        fetchAllChats();
+      } catch (error) {
+        if (error.response?.status === 401) {
+          navigate("/setup-user");
+        }
+      }
+    }
 
   }, [chatFlag])
 

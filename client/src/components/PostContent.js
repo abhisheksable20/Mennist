@@ -20,7 +20,6 @@ import relatableSVG from '../assets/relatable_svg.svg'
 import sadSVG from '../assets/sad_svg.svg'
 import toxicSVG from '../assets/toxic_svg.svg'
 import wholesomeSVG from '../assets/wholesome_svg.svg'
-import Spinner from './Spinner'
 import reportPost from "../assets/report_svg.svg"
 import ReportPostComponent from './ReportPostComponent'
 import { db } from '../internalDatabase/db'
@@ -37,7 +36,8 @@ function PostContent(props) {
     const [totalVibes, setTotalVibes] = useState(0);
     const [isSaved, setIsSaved] = useState(false);
     const [postVibe, setPostVibe] = useState(null);
-    const [userAvatar, setUserAvatar] = useState({})
+    const [userAvatar, setUserAvatar] = useState({});
+    const [isSimilarPostsLoading, setIsSimilarPostsLoading] = useState(false);
 
     const reportBtnRef = useRef(null);
 
@@ -84,7 +84,6 @@ function PostContent(props) {
         document.title = postData.title;
         getUserAvatar(postData.chatId)
         postActions("viewed", postData.id);
-        fetchSimilarPosts(postData.category, postData.id);
     }, [postData]);
 
     useEffect(() => {
@@ -97,6 +96,33 @@ function PostContent(props) {
             isPostSaved();
         }
     }, [id]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadSimilarPosts = async () => {
+            setIsSimilarPostsLoading(true);
+
+            try {
+                await fetchSimilarPosts(postData.category, postData.id);
+            } catch (error) {
+                console.error("Failed to fetch similar posts:", error);
+            } finally {
+                if (isMounted) {
+                    setIsSimilarPostsLoading(false);
+                }
+            }
+        };
+
+        if (postData.category && postData.id) {
+            loadSimilarPosts();
+        }
+
+        return () => {
+            isMounted = false;
+        };
+
+    }, [postData.category, postData.id, fetchSimilarPosts])
 
     // Get posts vibe check type from local storage and also from server side
     const getPostsVibeCheck = async () => {
@@ -130,7 +156,7 @@ function PostContent(props) {
         }
         catch (vibeCountError) {
             console.log("Failed to vibe this post.", vibeCountError)
-         }
+        }
     }
 
     // Handle post vibe check button
@@ -179,24 +205,24 @@ function PostContent(props) {
                 return;
             }
 
-            const data = await axios.put(`${process.env.REACT_APP_API_URL}/vibes/${id}`);
-
-            // Setting the like post to the local storage
-            setVibeToLocalStorage();
-
             setIsVibed(true);
             setTotalVibes(prev => prev + 1);
 
-            props.alert("Vibe matched!", "success");
+            await axios.put(`${process.env.REACT_APP_API_URL}/vibes/${id}`);
 
+            // Setting the like post to the local storage
+            setVibeToLocalStorage();
         }
         catch (error) {
             if (error.response && error.response.status === 403) {
                 setVibeToLocalStorage();
-                setIsVibed(true);
+                setTotalVibes(prev => Math.max(0, prev - 1));
                 props.alert("Your vibe is already matched!", "success");
                 return;
             }
+
+            setIsVibed(false);
+            setTotalVibes(prev => Math.max(0, prev - 1));
         }
     }
 
@@ -451,7 +477,7 @@ Share your own vibe on Mennist.`;
                 </div>
                 <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
                 {/* Show more posts section */}
-                <ShowSimilarPosts similarPosts={similarPosts} />
+                <ShowSimilarPosts similarPosts={similarPosts} isLoading={isSimilarPostsLoading}/>
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">

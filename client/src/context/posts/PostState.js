@@ -1,5 +1,5 @@
 import PostContext from "./postContext";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import axios from "axios";
 
 const PostState = (props) => {
@@ -60,42 +60,48 @@ const PostState = (props) => {
         }
     }
 
-    // Fetch the similar posts according to their category
-    const fetchSimilarPosts = async (category, currentPostId) => {
-        setSimilarPosts([]);
-        if (!category)
+    // Fetch similar posts according to their category
+    const fetchSimilarPosts = useCallback(async (category, currentPostId) => {
+        if (!category) {
+            setSimilarPosts([]);
             return;
+        }
 
-        if (abortSimilarPostsControllerRef.current)
+        if (abortSimilarPostsControllerRef.current) {
             abortSimilarPostsControllerRef.current.abort();
+        }
 
         const controller = new AbortController();
         abortSimilarPostsControllerRef.current = controller;
         isSimilarPostsFetchingRef.current = true;
 
         try {
-            const data = (await axios.get(`${process.env.REACT_APP_API_URL}/suggestPost/${category}`,
-                { signal: controller.signal })).data
+            const data = (
+                await axios.get(
+                    `${process.env.REACT_APP_API_URL}/suggestPost/${category}`,
+                    { signal: controller.signal }
+                )
+            ).data;
 
-            if (controller.signal.aborted)
-                return;
+            if (controller.signal.aborted) return;
 
             if (data) {
-                const filteredSimilarPosts = data.filter((post) => post.id !== currentPostId)
+                const filteredSimilarPosts = data.filter(
+                    (post) => post.id !== currentPostId
+                );
+
                 setSimilarPosts(filteredSimilarPosts);
             }
-        }
-        catch (SimilarPostsError) {
-            if (axios.isCancel(SimilarPostsError))
-                return;
-            console.log("Failed to load similar posts")
-        }
-        finally {
+        } catch (error) {
+            if (!axios.isCancel(error)) {
+                console.error("Failed to load similar posts:", error);
+            }
+        } finally {
             if (abortSimilarPostsControllerRef.current === controller) {
                 isSimilarPostsFetchingRef.current = false;
             }
         }
-    }
+    }, []);
 
     // Reset the value for Re-Fetch the data
     const resetPostFetching = async (activeState) => {

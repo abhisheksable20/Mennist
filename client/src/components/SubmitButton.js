@@ -34,6 +34,10 @@ function SubmitButton(props) {
                 }
             }
             catch (submitErr) {
+                if(submitErr.response?.status === 401){
+                    props.alert("Please start a new session.", "alert");
+                    navigate("/setup-user")
+                }
                 props.alert("Something went wrong!", "alert");
             }
             finally {

@@ -68,6 +68,7 @@ const ChatsState = (props) => {
         }
         catch (error) {
             console.log(error);
+            throw error;
         }
         finally {
             setLoading(false);
@@ -219,7 +220,11 @@ const ChatsState = (props) => {
             await userChatIndexDB(chatId);
         }
         catch (fetchError) {
-            console.log(fetchError);
+            if (fetchError.code === "ERR_CANCELED") {
+                return;
+            }
+
+            throw fetchError;
         }
         finally {
             setLoading(false);
@@ -385,11 +390,10 @@ const ChatsState = (props) => {
             });
 
             await delChatsFromLocal(chatId);
-            return true;
         }
         catch (error) {
             console.log("Failed to delete chats please contact support team.");
-            return false;
+            throw error;
         }
     }
 

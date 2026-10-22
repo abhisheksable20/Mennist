@@ -5,7 +5,7 @@ import { AVATAR_CATEGORIES, AVATAR_OPTIONS, DEFAULT_AVATAR, HAIR_COLORS } from "
 import { loadAvatar, saveAvatar } from "./avatarService";
 import "../../styles/Avatar.css";
 
-export default function AvatarEditor({ chatId, alert }) {
+export default function AvatarEditor({ chatId, alert, sessionExpired }) {
   const [avatar, setAvatar] = useState({ ...DEFAULT_AVATAR });
   const [category, setCategory] = useState("style");
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,10 @@ export default function AvatarEditor({ chatId, alert }) {
       } catch (err) {
         if (active) {
           alert("Couldn't load your avatar!", "alert");
+        }
+        if (err.response?.status === 401) {
+          alert("Please start a new session.", "alert")
+          sessionExpired();
         }
       } finally {
         if (active) setLoading(false);

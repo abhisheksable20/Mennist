@@ -23,9 +23,14 @@ function PostHeaders(props) {
         if (!chatId)
             return;
 
-        avatar = await loadAvatar(chatId);
-        localStorage.setItem("mennist-avatar", JSON.stringify(avatar));
-        setUserAvatar(avatar);
+        try {
+            avatar = await loadAvatar(chatId);
+            localStorage.setItem("mennist-avatar", JSON.stringify(avatar));
+            setUserAvatar(avatar);
+        }
+        catch (error) {
+            console.log("Something went wrong!")
+        }
     }
 
     return (
