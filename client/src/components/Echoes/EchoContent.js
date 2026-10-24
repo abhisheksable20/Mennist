@@ -28,6 +28,12 @@ function EchoContent(props) {
             }));
         }
         catch (echoLoadingError) {
+            if (echoLoadingError.response?.status === 401) {
+                props.alert("Please start a new session.", "alert");
+                navigate("/setup-user");
+                return;
+            }
+            
             props.alert("Something Went Wrong!", "alert");
         }
         finally {

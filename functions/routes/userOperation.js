@@ -2,7 +2,7 @@ const express = require("express");
 const admin = require("firebase-admin");
 const {authUser, isLoggedIn} = require("../middleware/authenticUser");
 const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
-const {globalLimiter} = require("../middleware/rateLimiter");
+const {signupLimiter, globalLimiter, sensitiveLimiter} = require("../middleware/rateLimiter");
 const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
@@ -14,7 +14,7 @@ const taskQueue = getFunctions().taskQueue("deleteUserData");
 
 const retrieveLimit = 10;
 
-router.post("/create-user", authUser, globalLimiter, async (req, res) => {
+router.post("/create-user", signupLimiter, authUser, async (req, res) => {
   const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
 });
@@ -59,7 +59,7 @@ router.get("/avatar/:chatId", isLoggedIn, globalLimiter, async (req, res) => {
 });
 
 // Set the user avatar
-router.post("/set-avatar", globalLimiter, isLoggedIn, async (req, res) => {
+router.post("/set-avatar", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const {avatar} = req.body || {};
 
@@ -136,7 +136,7 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
 
 
 // Delete user specific posts
-router.delete("/posts/:postId", isLoggedIn, async (req, res) => {
+router.delete("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const postId = req.params.postId;
 
@@ -158,7 +158,7 @@ router.delete("/posts/:postId", isLoggedIn, async (req, res) => {
 });
 
 // Delete user related whole data
-router.delete("/delete-account", isLoggedIn, async (req, res) => {
+router.delete("/delete-account", isLoggedIn, sensitiveLimiter, async (req, res) => {
   const sessionId = req.cookies.__session;
   const userId = req.user.uid;
 

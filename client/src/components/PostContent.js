@@ -54,7 +54,14 @@ function PostContent(props) {
             }));
         }
         catch (fetchError) {
+            if (fetchError.response?.status === 401) {
+                props.alert("Please start a new session.", "alert");
+                navigate("/setup-user");
+                return;
+            }
+
             props.alert("Something went wrong!", "alert");
+            
         } finally {
             setIsLoading(false);
         }
@@ -477,7 +484,7 @@ Share your own vibe on Mennist.`;
                 </div>
                 <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
                 {/* Show more posts section */}
-                <ShowSimilarPosts similarPosts={similarPosts} isLoading={isSimilarPostsLoading}/>
+                <ShowSimilarPosts similarPosts={similarPosts} isLoading={isSimilarPostsLoading} />
                 {/* Post footer section */}
                 <div className='d-flex justify-content-between mt-auto'>
                     <div className="floating-bar">

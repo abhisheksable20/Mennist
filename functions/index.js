@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const {onTaskDispatched} = require("firebase-functions/tasks");
@@ -6,8 +8,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const {ValidationError} = require("express-validation");
 const {findEchoMatches} = require("./dataProcessing/geminiProcessing");
-
-require("dotenv").config();
+const {ipLimiter} = require("./middleware/rateLimiter");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -19,7 +20,9 @@ const db = admin.database();
 const allowedOrigins = [
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
-  "https://www.mennist.com"];
+  "https://www.mennist.com",
+  "http://localhost:3000",
+  "https://drumkit-5b886.web.app"];
 const corsOptions = {
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -32,23 +35,21 @@ const corsOptions = {
   credentials: true,
 };
 
-app.use(cors(corsOptions));
 
-app.use(express.json());
+// 1. The app runs behind Google's proxy, so trust it to get the real user IP.
+//    Without this, every user looks like the same IP and shares one rate limit.
+app.set("trust proxy", 1);
+
+app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// Cookie parser
+// 3. Parsers
+app.use(express.json());
 app.use(cookieParser());
 
-// Handle validation error
-app.use((err, req, res, next) => {
-  if (err instanceof ValidationError) {
-    return res.status(err.statusCode).json(err.details);
-  }
-  return res.status(500).json({
-    message: "Internal server error",
-  });
-});
+// 4. App-wide IP rate limit.
+//    After CORS/OPTIONS (preflight requests don't count), before any route or DB read.
+app.use(ipLimiter);
 
 // Post CRUD operation route
 app.use("/api", require("./routes/posts"));
@@ -64,6 +65,16 @@ app.use("/api/chats", require("./routes/chats"));
 
 // Post tracking operations route
 app.use("/api/actions", require("./routes/postTracking"));
+
+// Handle validation error
+app.use((err, req, res, next) => {
+  if (err instanceof ValidationError) {
+    return res.status(err.statusCode).json(err.details);
+  }
+  return res.status(500).json({
+    message: "Internal server error",
+  });
+});
 
 const markEchoCompleted = async (userId, echoId, matches) => {
   await db.ref(

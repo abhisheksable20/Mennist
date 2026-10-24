@@ -14,7 +14,7 @@ const counterMap = {
 };
 
 // Handle all the post actions
-router.post("/postAction", postTrackLimiter, isLoggedIn, async (req, res) => {
+router.post("/postAction", isLoggedIn, postTrackLimiter, async (req, res) => {
   const userId = req.user.uid;
   const {postId, action} = req.body;
 

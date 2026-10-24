@@ -4,7 +4,7 @@ const admin = require("firebase-admin");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {validate} = require("express-validation");
 const {echoValidation} = require("../validators/postValidator");
-const {postLimiter, globalLimiter} = require("../middleware/rateLimiter");
+const {globalLimiter, postLimiter, dailyAiLimiter} = require("../middleware/rateLimiter");
 const {getFunctions} = require("firebase-admin/functions");
 const {userEchoesFetching} = require("../dataProcessing/postsProcessing");
 
@@ -15,7 +15,7 @@ const db = admin.database();
 const retrieveLimit = 10;
 
 // Fetch only user echoes from the database
-router.get("/", globalLimiter, isLoggedIn, async (req, res) => {
+router.get("/", isLoggedIn, globalLimiter, async (req, res) => {
   const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
   const userId = req.user.uid;
   try {
@@ -30,7 +30,7 @@ router.get("/", globalLimiter, isLoggedIn, async (req, res) => {
 });
 
 // Fetch single echo from the database
-router.get("/echo/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
+router.get("/echo/:echoId", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const echoId = req.params.echoId;
 
@@ -58,7 +58,7 @@ router.get("/echo/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
 });
 
 // Fetch echoes matches from the database
-router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
+router.get("/:echoId", isLoggedIn, globalLimiter, async (req, res) => {
   try {
     const userId = req.user.uid;
     const echoId = req.params.echoId;
@@ -88,7 +88,7 @@ router.get("/:echoId", globalLimiter, isLoggedIn, async (req, res) => {
 });
 
 // Submit people echoes
-router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), async (req, res) => {
+router.post("/submitEcho", isLoggedIn, postLimiter, dailyAiLimiter, validate(echoValidation), async (req, res) => {
   try {
     const userId = req.user.uid;
     const {echo} = req.body;
@@ -123,7 +123,7 @@ router.post("/submitEcho", postLimiter, isLoggedIn, validate(echoValidation), as
 });
 
 // Router to reinitiate the echo matching of the echo post
-router.get("/rematch/:echoId", postLimiter, isLoggedIn, async (req, res) => {
+router.get("/rematch/:echoId", isLoggedIn, postLimiter, dailyAiLimiter, async (req, res) => {
   try {
     const echoId = req.params.echoId;
     const userId = req.user.uid;

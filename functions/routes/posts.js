@@ -3,7 +3,7 @@ const router = express.Router();
 const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
 const {isLoggedIn} = require("../middleware/authenticUser");
-const {globalLimiter, postLimiter} = require("../middleware/rateLimiter");
+const {globalLimiter, postLimiter, dailyAiLimiter, vibeLimiter, reportLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
 const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
@@ -20,7 +20,7 @@ const db = admin.database();
 const retrieveLimit = 10;
 
 // Get all the database posts
-router.get("/posts", globalLimiter, isLoggedIn, async (req, res) => {
+router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
   const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
   try {
     const ref = db.ref("posts");
@@ -34,7 +34,7 @@ router.get("/posts", globalLimiter, isLoggedIn, async (req, res) => {
 });
 
 // Get a specific post
-router.get("/posts/:postId", globalLimiter, isLoggedIn, async (req, res) => {
+router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
   try {
     const postId = req.params.postId;
     if (!postId) {
@@ -68,7 +68,7 @@ router.get("/posts/:postId", globalLimiter, isLoggedIn, async (req, res) => {
 });
 
 // Get specific category posts from database
-router.get("/suggestPost/:category", globalLimiter, async (req, res) => {
+router.get("/suggestPost/:category", async (req, res) => {
   try {
     const postCategory = req.params.category.toLowerCase();
     if (!postCategory) {
@@ -114,7 +114,7 @@ router.get("/suggestPost/:category", globalLimiter, async (req, res) => {
 });
 
 // Submit the post in database
-router.post("/posts", postLimiter, isLoggedIn, validate(postValidation), async (req, res) => {
+router.post("/posts", isLoggedIn, postLimiter, dailyAiLimiter, validate(postValidation), async (req, res) => {
   try {
     const userUniqueId = req.user.uid;
 
@@ -239,7 +239,7 @@ ${content}
 
 
 // Post like counter functions
-router.put("/vibes/:postId", globalLimiter, isLoggedIn, async (req, res) => {
+router.put("/vibes/:postId", isLoggedIn, vibeLimiter, async (req, res) => {
   const user = req.user.uid;
   const postId = req.params.postId;
 
@@ -268,7 +268,7 @@ router.put("/vibes/:postId", globalLimiter, isLoggedIn, async (req, res) => {
 });
 
 // Vibe check the post
-router.post("/vibeCheck", postLimiter, isLoggedIn, validate(vibeCheckValidation), async (req, res) => {
+router.post("/vibeCheck", isLoggedIn, vibeLimiter, validate(vibeCheckValidation), async (req, res) => {
   const userId = req.user.uid;
   const {postId, postVibe} = req.body;
 
@@ -277,7 +277,7 @@ router.post("/vibeCheck", postLimiter, isLoggedIn, validate(vibeCheckValidation)
 });
 
 // Send the type of vibe check to client side
-router.get("/vibeCheck/:postId", globalLimiter, isLoggedIn, async (req, res) => {
+router.get("/vibeCheck/:postId", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const postId = req.params.postId;
 
@@ -297,7 +297,7 @@ router.get("/vibeCheck/:postId", globalLimiter, isLoggedIn, async (req, res) => 
 });
 
 // Report the post
-router.post("/report", isLoggedIn, validate(reportValidation), async (req, res) => {
+router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), async (req, res) => {
   const user = req.user.uid;
   const {reason, postOwnerChatId, postId} = req.body;
 
