@@ -29,6 +29,9 @@ function ReportPostComponent(props) {
       props.alert("Thanks for helping keep Mennist safe.", "success");
     }
     catch (reportErr) {
+      if (reportErr.response?.status === 401) {
+        props.alert("Please start a new session.", "alert");
+      }
       props.alert("Something went wrong!", "alert");
     }
     finally {

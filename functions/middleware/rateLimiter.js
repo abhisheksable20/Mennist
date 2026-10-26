@@ -97,6 +97,9 @@ const ipLimiter = createLimiter({name: "ip", max: 200});
 // Account creation: 10 new accounts per IP per hour
 const signupLimiter = createLimiter({name: "signup", max: 10, windowMs: 60 * 60 * 1000});
 
+// Public pages that need no login (shared post link, suggestions, vibe counts). Counted by IP.
+const publicReadLimiter = createLimiter({name: "publicread", max: 60});
+
 // ===============================================================
 // LAYER 2: BY USER, runs after isLoggedIn
 // ===============================================================
@@ -134,6 +137,7 @@ const sensitiveLimiter = createLimiter({name: "sensitive", max: 3, perUser: true
 module.exports = {
   ipLimiter,
   signupLimiter,
+  publicReadLimiter,
   globalLimiter,
   postLimiter,
   dailyAiLimiter,
