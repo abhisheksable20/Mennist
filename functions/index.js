@@ -2,13 +2,13 @@ require("dotenv").config();
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const {onTaskDispatched} = require("firebase-functions/tasks");
+const { onTaskDispatched } = require("firebase-functions/tasks");
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const {ValidationError} = require("express-validation");
-const {findEchoMatches} = require("./dataProcessing/geminiProcessing");
-const {ipLimiter} = require("./middleware/rateLimiter");
+const { ValidationError } = require("express-validation");
+const { findEchoMatches } = require("./dataProcessing/geminiProcessing");
+const { ipLimiter } = require("./middleware/rateLimiter");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -20,9 +20,11 @@ const db = admin.database();
 const allowedOrigins = [
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
-  "https://www.mennist.com"];
+  "https://www.mennist.com",
+  "http://localhost:3000",
+  "https://drumkit-5b886.web.app"];
 const corsOptions = {
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -76,7 +78,7 @@ app.use((err, req, res, next) => {
 
 const markEchoCompleted = async (userId, echoId, matches) => {
   await db.ref(
-      `echoMatches/${userId}/${echoId}`,
+    `echoMatches/${userId}/${echoId}`,
   ).set({
     status: "completed",
     completedAt: Date.now(),
@@ -84,7 +86,7 @@ const markEchoCompleted = async (userId, echoId, matches) => {
   });
 
   await db.ref(
-      `echoes/${userId}/${echoId}/status`,
+    `echoes/${userId}/${echoId}/status`,
   ).set("completed");
 };
 
@@ -103,34 +105,34 @@ exports.deleteUserData = onTaskDispatched({
     maxConcurrentDispatches: 10,
   },
 },
-async (request) => {
-  const {userId, sessionId} = request.data;
+  async (request) => {
+    const { userId, sessionId } = request.data;
 
-  try {
-    const userPostsSnapshot = await db.ref(`users/${userId}/posts`).get();
+    try {
+      const userPostsSnapshot = await db.ref(`users/${userId}/posts`).get();
 
-    const updates = {
-      [`sessions/${sessionId}`]: null,
-      [`users/${userId}`]: null,
-      [`chats/${userId}`]: null,
-      [`echoMatches/${userId}`]: null,
-      [`echoes/${userId}`]: null,
-      [`postActions/${userId}`]: null,
-    };
+      const updates = {
+        [`sessions/${sessionId}`]: null,
+        [`users/${userId}`]: null,
+        [`chats/${userId}`]: null,
+        [`echoMatches/${userId}`]: null,
+        [`echoes/${userId}`]: null,
+        [`postActions/${userId}`]: null,
+      };
 
-    if (userPostsSnapshot.exists()) {
-      userPostsSnapshot.forEach((postSnapshot) => {
-        const postId = postSnapshot.key;
-        updates[`posts/${postId}`] = null;
-      });
+      if (userPostsSnapshot.exists()) {
+        userPostsSnapshot.forEach((postSnapshot) => {
+          const postId = postSnapshot.key;
+          updates[`posts/${postId}`] = null;
+        });
+      }
+
+      await db.ref().update(updates);
+    } catch (deleteError) {
+      console.log("Failed to delete user data: ", deleteError);
+      throw deleteError;
     }
-
-    await db.ref().update(updates);
-  } catch (deleteError) {
-    console.log("Failed to delete user data: ", deleteError);
-    throw deleteError;
-  }
-},
+  },
 );
 
 // background work for vibe check for the post
@@ -139,22 +141,22 @@ exports.postVibeCheck = onTaskDispatched({
     maxAttempts: 3,
   },
 },
-async (request) => {
-  const {postId, userId, postVibe} = request.data;
-  try {
-    const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
-    const snapshot = await vibeChecksRef.get();
-    if (snapshot.exists() && snapshot.val() === postVibe) {
-      return;
-    }
+  async (request) => {
+    const { postId, userId, postVibe } = request.data;
+    try {
+      const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${userId}`);
+      const snapshot = await vibeChecksRef.get();
+      if (snapshot.exists() && snapshot.val() === postVibe) {
+        return;
+      }
 
-    await vibeChecksRef.set(postVibe);
-    await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
-  } catch (error) {
-    console.error("Error processing post vibe check:", error);
-    throw error;
-  }
-},
+      await vibeChecksRef.set(postVibe);
+      await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
+    } catch (error) {
+      console.error("Error processing post vibe check:", error);
+      throw error;
+    }
+  },
 );
 
 // background work for checking echo similarities
@@ -166,7 +168,7 @@ exports.matchEchoes = onTaskDispatched({
     maxConcurrentDispatches: 5,
   },
 }, async (req) => {
-  const {userId, echoId, echo} = req.data;
+  const { userId, echoId, echo } = req.data;
 
   try {
     const snapshot = await db.ref("echoes").once("value");
@@ -205,18 +207,18 @@ exports.matchEchoes = onTaskDispatched({
     }
 
     const matches = await findEchoMatches(
-        echo,
-        candidates,
+      echo,
+      candidates,
     );
 
     matches.sort(
-        (a, b) => b.similarityScore - a.similarityScore,
+      (a, b) => b.similarityScore - a.similarityScore,
     );
 
     const top10 = matches.slice(0, 10);
 
     await db.ref(
-        `echoMatches/${userId}/${echoId}`,
+      `echoMatches/${userId}/${echoId}`,
     ).set({
       status: "completed",
       completedAt: Date.now(),
@@ -224,12 +226,12 @@ exports.matchEchoes = onTaskDispatched({
     });
 
     await db.ref(
-        `echoes/${userId}/${echoId}/status`,
+      `echoes/${userId}/${echoId}/status`,
     ).set("completed");
   } catch (error) {
     console.error(`Echo matching failed: ${echoId}`, error);
     await db.ref(
-        `echoMatches/${userId}/${echoId}`,
+      `echoMatches/${userId}/${echoId}`,
     ).update({
       status: "failed",
       error: "Echo matching failed",
@@ -237,7 +239,7 @@ exports.matchEchoes = onTaskDispatched({
     });
 
     await db.ref(
-        `echoes/${userId}/${echoId}/status`,
+      `echoes/${userId}/${echoId}/status`,
     ).set("failed");
 
     throw error;
