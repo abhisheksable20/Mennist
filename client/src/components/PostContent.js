@@ -16,6 +16,7 @@ import removeSave from '../assets/remove_save_svg.svg'
 import funnySVG from '../assets/funny_svg.svg'
 import emotionalSVG from '../assets/emotional_svg.svg'
 import racistSVG from '../assets/racist_svg.svg'
+import alertSVG from "../assets/alert_svg.svg"
 import relatableSVG from '../assets/relatable_svg.svg'
 import sadSVG from '../assets/sad_svg.svg'
 import toxicSVG from '../assets/toxic_svg.svg'
@@ -30,7 +31,7 @@ function PostContent(props) {
     const { id } = useParams();
     const { similarPosts, fetchSimilarPosts } = useContext(PostContext)
     const navigate = useNavigate();
-    const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null, vibeCheck: null });
+    const [postData, setPostData] = useState({ id: id, title: "Loading...", content: "", timestamp: 0, chatId: null, vibeCheck: null, isAdult: false });
     const [isLoading, setIsLoading] = useState(false);
     const [isVibed, setIsVibed] = useState(false);
     const [totalVibes, setTotalVibes] = useState(0);
@@ -48,6 +49,7 @@ function PostContent(props) {
         try {
             setIsLoading(true);
             const res = (await axios.get(`${process.env.REACT_APP_API_URL}/posts/${id}`)).data;
+            console.log("Post Data: ", res);
             setPostData(prev => ({
                 ...prev,
                 ...res
@@ -432,6 +434,20 @@ Share your own vibe on Mennist.`;
                     </div>
                 </div>
                 <div className="post-divider"></div>
+
+                {/* Adult content warning */}
+                {postData.isAdult && (
+                    <div className="adult-content-wrapper">
+                        <div className="adult-content-warning">
+                            <img src={alertSVG} alt="Warning" width={24} height={24} />
+                            <div>
+                                <strong>Adult content</strong>
+                                <p>This post is marked 18+. Read at your discretion.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Post body section */}
                 <div className='my-4'>
                     <p className='post-content fs-5'>{postData.content}</p>

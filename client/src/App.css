@@ -409,6 +409,34 @@ body {
   min-width: 280px;
 }
 
+.adult-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.adult-content-warning {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  gap: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+  background: #2A1515;
+  border: 1px solid #D0342C;
+  border-radius: 8px;
+  color: #FCA5A5;
+}
+
+.adult-content-warning p {
+  margin: 0;
+  font-size: 13px;
+  font-family: "Open Sans", sans-serif;
+  color: #D4A5A5;
+}
+
 /* Vibe check */
 .vibe-check {
   margin-top: 35px;
