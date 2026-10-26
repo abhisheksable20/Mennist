@@ -168,11 +168,13 @@ function PostContent(props) {
 
     // Handle post vibe check button
     const postVibeCheckBtn = async (postVibe) => {
-        if (hasPostVibeCheck(id, postVibe)) {
-            return;
-        }
-
         try {
+            await getCurrentUserChatId();
+
+            if (hasPostVibeCheck(id, postVibe)) {
+                return;
+            }
+
             const vibeCheckBody = {
                 postId: id,
                 postVibe: postVibe
@@ -182,11 +184,9 @@ function PostContent(props) {
 
             await axios.post(`${process.env.REACT_APP_API_URL}/vibeCheck`, vibeCheckBody);
         }
-        catch (vibeCheckError) {
-            if (vibeCheckError.response?.status === 401) {
-                props.alert("Please start a new session.", "alert")
-                navigate("/setup-user");
-            }
+        catch (error) {
+            props.alert("Please start a new session.", "alert")
+            navigate("/setup-user");
         }
     }
 
@@ -244,7 +244,7 @@ function PostContent(props) {
     // save the posts to local storage
     const savePostBtn = async () => {
         try {
-            const userChatId = await getCurrentUserChatId();
+            await getCurrentUserChatId();
 
             if (!postData.chatId) {
                 props.alert("Nothing to save.", "alert");

@@ -31,6 +31,7 @@ function ReportPostComponent(props) {
     catch (reportErr) {
       if (reportErr.response?.status === 401) {
         props.alert("Please start a new session.", "alert");
+        return 
       }
       props.alert("Something went wrong!", "alert");
     }
