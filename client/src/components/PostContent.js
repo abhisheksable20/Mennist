@@ -61,7 +61,7 @@ function PostContent(props) {
             }
 
             props.alert("Something went wrong!", "alert");
-            
+
         } finally {
             setIsLoading(false);
         }
@@ -168,11 +168,13 @@ function PostContent(props) {
 
     // Handle post vibe check button
     const postVibeCheckBtn = async (postVibe) => {
-        if (hasPostVibeCheck(id, postVibe)) {
-            return;
-        }
-
         try {
+            await getCurrentUserChatId();
+
+            if (hasPostVibeCheck(id, postVibe)) {
+                return;
+            }
+
             const vibeCheckBody = {
                 postId: id,
                 postVibe: postVibe
@@ -182,8 +184,9 @@ function PostContent(props) {
 
             await axios.post(`${process.env.REACT_APP_API_URL}/vibeCheck`, vibeCheckBody);
         }
-        catch (vibeCheckError) {
-            console.log(vibeCheckError)
+        catch (error) {
+            props.alert("Please start a new session.", "alert")
+            navigate("/setup-user");
         }
     }
 
@@ -221,6 +224,11 @@ function PostContent(props) {
             setVibeToLocalStorage();
         }
         catch (error) {
+            if (error.response?.status === 401) {
+                props.alert("Please start a new session.", "alert");
+                navigate("/setup-user");
+            }
+
             if (error.response && error.response.status === 403) {
                 setVibeToLocalStorage();
                 setTotalVibes(prev => Math.max(0, prev - 1));
@@ -234,46 +242,55 @@ function PostContent(props) {
     }
 
     // save the posts to local storage
-    const savePostBtn = () => {
-        if (!postData.chatId) {
-            props.alert("Nothing to save.", "alert");
-            return;
+    const savePostBtn = async () => {
+        try {
+            await getCurrentUserChatId();
+
+            if (!postData.chatId) {
+                props.alert("Nothing to save.", "alert");
+                return;
+            }
+
+            const savedPosts = JSON.parse(localStorage.getItem("savedPosts")) || [];
+
+            const alreadySavedIndex = savedPosts.findIndex((post) => post.id === id);
+
+            if (alreadySavedIndex !== -1) {
+                savedPosts.splice(alreadySavedIndex, 1);
+
+                localStorage.setItem(
+                    "savedPosts",
+                    JSON.stringify(savedPosts)
+                );
+
+                setIsSaved(false);
+                props.alert("Post removed from saved.", "alert");
+                return;
+            }
+
+            if (savedPosts.length >= MAX_SAVING_CAPACITY) {
+                props.alert("Only 20 posts can be saved", "alert");
+                return;
+            }
+
+            const postToSave = {
+                id: id,
+                title: postData.title,
+                content: postData.content.length > 100 ? postData.content.substring(0, 100) + "..." : postData.content,
+                timestamp: postData.timestamp
+            }
+            savedPosts.push(postToSave);
+
+            localStorage.setItem("savedPosts", JSON.stringify(savedPosts));
+            setIsSaved(true);
+            props.alert("Post saved successfully!", "success");
+            postActions("saved", postData.id);
+        }
+        catch (error) {
+            props.alert("Please start a new session.", "alert");
+            navigate("/setup-user");
         }
 
-        const savedPosts = JSON.parse(localStorage.getItem("savedPosts")) || [];
-
-        const alreadySavedIndex = savedPosts.findIndex((post) => post.id === id);
-
-        if (alreadySavedIndex !== -1) {
-            savedPosts.splice(alreadySavedIndex, 1);
-
-            localStorage.setItem(
-                "savedPosts",
-                JSON.stringify(savedPosts)
-            );
-
-            setIsSaved(false);
-            props.alert("Post removed from saved.", "alert");
-            return;
-        }
-
-        if (savedPosts.length >= MAX_SAVING_CAPACITY) {
-            props.alert("Only 20 posts can be saved", "alert");
-            return;
-        }
-
-        const postToSave = {
-            id: id,
-            title: postData.title,
-            content: postData.content.length > 100 ? postData.content.substring(0, 100) + "..." : postData.content,
-            timestamp: postData.timestamp
-        }
-        savedPosts.push(postToSave);
-
-        localStorage.setItem("savedPosts", JSON.stringify(savedPosts));
-        setIsSaved(true);
-        props.alert("Post saved successfully!", "success");
-        postActions("saved", postData.id);
     }
 
     const isPostSaved = () => {
@@ -313,15 +330,22 @@ function PostContent(props) {
 
     // Start the chat session with this user
     const startChatSesssion = async () => {
-        if (postData.chatId) {
-            const userChatId = (await db.keys.get("user-keypair")).chatId;
-            if (postData.chatId === userChatId) {
-                navigate('/my-chats');
-                return;
-            }
+        try {
+            const userChatId = await getCurrentUserChatId();
 
-            postActions("chat", postData.id)
-            navigate(`/user-chat/${postData.chatId}`)
+            if (postData.chatId) {
+                if (postData.chatId === userChatId) {
+                    navigate('/my-chats');
+                    return;
+                }
+
+                postActions("chat", postData.id)
+                navigate(`/user-chat/${postData.chatId}`)
+            }
+        }
+        catch (error) {
+            props.alert("Please start a new session.", "alert");
+            navigate("/setup-user");
         }
     }
 
@@ -348,6 +372,17 @@ Share your own vibe on Mennist.`;
 
         postActions("shared", postData.id);
 
+    }
+
+    // Check wheather the user exits or not in client side
+    const getCurrentUserChatId = async () => {
+        const userKeyPair = await db.keys.get("user-keypair");
+
+        if (!userKeyPair?.chatId) {
+            throw new Error("User chatId not found in Dexie DB");
+        }
+
+        return userKeyPair.chatId;
     }
 
     const reportPostBtn = () => {

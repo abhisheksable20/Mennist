@@ -3,7 +3,7 @@ const router = express.Router();
 const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
 const {isLoggedIn} = require("../middleware/authenticUser");
-const {globalLimiter, postLimiter, dailyAiLimiter, vibeLimiter, reportLimiter} = require("../middleware/rateLimiter");
+const {publicReadLimiter, globalLimiter, postLimiter, dailyAiLimiter, vibeLimiter, reportLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
 const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
@@ -34,7 +34,7 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
 });
 
 // Get a specific post
-router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
+router.get("/posts/:postId", publicReadLimiter, async (req, res) => {
   try {
     const postId = req.params.postId;
     if (!postId) {
@@ -68,7 +68,7 @@ router.get("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
 });
 
 // Get specific category posts from database
-router.get("/suggestPost/:category", async (req, res) => {
+router.get("/suggestPost/:category", isLoggedIn, globalLimiter, async (req, res) => {
   try {
     const postCategory = req.params.category.toLowerCase();
     if (!postCategory) {
@@ -324,7 +324,7 @@ router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), as
 
 
 // Get vibes count
-router.get("/vibes/:postId", async (req, res) => {
+router.get("/vibes/:postId", publicReadLimiter, async (req, res) => {
   const postId = req.params.postId;
   if (!postId) {
     return res.status(400).send({error: "No data found"});

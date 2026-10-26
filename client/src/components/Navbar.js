@@ -1,4 +1,3 @@
-import React from 'react'
 import SubmitButton from './SubmitButton'
 import ChatFlagButton from './ChatFlagButton';
 import { useNavigate, useLocation } from 'react-router-dom';

@@ -2,7 +2,7 @@ const express = require("express");
 const admin = require("firebase-admin");
 const {authUser, isLoggedIn} = require("../middleware/authenticUser");
 const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
-const {signupLimiter, globalLimiter, sensitiveLimiter} = require("../middleware/rateLimiter");
+const {signupLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
 const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
@@ -20,7 +20,7 @@ router.post("/create-user", signupLimiter, authUser, async (req, res) => {
 });
 
 // Get the user avatar
-router.get("/avatar/:chatId", isLoggedIn, globalLimiter, async (req, res) => {
+router.get("/avatar/:chatId", publicReadLimiter, async (req, res) => {
   const chatId = req.params.chatId;
   if (!chatId) {
     return res.status(400).send({
