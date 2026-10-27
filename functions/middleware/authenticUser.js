@@ -119,17 +119,20 @@ const createSession = async (req, res, publicKey, deviceFingerprint) => {
   const sessionId = crypto.randomBytes(8).toString("hex");
 
   const expiresAt = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
+  const createdAt = Date.now();
 
   await db.ref(`sessions/${sessionId}`).set({
     userId,
     expiresAt,
+    createdAt,
   });
 
   // Creating storage to store user basic details
   await db.ref(`users/${userId}/userDetail`).set({
     publicKey: publicKey,
     deviceFingerprint: deviceFingerprint,
-    chatFlag: false,
+    chatFlag: true,
+    createdAt,
   });
 
   // Make it Secure: true in production
