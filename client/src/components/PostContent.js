@@ -49,7 +49,6 @@ function PostContent(props) {
         try {
             setIsLoading(true);
             const res = (await axios.get(`${process.env.REACT_APP_API_URL}/posts/${id}`)).data;
-            console.log("Post Data: ", res);
             setPostData(prev => ({
                 ...prev,
                 ...res
@@ -173,12 +172,13 @@ function PostContent(props) {
         try {
             await getCurrentUserChatId();
 
-            if (hasPostVibeCheck(id, postVibe)) {
+            if (hasPostVibeCheck(id, postVibe) || !postData.chatId) {
                 return;
             }
 
             const vibeCheckBody = {
                 postId: id,
+                chatId:postData.chatId,
                 postVibe: postVibe
             }
 
@@ -220,7 +220,8 @@ function PostContent(props) {
             setIsVibed(true);
             setTotalVibes(prev => prev + 1);
 
-            await axios.put(`${process.env.REACT_APP_API_URL}/vibes/${id}`);
+
+            await axios.put(`${process.env.REACT_APP_API_URL}/vibes/${id}`, {chatId:postData.chatId});
 
             // Setting the like post to the local storage
             setVibeToLocalStorage();

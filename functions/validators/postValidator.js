@@ -24,6 +24,7 @@ const reportValidation = {
 const vibeCheckValidation = {
   body: Joi.object({
     postId: Joi.string().required(),
+    chatId: Joi.string().required(),
     postVibe: Joi.string().valid("funny", "relatable", "emotional", "wholesome", "sad", "toxic", "racist").required(),
   }),
 };
