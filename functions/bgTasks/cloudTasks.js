@@ -178,6 +178,19 @@ exports.matchEchoes = onTaskDispatched({
     await db.ref(
         `echoes/${userId}/${echoId}/status`,
     ).set("completed");
+
+
+    if (top10.length > 0) {
+      // eventId, userId, actorId, type, postId, echoId, chatId, vibe
+      const notificationData = {
+        eventId: `echoMatch_${echoId}`,
+        userId,
+        type: "echoMatch",
+        echoId,
+      };
+
+      await processNotification.enqueue(notificationData);
+    }
   } catch (error) {
     console.error(`Echo matching failed: ${echoId}`, error);
     await db.ref(
@@ -212,7 +225,11 @@ exports.processNotification = onTaskDispatched({
 }, async (request) => {
   const {eventId, userId, actorId, type, postId, echoId, chatId, vibe} = request.data;
 
-  if (!eventId || !userId || !actorId || userId === actorId) {
+  if (!eventId || !userId) {
+    return;
+  }
+
+  if (type !== "echoMatch" && (!actorId || userId === actorId)) {
     return;
   }
 
@@ -224,8 +241,8 @@ exports.processNotification = onTaskDispatched({
     vibeCheck: {
       title: "New vibe check",
       message: vibe ?
-                `Someone marked your post as ${vibe}.` :
-                "Someone vibe-checked your post.",
+        `Someone marked your post as ${vibe}.` :
+        "Someone vibe-checked your post.",
     },
     echoMatch: {
       title: "New Echo match",
@@ -234,6 +251,10 @@ exports.processNotification = onTaskDispatched({
     message: {
       title: "New message",
       message: "Someone sent you a message.",
+    },
+    attachement: {
+      title: "New attachement",
+      message: "Someone sent you an attachement.",
     },
   };
 

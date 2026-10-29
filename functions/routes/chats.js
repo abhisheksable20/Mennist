@@ -6,8 +6,11 @@ const {chatBlobValidation, fileBlobValidation} = require("../validators/chatVali
 const {chatSendLimiter, attachmentLimiter, chatReadLimiter} = require("../middleware/rateLimiter");
 const {isLoggedIn} = require("../middleware/authenticUser");
 const {validate} = require("express-validation");
+const {getFunctions} = require("firebase-admin/functions");
 
 const db = admin.database();
+
+const notificationQueue = getFunctions().taskQueue("processNotification");
 
 // Get Post Owner PublicKey
 router.post("/get-publicKey", isLoggedIn, chatReadLimiter, async (req, res) => {
@@ -103,6 +106,18 @@ router.post("/send-chat", isLoggedIn, chatSendLimiter, validate(chatBlobValidati
   try {
     await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
     await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
+
+    // Send notification to the receiverID
+    // eventId, userId, actorId, type, postId, echoId, chatId, vibe
+    const notificationData = {
+      eventId: `message_${senderUserId}_${recieverUserId}`,
+      userId: recieverUserId,
+      actorId: senderUserId,
+      type: "message",
+      chatId: senderChatId,
+    };
+
+    await notificationQueue.enqueue(notificationData);
     return res.status(200).send({message: "Message send successfully"});
   } catch (sendChatError) {
     console.log("sendChatError: ", sendChatError);
@@ -153,6 +168,19 @@ router.post("/send-attachment", isLoggedIn, attachmentLimiter, validate(fileBlob
   try {
     await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
     await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
+
+    // Send notification to the receiverID
+    // eventId, userId, actorId, type, postId, echoId, chatId, vibe
+    const notificationData = {
+      eventId: `attachement_${senderUserId}_${recieverUserId}`,
+      userId: recieverUserId,
+      actorId: senderUserId,
+      type: "attachement",
+      chatId: senderChatId,
+    };
+
+    await notificationQueue.enqueue(notificationData);
+
     return res.status(200).send({message: "Message send successfully"});
   } catch (sendChatError) {
     console.log("sendChatError: ", sendChatError);
