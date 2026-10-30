@@ -4,12 +4,34 @@ import notificationSVG from "../../assets/notification_svg.svg"
 import vibeSVG from "../../assets/heart_fill_svg.svg";
 import messageSVG from "../../assets/chat_round-svg.svg"
 import echoSVG from "../../assets/echo_svg.svg"
+import sadSVG from "../../assets/sad_svg.svg";
+import funnySVG from "../../assets/funny_svg.svg";
+import emotionalSVG from "../../assets/emotional_svg.svg";
+import wholesomeSVG from "../../assets/wholesome_svg.svg";
+import toxicSVG from "../../assets/toxic_svg.svg";
+import racistSVG from "../../assets/racist_svg.svg";
+import relatableSVG from "../../assets/relatable_svg.svg";
 import axios from "axios";
+import { db } from '../../internalDatabase/db';
+import { useNavigate } from "react-router-dom";
 
 
 function NotificationCenter() {
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
+    const [chatUsernames, setChatUsernames] = useState({});
+
+    const navigate = useNavigate();
+
+    const vibeIcons = {
+        sad: sadSVG,
+        funny: funnySVG,
+        emotional: emotionalSVG,
+        wholesome: wholesomeSVG,
+        toxic: toxicSVG,
+        racist: racistSVG,
+        relatable: relatableSVG,
+    };
 
     useEffect(() => {
         if (!isOpen) {
@@ -20,12 +42,36 @@ function NotificationCenter() {
 
         const fetchNotifications = async () => {
             try {
+                // Fetch local notifications
+                const localNotifications = await db.notifications
+                    .orderBy("timestamp")
+                    .reverse()
+                    .toArray();
+
+                setNotifications(localNotifications);
+                await loadChatUsernames(localNotifications);
+
                 const response = await axios.get(`${process.env.REACT_APP_API_URL}/user/fetch-notifications`, {
                     withCredentials: true,
                     signal: controller.signal
                 });
 
-                console.log("Notifications: ", response.data);
+                const serverNotifications = Array.isArray(response.data) ? response.data : response.data.notifications || [];
+                await db.notifications.bulkPut(serverNotifications);
+
+                axios.delete(`${process.env.REACT_APP_API_URL}/user/delete-notifications`)
+                    .catch((err) => {
+                        console.error("Failed to delete server notifications:", err);
+                    });
+
+                // Refresh from Dexie
+                const updatedNotifications = await db.notifications
+                    .orderBy("timestamp")
+                    .reverse()
+                    .toArray();
+
+                setNotifications(updatedNotifications);
+                await loadChatUsernames(updatedNotifications);
 
             }
             catch (error) {
@@ -40,38 +86,59 @@ function NotificationCenter() {
 
     }, [isOpen]);
 
+    const loadChatUsernames = async (notifications) => {
+        const usernames = {};
+
+        for (const notification of notifications) {
+            if (
+                notification.type === "message" ||
+                notification.type === "attachment"
+            ) {
+                const userData = await db.chatUser.get(notification.chatId);
+
+                if (userData?.username) {
+                    usernames[notification.eventId] = userData.username;
+                }
+            }
+        }
+
+        setChatUsernames(usernames);
+    };
+
     const notificationTypes = {
-        newVibe: {
+        vibe: {
             title: 'New vibe',
             icon: vibeSVG,
             color: 'green',
             message: (n) =>
                 n.message ||
-                `Someone vibed with your post${n.postTitle ? ` “${n.postTitle}”` : ''}.`,
+                `Someone vibed with your post`,
         },
         vibeCheck: {
             title: 'Vibe check',
-            icon: vibeSVG,
+            icon: (n) => vibeIcons[n.vibe] || vibeSVG,
             color: 'purple',
             message: (n) =>
                 n.message ||
                 "Someone wants to know how you're feeling today.",
         },
-        newMessage: {
+        message: {
             title: 'New message',
             icon: messageSVG,
             color: 'blue',
             message: (n) =>
-                n.message ||
-                `${n.actorName || 'Someone'} sent you a message.`,
+                chatUsernames[n.eventId]
+                    ? `${chatUsernames[n.eventId]} sent you a message.`
+                    : "You have a new message.",
         },
-        newAttachment: {
+        attachment: {
             title: 'New attachment',
             icon: messageSVG,
             color: 'orange',
             message: (n) =>
-                n.message ||
-                `${n.actorName || 'Someone'} sent you a photo.`,
+                chatUsernames[n.eventId]
+                    ? `${chatUsernames[n.eventId]} sent you a photo.`
+                    : "Someone sent you a photo",
         },
         echoMatch: {
             title: 'Echo match',
@@ -86,8 +153,42 @@ function NotificationCenter() {
         (notification) => !notification.read
     ).length;
 
-    const onNotificationClick = () => {
+    const onNotificationClick = async (notification) => {
+        try {
+            // Delete notification from Dexie
+            await db.notifications.delete(notification.eventId);
 
+            // Update React state
+            setNotifications((prev) =>
+                prev.filter((n) => n.eventId !== notification.eventId)
+            );
+
+            // Close notification panel
+            setIsOpen(false);
+
+            // Navigate according to notification type
+            switch (notification.type) {
+                case "vibe":
+                case "vibeCheck":
+                    navigate(`/post/${notification.postId}`);
+                    break;
+
+                case "message":
+                case "attachment":
+                    navigate(`/user-chat/${notification.chatId}`);
+                    break;
+
+                case "echoMatch":
+                    navigate(`/echoes/${notification.echoId}`);
+                    break;
+
+                default:
+                    console.warn("Unknown notification type:", notification.type);
+            }
+        }
+        catch (error) {
+            console.error("Failed to process notification:", error);
+        }
     }
 
     return (
@@ -181,8 +282,12 @@ function NotificationCenter() {
                                                 className={`notification-icon ${meta.color}`}
                                             >
                                                 <img
-                                                    src={meta.icon}
-                                                    alt=""
+                                                    src={
+                                                        typeof meta.icon === 'function'
+                                                            ? meta.icon(notification)
+                                                            : meta.icon
+                                                    }
+                                                    alt="vibe check icon"
                                                 />
                                             </span>
 

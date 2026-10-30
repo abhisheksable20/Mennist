@@ -6,6 +6,7 @@ const {signupLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = requ
 const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
+const crypto = require("crypto");
 
 
 const router = express.Router();
@@ -179,6 +180,13 @@ router.delete("/delete-account", isLoggedIn, sensitiveLimiter, async (req, res) 
   }
 });
 
+const createNotificationId = (eventId) => {
+  return crypto
+      .createHmac("sha256", process.env.NOTIFICATION_SECRET)
+      .update(eventId)
+      .digest("hex");
+};
+
 // Fetch user notifications
 router.get("/fetch-notifications", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
@@ -192,7 +200,7 @@ router.get("/fetch-notifications", isLoggedIn, globalLimiter, async (req, res) =
       snapshot.forEach((child) => {
         notifications.push({
           ...child.val(),
-          eventId: child.key,
+          eventId: createNotificationId(child.key),
         });
       });
     }
@@ -206,6 +214,25 @@ router.get("/fetch-notifications", isLoggedIn, globalLimiter, async (req, res) =
     return res.status(500).send({
       success: false,
       error: "Internal server error!",
+    });
+  }
+});
+
+// Delete the notifications from the server
+router.delete("/delete-notifications", isLoggedIn, globalLimiter, async (req, res) => {
+  const userId = req.user.uid;
+
+  try {
+    await db.ref(`users/${userId}/notification`).remove();
+    return res.status(200).json({
+      success: true,
+      message: "Notifications deleted successfully.",
+    });
+  } catch (deleteErr) {
+    console.error("Notification deletion error:", deleteErr);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete notifications.",
     });
   }
 });

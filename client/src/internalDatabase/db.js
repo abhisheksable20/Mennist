@@ -32,3 +32,11 @@ db.version(5).stores({
   chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageBlob, type, fromMe",
   postActions: "&postId, viewed, saved, shared, chat, postWatchTime"
 });
+
+db.version(6).stores({
+  keys: "id",
+  chatUser: "chatId, username, publicKey, lastMsg, type, timestamp",
+  chats: "++id, &firebaseId, chatId, plainMsg, timestamp, imageBlob, type, fromMe",
+  postActions: "&postId, viewed, saved, shared, chat, postWatchTime",
+  notifications: "&eventId, timestamp, type, read"
+});

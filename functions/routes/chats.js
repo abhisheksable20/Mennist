@@ -175,7 +175,7 @@ router.post("/send-attachment", isLoggedIn, attachmentLimiter, validate(fileBlob
       eventId: `attachement_${senderUserId}_${recieverUserId}`,
       userId: recieverUserId,
       actorId: senderUserId,
-      type: "attachement",
+      type: "attachment",
       chatId: senderChatId,
     };
 

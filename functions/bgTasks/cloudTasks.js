@@ -252,9 +252,9 @@ exports.processNotification = onTaskDispatched({
       title: "New message",
       message: "Someone sent you a message.",
     },
-    attachement: {
-      title: "New attachement",
-      message: "Someone sent you an attachement.",
+    attachment: {
+      title: "New attachment",
+      message: "Someone sent you an attachment.",
     },
   };
 
@@ -267,12 +267,11 @@ exports.processNotification = onTaskDispatched({
   const notification = {
     ...content,
     type,
-    actorId,
     timestamp: Date.now(),
-    isRead: false,
     ...(postId && {postId}),
     ...(echoId && {echoId}),
     ...(chatId && {chatId}),
+    ...(vibe && {vibe}),
   };
 
   const ref = db.ref(`users/${userId}/notification/${eventId}`);
