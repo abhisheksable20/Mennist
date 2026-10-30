@@ -11,6 +11,7 @@ const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
 
 const taskQueue = getFunctions().taskQueue("postVibeCheck");
+const notificationQueue = getFunctions().taskQueue("processNotification");
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -242,12 +243,15 @@ ${content}
 router.put("/vibes/:postId", isLoggedIn, vibeLimiter, async (req, res) => {
   const user = req.user.uid;
   const postId = req.params.postId;
+  const {chatId} = req.body;
 
-  if (!postId) {
+  if (!postId || !chatId) {
     return res.status(400).send({error: "Failed to process your request!"});
   }
 
   try {
+    const reveiverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+
     const userRef = db.ref(`vibes/${postId}/userId/${user}`);
     const userSnapshot = await userRef.once("value");
 
@@ -260,6 +264,17 @@ router.put("/vibes/:postId", isLoggedIn, vibeLimiter, async (req, res) => {
     const countRef = db.ref(`vibes/${postId}/count`);
     await countRef.transaction((current) => (current || 0) + 1);
 
+    // eventId, userId, actorId, type, postId, echoId, chatId, vibe
+    const notificationData = {
+      eventId: `vibe_${postId}_${user}`,
+      userId: reveiverUserId,
+      actorId: user,
+      type: "vibe",
+      postId,
+    };
+
+    await notificationQueue.enqueue(notificationData);
+
     return res.status(200).send("Vibe Matched!");
   } catch (relError) {
     console.log("vibe marking error: ", relError);
@@ -270,9 +285,9 @@ router.put("/vibes/:postId", isLoggedIn, vibeLimiter, async (req, res) => {
 // Vibe check the post
 router.post("/vibeCheck", isLoggedIn, vibeLimiter, validate(vibeCheckValidation), async (req, res) => {
   const userId = req.user.uid;
-  const {postId, postVibe} = req.body;
+  const {postId, chatId, postVibe} = req.body;
 
-  await taskQueue.enqueue({postId, userId, postVibe});
+  await taskQueue.enqueue({postId, actorId: userId, postVibe, userChatId: chatId});
   return res.status(200).send({Message: "Vibe registered sucessfully!"});
 });
 
