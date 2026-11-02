@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import "../styles/ReportModal.css"
 import { formatFileSize } from '../dataProcessing/dataProcessing';
 
@@ -27,7 +27,7 @@ function FilePreview(props) {
 
   // User has confirm to send the attachement
   const handleSendBtn = async () => {
-    await sendAttachment();
+    sendAttachment();
     closeModalRef.current.click();
   }
 

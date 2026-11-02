@@ -190,6 +190,39 @@
     max-height: 180px;
 }
 
+.message-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-separator {
+    color: #A3A3A3;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.message-status-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.sending-status-icon {
+    width: 17px;
+    height: 17px;
+    object-fit: contain;
+    animation: sendingRotate 1.5s linear infinite;
+}
+
+@keyframes sendingRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .chat-textarea::placeholder {
     font-family: "Open Sans", sans-serif;
     color: #A3A3A3;

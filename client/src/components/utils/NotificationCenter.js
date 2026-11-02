@@ -126,19 +126,33 @@ function NotificationCenter() {
             title: 'New message',
             icon: messageSVG,
             color: 'blue',
-            message: (n) =>
-                chatUsernames[n.eventId]
-                    ? `${chatUsernames[n.eventId]} sent you a message.`
-                    : "You have a new message.",
+            message: (n) => {
+                const username = chatUsernames[n.eventId];
+
+                return username ? (
+                    <>
+                        <strong>{username}</strong> sent you a message.
+                    </>
+                ) : (
+                    "You have a new message."
+                );
+            }
         },
         attachment: {
             title: 'New attachment',
             icon: messageSVG,
             color: 'orange',
-            message: (n) =>
-                chatUsernames[n.eventId]
-                    ? `${chatUsernames[n.eventId]} sent you a photo.`
-                    : "Someone sent you a photo",
+            message: (n) => {
+                const username = chatUsernames[n.eventId];
+
+                return username ? (
+                    <>
+                        <strong>{username}</strong> sent you a photo.
+                    </>
+                ) : (
+                    "Someone sent you a photo."
+                );
+            }
         },
         echoMatch: {
             title: 'Echo match',

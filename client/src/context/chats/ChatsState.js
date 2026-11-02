@@ -305,14 +305,24 @@ const ChatsState = (props) => {
 
     // Sending the attachement to server 
     const sendAttachment = async (file, receiverPublicKey) => {
+        if (!chatIdRef.current || !file || !receiverPublicKey)
+            return false
+
+        const tempMessage = {
+            chatId: chatIdRef.current,
+            timestamp: Date.now(),
+            imageBlob: file,
+            plainMsg: file.name,
+            type: file.type,
+            fromMe: true,
+            status: "sending"
+        }
+
+        // Save temporary message immediately
+        const id = await db.chats.add(tempMessage);
+        setUserMessages(prev => [...prev, { id, ...tempMessage }]);
+
         try {
-            if (!chatIdRef.current)
-                return false
-
-            if (!file) {
-                return false;
-            }
-
             /**
              * Data recieved from the encryption process
              * {
@@ -344,20 +354,21 @@ const ChatsState = (props) => {
 
             await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-attachment`, chatBody, { withCredentials: true });
 
-            const timestamp = Date.now();
-
-            // Storing the data in index DB in chats database
-            const indexDBData = {
-                chatId: chatIdRef.current,
-                timestamp,
-                imageBlob: file,
+            await db.chats.update(id, {
                 plainMsg: fileName,
-                type: file.type,
-                fromMe: true,
-            }
+                status: "sent"
+            });
 
-            const id = await db.chats.add(indexDBData);
-            setUserMessages(prev => [...prev, { id, ...indexDBData }]);
+            // Update React state
+            setUserMessages(prev =>
+                prev.map(msg =>
+                    msg.id === id
+                        ? { ...msg, plainMsg: fileName, status: "sent" }
+                        : msg
+                )
+            );
+
+            const timestamp = tempMessage.timestamp;
 
             // Updating last msg in chatUser table in dexie
             const DBData = {
@@ -369,8 +380,21 @@ const ChatsState = (props) => {
             }
 
             await saveAndUpdateDBV2(DBData);
+            return true;
         }
         catch (error) {
+            await db.chats.update(id, {
+                status: "failed"
+            });
+
+            setUserMessages(prev =>
+                prev.map(msg =>
+                    msg.id === id
+                        ? { ...msg, status: "failed" }
+                        : msg
+                )
+            );
+
             throw error;
         }
 
