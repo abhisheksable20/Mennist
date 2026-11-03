@@ -144,78 +144,78 @@ const ChatsState = (props) => {
 
         try {
             await userChatIndexDB(chatId);
-            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId }, signal })).data;
-            if (!rawData.messages) {
-                return;
-            }
 
-            const delChatsKeys = [];
+            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId }, signal })).data;
+
+            if (!rawData || !rawData.messages || rawData.messages.length === 0)
+                return;
 
             const keys = (await db.keys.get("user-keypair"));
 
-            /*
-                Structure from server
-                {
-                    chatId: "",
-                    senderPublicKey: "",
-                    messages: [{
-                    encryptedFile,
-                    encryptedKey,
-                    name,
-                    size,
-                    type
-                    encryptedMsg,
-                    timestamp,
-                    nounce
-                }]
-                } 
-            **/
             const newChats = await Promise.all(
                 rawData.messages.map(async (chat) => {
+                    const isAttachment = chat.type && chat.type.startsWith("image");
+
                     const data = {
                         firebaseId: chat.id,
                         chatId: rawData.chatId,
                         timestamp: chat.timestamp,
                         type: chat.type,
-                        fromMe: false
+                        fromMe: false,
+                        hasAttachment: !!isAttachment,
+                        attachmentId: chat.attachmentId || null,
+                        plainMsg: ""
                     };
 
-                    if (chat.type.startsWith("image")) {
-                        const decryptedMsg = await decryptFile(
-                            chat.encryptedFile,
-                            chat.encryptedFileKey,
-                            chat.nounce,
-                            keys.publicKey,
-                            keys.privateKey
-                        );
-
-                        data.imageBlob = new Blob([decryptedMsg], { type: chat.type });
+                    if (isAttachment) {
+                        // Only metadata is stored. The actual file is fetched on demand.
                         data.plainMsg = chat.name;
+                        data.fileSize = chat.size;
                     } else {
                         data.plainMsg = await decryptMessage(
                             chat.encryptedMsg,
                             chat.nounce,
                             rawData.senderPublicKey,
-                            keys.privateKey);
+                            keys.privateKey
+                        );
                     }
 
                     return data;
                 })
             );
 
+            // Save messages locally before deleting fetched text messages from server.
+            for (const chat of newChats) {
+                const existing = await db.chats
+                    .where("firebaseId")
+                    .equals(chat.firebaseId)
+                    .first();
 
-            delChatsKeys.push(...rawData.messages.map(chat => chat.id));
-            await db.chats.bulkPut(newChats);
+                if (existing) {
+                    await db.chats.put({
+                        ...existing,
+                        ...chat,
+                        id: existing.id,
+                        imageBlob: existing.imageBlob || chat.imageBlob
+                    });
+                } else {
+                    await db.chats.add(chat);
+                }
+            }
 
-            const delData = {
-                chatId: rawData.chatId,
-                messagesKeys: delChatsKeys
-            };
+            // Only text messages are deleted by this endpoint.
+            const textMessageIds = rawData.messages.filter(chat => !(chat.type && chat.type.startsWith("image"))).map(chat => chat.id);
 
-            await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
-                data: delData,
-                withCredentials: true
-            });
+            if (textMessageIds.length > 0) {
+                await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+                    data: {
+                        chatId: rawData.chatId,
+                        messagesKeys: textMessageIds
+                    },
+                    withCredentials: true
+                }
+                );
+            }
 
             await userChatIndexDB(chatId);
         }
@@ -230,7 +230,97 @@ const ChatsState = (props) => {
             setLoading(false);
         }
 
-    }, [])
+    }, []);
+
+    // Download one attachment when the user requests it
+    const downloadAttachment = async (chat) => {
+        if (!chat || !chat.firebaseId || !chat.chatId)
+            return null;
+
+        // If the file is already stored locally, reuse it.
+        if (chat.imageBlob)
+            return chat.imageBlob;
+
+        try {
+            const keys = await db.keys.get("user-keypair");
+
+            // Fetch only the selected attachment.
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat/attachment`, {
+                params: {
+                    chatId: chat.chatId,
+                    messageId: chat.firebaseId
+                },
+                withCredentials: true
+            }
+            );
+
+            const attachment = response.data;
+
+            // Decrypt the attachment on the client.
+            const decryptedFile = await decryptFile(
+                attachment.encryptedFile,
+                attachment.encryptedFileKey,
+                attachment.nounce,
+                keys.publicKey,
+                keys.privateKey
+            );
+
+            const imageBlob = new File([decryptedFile], attachment.name || chat.plainMsg, { type: attachment.type || chat.type });
+
+            // Find the existing local message.
+            const localMessage = await db.chats
+                .where("chatId")
+                .equals(chat.chatId)
+                .filter(message => message.firebaseId === chat.firebaseId)
+                .first();
+
+            // Save the decrypted file in Dexie before deleting the server copy.
+            if (localMessage) {
+                await db.chats.update(localMessage.id, {
+                    imageBlob,
+                    downloaded: true
+                });
+            }
+            else {
+                await db.chats.add({
+                    ...chat,
+                    imageBlob,
+                    downloaded: true
+                });
+            }
+
+            // Update the displayed conversation.
+            setUserMessages(prev =>
+                prev.map(message =>
+                    message.firebaseId === chat.firebaseId
+                        ? { ...message, imageBlob, downloaded: true }
+                        : message
+                )
+            );
+
+            // Delete the server copy only after the local save succeeds.
+            try {
+                await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat/attachment`, {
+                    data: {
+                        chatId: chat.chatId,
+                        messageId: chat.firebaseId
+                    },
+                    withCredentials: true
+                }
+                );
+            }
+            catch (deleteError) {
+                // The file is already safe in Dexie, so don't block the user.
+                console.error("Failed to delete downloaded attachment from server:", deleteError);
+            }
+
+            return imageBlob;
+        }
+        catch (error) {
+            console.error("Attachment download failed:", error);
+            throw error;
+        }
+    };
 
     // Only fetch single user chat from local Index Database Using Dexie
     const userChatIndexDB = async (chatId) => {
@@ -481,7 +571,7 @@ const ChatsState = (props) => {
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
             setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment,
-            chatFlag, changeChatFlag, setChatFlag
+            chatFlag, changeChatFlag, setChatFlag, downloadAttachment
         }}>
             {props.children}
         </ChatsContext.Provider>

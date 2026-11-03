@@ -214,6 +214,68 @@
     animation: sendingRotate 1.5s linear infinite;
 }
 
+.attachment-download-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 260px;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #262626;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.attachment-download-card:hover {
+    background: #333;
+}
+
+.attachment-file-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: #3a3a3a;
+    color: #ddd;
+}
+
+.attachment-download-icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.attachment-download-card:disabled {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.attachment-file-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 14px;
+}
+
+.attachment-download-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #22C55E;
+}
+
 @keyframes sendingRotate {
     from {
         transform: rotate(0deg);

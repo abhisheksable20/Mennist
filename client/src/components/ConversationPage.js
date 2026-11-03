@@ -19,7 +19,7 @@ import FilePreview from "./FilePreview";
 function ConversationPage() {
   const { chatId } = useParams();
   const { inputMessage, setInputMessage, chatIdRef,
-    userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag } = useContext(ChatsContext);
+    userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag, downloadAttachment } = useContext(ChatsContext);
   const userData = useRef(null);
   const fileDownloadFlag = useRef(false);
   const previewBtnRef = useRef(null);
@@ -27,6 +27,7 @@ function ConversationPage() {
   const [isSendBtnDisabled, setIsSendBtnDisabled] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
+  const [attachmentDownloadStatus, setAttachmentDownloadStatus] = useState({});
 
   // If this is true sender can send messages and attachments
   // If this is false sender cannot send messages and attachments
@@ -210,12 +211,49 @@ function ConversationPage() {
   }
 
   // Handle file download
-  const fileDownload = (imageBlob) => {
-    if (!imageBlob)
+  const fileDownload = async (chat) => {
+    const messageId = chat.firebaseId;
+
+    if (!messageId)
+      return;
+
+    // Prevent multiple simultaneous downloads of the same attachment.
+    if (attachmentDownloadStatus[messageId] === "downloading")
       return;
 
     fileDownloadFlag.current = true;
-    setSelectedFile(imageBlob);
+
+    // Show downloading status.
+    setAttachmentDownloadStatus(prev => ({
+      ...prev,
+      [messageId]: "downloading"
+    }));
+
+    try {
+      const imageBlob = chat.imageBlob
+        ? chat.imageBlob
+        : await downloadAttachment(chat);
+
+      if (!imageBlob)
+        throw new Error("Downloaded attachment is empty.");
+
+      setAttachmentDownloadStatus(prev => ({
+        ...prev,
+        [messageId]: "downloaded"
+      }));
+
+      setSelectedFile(imageBlob);
+    }
+    catch (error) {
+      console.error("Unable to download attachment:", error);
+
+      setAttachmentDownloadStatus(prev => ({
+        ...prev,
+        [messageId]: "failed"
+      }));
+
+      fileDownloadFlag.current = false;
+    }
   }
 
   // Send the message to the reciever side
@@ -272,7 +310,7 @@ function ConversationPage() {
           </div>
           {
             userMessages.map((chat) => {
-              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} />
+              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} downloadStatus={attachmentDownloadStatus[chat.firebaseId]}/>
             })
           }
         </div>

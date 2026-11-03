@@ -37,7 +37,7 @@ function FilePreview(props) {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `M-${Date.now()}`;
+    a.download = selectedFile.name || `M-${Date.now()}`;
 
     document.body.appendChild(a);
     a.click();
