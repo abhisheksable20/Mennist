@@ -67,6 +67,13 @@ function ConversationPage() {
     }
   }, [])
 
+  const handleFilePreviewClose = useCallback(() => {
+    setSelectedFile(null);
+    fileDownloadFlag.current = false;
+    const input = document.getElementById("fileInput");
+    if (input) input.value = "";   // lets the same file be picked again
+  }, []);
+
 
   useEffect(() => {
     if (!chatId) {
@@ -212,10 +219,12 @@ function ConversationPage() {
 
   // Handle file download
   const fileDownload = async (chat) => {
-    const messageId = chat.firebaseId;
+    const messageId = chat.firebaseId ?? chat.id;
 
-    if (!messageId)
-      return;
+    if (!messageId) return;
+
+    // Nothing in memory and nothing to fetch from the server
+    if (!chat.imageBlob && !chat.firebaseId) return;
 
     // Prevent multiple simultaneous downloads of the same attachment.
     if (attachmentDownloadStatus[messageId] === "downloading")
@@ -310,12 +319,17 @@ function ConversationPage() {
           </div>
           {
             userMessages.map((chat) => {
-              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} downloadStatus={attachmentDownloadStatus[chat.firebaseId]}/>
+              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} downloadStatus={attachmentDownloadStatus[chat.firebaseId ?? chat.id]} />
             })
           }
         </div>
 
-        <FilePreview previewBtnRef={previewBtnRef} selectedFile={selectedFile} sendAttachment={handleAttachmentInput} fileDownloadFlag={fileDownloadFlag} />
+        <FilePreview
+          previewBtnRef={previewBtnRef}
+          selectedFile={selectedFile}
+          sendAttachment={handleAttachmentInput}
+          fileDownloadFlag={fileDownloadFlag}
+          onClose={handleFilePreviewClose} />
 
         {/* Input component to take msg from the user */}
         <div className={`chat-input-wrapper ${!chatFlag ? "d-none" : ""}`}>

@@ -35,12 +35,7 @@ function ConversationItem(props) {
       <div className="chat-bubble" title={isAttachment ? plainMsg : ""}>
         {isAttachment ? (
           imageBlob ? (
-            <img
-              className="chat-image"
-              src={imageUrl}
-              alt="attachment"
-              onClick={handleDownloadBtn}
-            />
+            <img className="chat-image" src={imageUrl} alt="attachment" onClick={handleDownloadBtn} />
           ) : (
             <button
               type="button"
@@ -84,10 +79,7 @@ function ConversationItem(props) {
                 }
               >
                 {downloadStatus === "downloading" ? (
-                  <img
-                    src={sendingSVG}
-                    alt="Downloading"
-                  />
+                  <img src={sendingSVG} alt="Downloading" className="sending-status-icon"/>
                 ) : downloadStatus === "failed" ? (
                   <img
                     src={alertSVG}

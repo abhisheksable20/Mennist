@@ -6,10 +6,11 @@ export async function deleteUserInternalData(whole = false) {
             await db.keys.clear();
         }
 
-        await db.transaction("rw", db.chatUser, db.chats, db.postActions, async () => {
+        await db.transaction("rw", db.chatUser, db.chats, db.postActions, db.notifications, async () => {
             await db.chatUser.clear();
             await db.chats.clear();
             await db.postActions.clear();
+            await db.notifications.clear();
         });
 
         localStorage.removeItem("postsVibeCheck");

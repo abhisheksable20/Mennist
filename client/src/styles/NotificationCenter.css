@@ -7,7 +7,7 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    z-index: 1060;
+    z-index: 9999;
 }
 
 
@@ -64,6 +64,7 @@
 .notification-center.is-open .notification-bell {
     background-color: #183323;
     border-color: #22c55e;
+    z-index: 9999;
 }
 
 /* Bell while clicking */
@@ -141,7 +142,7 @@
 
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 
-    z-index: 1061;
+    z-index: 9999;
 
     animation: notification-enter 0.18s ease-out;
 }
@@ -406,6 +407,7 @@
 
     .notification-center.is-open {
         position: static;
+        z-index: 9999;
     }
 
     /* Dark overlay */
@@ -442,7 +444,7 @@
 
         border-radius: 15px;
 
-        z-index: 1061;
+        z-index: 9999;
 
         animation: notification-mobile-enter 0.18s ease-out;
     }
