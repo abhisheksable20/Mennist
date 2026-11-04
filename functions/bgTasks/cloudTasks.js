@@ -161,11 +161,12 @@ exports.matchEchoes = onTaskDispatched({
         candidates,
     );
 
-    matches.sort(
-        (a, b) => b.similarityScore - a.similarityScore,
-    );
+    const filteredMatches = matches
+        .filter((match) => match.similarityScore > 49)
+        .sort((a, b) => b.similarityScore - a.similarityScore);
 
-    const top10 = matches.slice(0, 10);
+
+    const top10 = filteredMatches.slice(0, 10);
 
     await db.ref(
         `echoMatches/${userId}/${echoId}`,
