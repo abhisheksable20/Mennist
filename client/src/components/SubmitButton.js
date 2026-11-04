@@ -12,6 +12,8 @@ function SubmitButton(props) {
     // The user is submit post page change the button to submit to submit post
     const currentPath = location.pathname === "/submit-secret";
 
+    const isSubmitPage = location.pathname === "/submit-secret";
+
     // Navigate to submit secret component
     const navigateToSubmitSecret = async () => {
         if (!currentPath) {
@@ -34,7 +36,7 @@ function SubmitButton(props) {
                 }
             }
             catch (submitErr) {
-                if(submitErr.response?.status === 401){
+                if (submitErr.response?.status === 401) {
                     props.alert("Please start a new session.", "alert");
                     navigate("/setup-user")
                 }
@@ -76,10 +78,27 @@ function SubmitButton(props) {
 
     return (
         <div className={["/terms-and-conditions", "/privacy-policy"].includes(location.pathname) ? "d-none" : ""}>
-            <button className="btn submit-button d-flex align-items-center justify-content-center gap-1 w-100"
-                onClick={navigateToSubmitSecret} disabled={btnDisabled}>
-                {currentPath ? "" : <img src={addSVG} alt="submitButton" width="24px" height="24px" />}
-                {currentPath ? "Submit" : "Post"}
+            <button
+                type="button"
+                className={`btn submit-button d-flex align-items-center justify-content-center gap-1 ${props.menu ? "navbar-menu-action navbar-new-post" : "w-100"
+                    }`}
+                onClick={navigateToSubmitSecret}
+                disabled={btnDisabled}
+            >
+                <span className="navbar-menu-icon">
+                    <img src={addSVG} alt="" width="24" height="24" />
+                </span>
+
+                <span className={`navbar-post-desktop-label ${isSubmitPage ? "show-mobile-submit-label" : ""}`}>
+                    {isSubmitPage ? "Submit" : "+ Post"}
+                </span>
+
+                {!isSubmitPage && (
+                    <span className="navbar-post-mobile-copy mx-2">
+                        <strong>New post</strong>
+                        <small>Share anonymously</small>
+                    </span>
+                )}
             </button>
         </div>
     )

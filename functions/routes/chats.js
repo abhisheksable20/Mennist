@@ -128,46 +128,74 @@ router.post("/send-chat", isLoggedIn, chatSendLimiter, validate(chatBlobValidati
 // Router to handle attachment coming from the client side
 router.post("/send-attachment", isLoggedIn, attachmentLimiter, validate(fileBlobValidation), async (req, res) => {
   const {chatId, senderPublicKey, encryptedFile, encryptedFileKey, nounce, name, type, size} = req.body;
-  const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
   const senderUserId = req.user.uid;
 
-  if (!recieverUserId) {
-    return res.status(404).send({error: "User not found!"});
-  }
-
-  if (senderUserId === recieverUserId) {
-    return res.status(406).send({error: "Cannot chat with yourself"});
-  }
-
-  const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
-  const timestamp = Date.now();
-
-  // This is message blob
-  const chatBlob = {
-    encryptedFile,
-    encryptedFileKey,
-    nounce,
-    name,
-    type,
-    size,
-    timestamp,
-    encryptedMsg: name,
-  };
-
-  // This is last message chat blob
-  const chatMetaData = {
-    senderChatId,
-    senderPublicKey,
-    type,
-    timestamp,
-    nounce,
-    encryptedMsg: name,
-  };
-
-  // Updating firebase realtime database
   try {
-    await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
-    await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
+    if (!chatId) {
+      return res.status(400).send({error: "Chat ID is required."});
+    }
+
+    const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+
+    if (!recieverUserId) {
+      return res.status(404).send({error: "User not found!"});
+    }
+
+    if (senderUserId === recieverUserId) {
+      return res.status(406).send({error: "Cannot chat with yourself"});
+    }
+
+    const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
+    const timestamp = Date.now();
+
+    const conversationPath = `chats/${recieverUserId}/${senderUserId}`;
+
+    // Generate message ID
+    const messageRef = db.ref(`${conversationPath}/messages`).push();
+
+    const messageId = messageRef.key;
+
+    // Individual message metadata
+    const messageData = {
+      timestamp,
+      name,
+      type,
+      size,
+      encryptedMsg: name,
+      attachmentId: messageId,
+    };
+
+    // Encrypted attachment data
+    const attachmentData = {
+      encryptedFile,
+      encryptedFileKey,
+      nounce,
+      name,
+      type,
+      size,
+      timestamp,
+    };
+
+    // Save message and attachment separately
+    const updates = {};
+
+    updates[`${conversationPath}/messages/${messageId}`] = messageData;
+
+    updates[`${conversationPath}/attachments/${messageId}`] = attachmentData;
+
+    await db.ref().update(updates);
+
+    // This is last message chat blob
+    const chatMetaData = {
+      senderChatId,
+      senderPublicKey,
+      type,
+      timestamp,
+      nounce,
+      encryptedMsg: name,
+    };
+
+    await db.ref(conversationPath).update(chatMetaData);
 
     // Send notification to the receiverID
     // eventId, userId, actorId, type, postId, echoId, chatId, vibe
@@ -220,26 +248,103 @@ router.delete("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
   const {chatId, messagesKeys} = req.body;
   const userId = req.user.uid;
 
-  if (!chatId || !messagesKeys) {
-    return res.status(406).send({error: "Cannot process your request!"});
+  if (!chatId || !Array.isArray(messagesKeys)) {
+    return res.status(406).send({
+      error: "Cannot process your request!",
+    });
   }
 
   try {
-    const delChatUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+    const otherUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+
+    const conversationPath =
+      `chats/${userId}/${otherUserId}`;
 
     const updates = {};
 
-    // Messages firebase generated keys
-    messagesKeys.forEach((keys) => {
-      updates[`chats/${userId}/${delChatUserId}/messages/${keys}`] = null;
+    for (const messageId of messagesKeys) {
+      const messageSnapshot = await db.ref(`${conversationPath}/messages/${messageId}`).once("value");
+      if (!messageSnapshot.exists()) {
+        continue;
+      }
+
+      const message = messageSnapshot.val();
+
+      // Keep attachment metadata until the attachment is downloaded
+      if (message.type && message.type.startsWith("image")) {
+        continue;
+      }
+
+      updates[`${conversationPath}/messages/${messageId}`] = null;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+    }
+
+    return res.status(200).send({
+      message: "Fetched messages processed successfully.",
     });
-
-    await db.ref().update(updates);
-
-    return res.status(200).send("Deleted Successfully!");
   } catch (delError) {
     console.log("Error: ", delError);
     return res.status(500).send({error: "Something went wrong!"});
+  }
+});
+
+router.delete("/user-chat/attachment", isLoggedIn, chatReadLimiter, async (req, res) => {
+  const {chatId, messageId} = req.body;
+  const userId = req.user.uid;
+
+  if (!chatId || !messageId) {
+    return res.status(400).send({
+      error: "Chat ID and message ID are required.",
+    });
+  }
+
+  try {
+    const otherUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+
+    const conversationPath = `chats/${userId}/${otherUserId}`;
+
+    const messageSnapshot = await db.ref(`${conversationPath}/messages/${messageId}`).once("value");
+
+    if (!messageSnapshot.exists()) {
+      return res.status(404).send({
+        error: "Message not found.",
+      });
+    }
+
+    const message = messageSnapshot.val();
+
+    if (!message.type || !message.type.startsWith("image")) {
+      return res.status(400).send({
+        error: "This message is not an attachment.",
+      });
+    }
+
+    const attachmentId = message.attachmentId || messageId;
+
+    const updates = {};
+
+    updates[`${conversationPath}/attachments/${attachmentId}`] = null;
+    updates[`${conversationPath}/messages/${messageId}`] = null;
+
+    // Also remove embedded data from older records
+    if (message.encryptedFile) {
+      updates[`${conversationPath}/messages/${messageId}/encryptedFile`] = null;
+      updates[`${conversationPath}/messages/${messageId}/encryptedFileKey`] = null;
+    }
+
+    await db.ref().update(updates);
+
+    return res.status(200).send({
+      message: "Attachment deleted successfully.",
+    });
+  } catch (error) {
+    console.log("deleteAttachmentError:", error);
+    return res.status(500).send({
+      error: "Something went wrong.",
+    });
   }
 });
 
@@ -247,11 +352,11 @@ router.delete("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
 // Get user chat from database - specific user chat
 router.get("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
   const {chatId} = req.query;
+  const senderUserId = req.user.uid;
+
   if (!chatId) {
     return res.status(406).send({error: "Cannot process your request."});
   }
-
-  const senderUserId = req.user.uid;
 
   try {
     const recieverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
@@ -267,17 +372,26 @@ router.get("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
 
     const rawData = snapshot.val();
 
-    let chatData = [];
-
     if (!rawData.messages) {
       return res.status(200).send([]);
     }
 
-    chatData = Object.entries(rawData.messages).map(([messageId, chat]) => ({
-      id: messageId,
-      ...chat,
-    }
-    ));
+    const chatData = Object.entries(rawData.messages).map(
+        ([messageId, chat]) => {
+          return {
+            id: messageId,
+            timestamp: chat.timestamp,
+            type: chat.type,
+            encryptedMsg: chat.encryptedMsg,
+            nounce: chat.nounce,
+            name: chat.name,
+            size: chat.size,
+            hasAttachment: chat.type && chat.type.startsWith("image") || false,
+            attachmentId: chat.attachmentId || (chat.encryptedFile ? messageId : null),
+          };
+        },
+    );
+
 
     const data = {
       chatId: rawData.senderChatId,
@@ -292,6 +406,74 @@ router.get("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
           error: "Internal Server Error!",
           success: false,
         });
+  }
+});
+
+router.get("/user-chat/attachment", isLoggedIn, chatReadLimiter, async (req, res) => {
+  const {chatId, messageId} = req.query;
+  const userId = req.user.uid;
+
+  if (!chatId || !messageId) {
+    return res.status(400).send({
+      error: "Chat ID and message ID are required.",
+    });
+  }
+
+  try {
+    const otherUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+
+    const conversationPath = `chats/${userId}/${otherUserId}`;
+
+    // Verify requested message belongs to this conversation
+    const messageSnapshot = await db.ref(`${conversationPath}/messages/${messageId}`).once("value");
+
+    if (!messageSnapshot.exists()) {
+      return res.status(404).send({
+        error: "Attachment message not found.",
+      });
+    }
+
+    const message = messageSnapshot.val();
+
+    if (!message.type || !message.type.startsWith("image")) {
+      return res.status(400).send({
+        error: "This message is not an attachment.",
+      });
+    }
+
+    // Fetch only the requested encrypted attachment
+    const attachmentSnapshot = await db.ref(`${conversationPath}/attachments/${message.attachmentId || messageId}`).once("value");
+
+    let attachment;
+
+    if (attachmentSnapshot.exists()) {
+      attachment = attachmentSnapshot.val();
+    } else {
+      // Backward compatibility with old records
+      if (!message.encryptedFile || !message.encryptedFileKey) {
+        return res.status(404).send({
+          error: "Attachment data not found.",
+        });
+      }
+
+      attachment = message;
+    }
+
+    return res.status(200).send({
+      messageId,
+      encryptedFile: attachment.encryptedFile,
+      encryptedFileKey: attachment.encryptedFileKey,
+      nounce: attachment.nounce,
+      name: attachment.name,
+      type: attachment.type,
+      size: attachment.size,
+    });
+  } catch (error) {
+    console.log("fetchAttachmentError:", error);
+
+    return res.status(500).send({
+      error: "Something went wrong.",
+    });
   }
 });
 

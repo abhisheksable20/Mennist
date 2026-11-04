@@ -3,22 +3,33 @@ import "../styles/ReportModal.css"
 import { formatFileSize } from '../dataProcessing/dataProcessing';
 
 function FilePreview(props) {
-  const { previewBtnRef, selectedFile, sendAttachment, fileDownloadFlag } = props;
+  const { previewBtnRef, selectedFile, sendAttachment, fileDownloadFlag, onClose } = props;
   const [imageUrl, setImageUrl] = useState(null);
   const closeModalRef = useRef(null);
+  const modalRef = useRef(null);
 
   useEffect(() => {
     if (!selectedFile || !selectedFile.type.startsWith("image/")) {
       return;
     }
-    
+
     const url = URL.createObjectURL(selectedFile);
     setImageUrl(url);
 
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [selectedFile])
+  }, [selectedFile]);
+
+  useEffect(() => {
+    const modalEl = modalRef.current;
+    if (!modalEl) return;
+
+    const handleHidden = () => onClose && onClose();
+    modalEl.addEventListener("hidden.bs.modal", handleHidden);
+
+    return () => modalEl.removeEventListener("hidden.bs.modal", handleHidden);
+  }, [onClose]);
 
   // Generating preview for image url
   const generateImagePreviewURL = () => {
@@ -32,12 +43,12 @@ function FilePreview(props) {
   }
 
   // Save file in local device
-  const saveFile = ()=>{
+  const saveFile = () => {
     const url = URL.createObjectURL(selectedFile);
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = `M-${Date.now()}`;
+    a.download = selectedFile.name || `M-${Date.now()}`;
 
     document.body.appendChild(a);
     a.click();
@@ -48,10 +59,10 @@ function FilePreview(props) {
 
   return (
     <div>
-      <button ref={previewBtnRef} type="butto n" className="btn btn-primary d-none" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+      <button ref={previewBtnRef} type="button" className="btn btn-primary d-none" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
         Launch preview modal
       </button>
-      <div className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+      <div ref={modalRef} className="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabIndex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div className="modal-dialog">
           <div className="modal-content">
             <div className="modal-header">
