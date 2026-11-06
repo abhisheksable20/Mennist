@@ -64,6 +64,8 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.drumkit-5b886
+.env.mennist-4dda7
 
 # dataconnect generated files
 .dataconnect

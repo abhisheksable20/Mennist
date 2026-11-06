@@ -1,6 +1,6 @@
 require("dotenv").config();
-
-const functions = require("firebase-functions");
+const {onRequest} = require("firebase-functions/v2/https");
+const {defineInt} = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const express = require("express");
 const cors = require("cors");
@@ -14,10 +14,29 @@ if (!admin.apps.length) {
 
 const app = express();
 
-const allowedOrigins = [
+// Per-environment config comes from functions/.env.<projectId>
+// (.env.drumkit-5b886 for dev, .env.mennist-4dda7 for prod).
+// If a variable is missing, fall back to the strict PROD values (fail closed).
+const list = (value, fallback) =>
+  value ?
+    value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean) :
+    fallback;
+
+const allowedOrigins = list(process.env.ALLOWED_ORIGINS, [
   "https://mennist-4dda7.web.app",
   "https://mennist.com",
-  "https://www.mennist.com"];
+  "https://www.mennist.com",
+]);
+
+const ALLOWED_HOSTS = new Set(list(process.env.ALLOWED_HOSTS, [
+  "mennist.com",
+  "www.mennist.com",
+  "mennist-4dda7.web.app",
+]));
+
+// Cap scaling so a flood of requests can't run up your bill.
+const maxInst = defineInt("MAX_INSTANCES", {default: 5});
+
 const corsOptions = {
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -34,6 +53,17 @@ const corsOptions = {
 // 1. The app runs behind Google's proxy, so trust it to get the real user IP.
 //    Without this, every user looks like the same IP and shares one rate limit.
 app.set("trust proxy", 1);
+
+// 2. Host check: only accept requests that arrive through allowed hosts.
+//    Scanners hitting the raw run.app URL get an instant empty 403.
+//    (Noise reduction, not authentication: headers can be spoofed.)
+app.use((req, res, next) => {
+  if (process.env.FUNCTIONS_EMULATOR) return next(); // keep local dev working
+  const host = (req.get("x-forwarded-host") || req.hostname || "")
+      .split(",")[0].trim().toLowerCase();
+  if (!ALLOWED_HOSTS.has(host)) return res.status(403).end();
+  next();
+});
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -71,8 +101,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-exports.api = functions.https.onRequest(app);
 
+// Cap scaling so a flood of requests can't run up your bill.
+exports.api = onRequest({region: "us-central1", maxInstances: maxInst}, app);
 const {deleteUserData, postVibeCheck, matchEchoes, processNotification} = require("./bgTasks/cloudTasks");
 
 exports.processNotification = processNotification;
