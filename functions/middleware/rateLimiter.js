@@ -92,7 +92,7 @@ const createLimiter = ({name, max, windowMs = 60 * 1000, perUser = false}) => {
 // ===============================================================
 
 // Whole app, added once in index.js: app.use(ipLimiter)
-const ipLimiter = createLimiter({name: "ip", max: 200});
+const ipLimiter = createLimiter({name: "ip", max: 100});
 
 // Account creation: 10 new accounts per IP per hour
 const signupLimiter = createLimiter({name: "signup", max: 10, windowMs: 60 * 60 * 1000});

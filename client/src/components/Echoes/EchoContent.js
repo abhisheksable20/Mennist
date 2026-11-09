@@ -33,7 +33,7 @@ function EchoContent(props) {
                 navigate("/setup-user");
                 return;
             }
-            
+
             props.alert("Something Went Wrong!", "alert");
         }
         finally {
@@ -44,9 +44,23 @@ function EchoContent(props) {
     const loadMatchingEchoes = async () => {
         try {
             const data = (await axios.get(`${process.env.REACT_APP_API_URL}/echoes/${id}`)).data;
-            setMatchingEchoes(data);
+            setEchoData(prev => ({
+                ...prev,
+                status: data.status
+            }));
+
+            setMatchingEchoes(Array.isArray(data.matches) ? data.matches : []);
         }
         catch (matchingError) {
+            if (matchingError.response?.status === 404) {
+                setEchoData(prev => ({
+                    ...prev,
+                    status: "processing"
+                }));
+                setMatchingEchoes([]);
+                return;
+            }
+            
             props.alert("Failed To Load Matching Echoes!", "alert");
         }
     }

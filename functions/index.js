@@ -23,7 +23,6 @@ const list = (value, fallback) =>
     fallback;
 
 const allowedOrigins = list(process.env.ALLOWED_ORIGINS, [
-  "https://mennist-4dda7.web.app",
   "https://mennist.com",
   "https://www.mennist.com",
 ]);

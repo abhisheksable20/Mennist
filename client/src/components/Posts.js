@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from 'react'
+import { useEffect, useState, useContext, useRef, useLayoutEffect } from 'react'
 import PostContext from '../context/posts/postContext';
 import PostItem from './PostItem';
 import useInfiniteScroll from "react-infinite-scroll-hook";
@@ -8,10 +8,19 @@ import NoContent from './NoContent';
 import PostHeaders from './utils/PostHeaders';
 
 function Posts(props) {
-    const { posts, hasNext, getAllPosts, resetPostFetching, loading } = useContext(PostContext)
-    const [activeBtn, setActiveBtn] = useState(0);
+    const { posts, hasNext, getAllPosts, resetPostFetching, loading } = useContext(PostContext);
+
+
+    const [activeBtn, setActiveBtn] = useState(() => {
+        const savedFilter = sessionStorage.getItem("postsActiveFilter");
+        return savedFilter !== null ? Number(savedFilter) : 0;
+    });
 
     const navigate = useNavigate();
+
+    // Scroll restoration references
+    const hasRestoredScroll = useRef(false);
+    const isFirstRender = useRef(true);
 
     const loadMore = async () => {
         try {
@@ -31,10 +40,49 @@ function Posts(props) {
 
     useEffect(() => {
         document.title = "Mennist | Home";
-    }, [])
+    }, []);
+
+    // Save scroll position as the user scrolls
+    useLayoutEffect(() => {
+        const saveScrollPosition = () => {
+            // Don't overwrite the saved value before we've restored it
+            if (!hasRestoredScroll.current) return;
+            sessionStorage.setItem("postsScrollPosition", String(window.scrollY));
+        };
+
+        window.addEventListener("scroll", saveScrollPosition, { passive: true });
+
+        // Layout-effect cleanup runs synchronously on unmount, so the
+        // layout shrink / scroll-to-0 caused by the next page can't reach it
+        return () => window.removeEventListener("scroll", saveScrollPosition);
+    }, []);
+
+
+
+    // Restore scroll position once posts are in the DOM
+    useLayoutEffect(() => {
+        if (loading || posts.length === 0 || hasRestoredScroll.current) return;
+
+        const savedPosition = sessionStorage.getItem("postsScrollPosition");
+        if (savedPosition !== null) {
+            window.scrollTo(0, Number(savedPosition));
+        }
+        hasRestoredScroll.current = true;
+    }, [loading, posts.length]);
+
+
 
     // Trigger when state of the pill change
     useEffect(() => {
+        sessionStorage.setItem("postsActiveFilter", String(activeBtn));
+
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            if (posts.length > 0 || loading) {
+                return;
+            }
+        }
+
         const resetFetching = async () => {
             try {
                 await resetPostFetching(activeBtn);
@@ -45,6 +93,8 @@ function Posts(props) {
                     navigate("/setup-user", { replace: true });
                     return;
                 }
+
+                props.alert("Something went wrong!", "alert");
             }
         }
 

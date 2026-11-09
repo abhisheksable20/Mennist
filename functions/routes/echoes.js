@@ -74,14 +74,26 @@ router.get("/:echoId", isLoggedIn, globalLimiter, async (req, res) => {
     if (!snapshot.exists()) {
       return res.status(404).send({
         status: "processing",
+        matches: [],
         message: "Dream matching is still processing.",
       });
     }
 
     const data = snapshot.val();
-    const matches = data.matches.map(({...match}) => match);
 
-    return res.status(200).send(matches);
+    if (data.status === "failed") {
+      return res.status(200).send({
+        status: "failed",
+        matches: [],
+      });
+    }
+
+    const matches = Array.isArray(data.matches) ? data.matches : [];
+
+    return res.status(200).send({
+      status: data.status || "completed",
+      matches,
+    });
   } catch (echoFetchError) {
     console.log("Error while fetching the echo matches: ", echoFetchError);
   }
