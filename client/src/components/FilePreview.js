@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import "../styles/ReportModal.css"
 import { formatFileSize } from '../dataProcessing/dataProcessing';
+import { saveBlobToDevice } from '../utils/saveFile';
+import { isImageType } from '../config/attachmentConfig';
 
 function FilePreview(props) {
   const { previewBtnRef, selectedFile, sendAttachment, fileDownloadFlag, onClose } = props;
@@ -8,8 +10,12 @@ function FilePreview(props) {
   const closeModalRef = useRef(null);
   const modalRef = useRef(null);
 
+  const isImage = isImageType(selectedFile?.type);
+
+  // Object URL only for images. Other files are never rendered.
   useEffect(() => {
-    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
+    if (!selectedFile || !isImage) {
+      setImageUrl(null);
       return;
     }
 
@@ -19,7 +25,7 @@ function FilePreview(props) {
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [selectedFile]);
+  }, [selectedFile, isImage]);
 
   useEffect(() => {
     const modalEl = modalRef.current;
@@ -31,30 +37,15 @@ function FilePreview(props) {
     return () => modalEl.removeEventListener("hidden.bs.modal", handleHidden);
   }, [onClose]);
 
-  // Generating preview for image url
-  const generateImagePreviewURL = () => {
-    return URL.createObjectURL(selectedFile);
-  }
-
-  // User has confirm to send the attachement
-  const handleSendBtn = async () => {
+  // User has confirmed to send the attachment
+  const handleSendBtn = () => {
     sendAttachment();
     closeModalRef.current.click();
   }
 
-  // Save file in local device
+  // Save image to the local device
   const saveFile = () => {
-    const url = URL.createObjectURL(selectedFile);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = selectedFile.name || `M-${Date.now()}`;
-
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    saveBlobToDevice(selectedFile, selectedFile.name || `M-${Date.now()}`);
   }
 
   return (
@@ -66,23 +57,21 @@ function FilePreview(props) {
         <div className="modal-dialog">
           <div className="modal-content">
             <div className="modal-header">
-              <h1 className="modal-title fs-5" id="staticBackdropLabel">{selectedFile && selectedFile.type.startsWith("image/") ? selectedFile.name : "File Upload"}</h1>
+              <h1 className="modal-title fs-5" id="staticBackdropLabel">{isImage ? selectedFile.name : "Send file"}</h1>
               <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body text-center">
-              {selectedFile?.type.startsWith("image/") ? (
-                <img
-                  src={imageUrl}
-                  alt="Preview"
-                  className="img-fluid"
-                />
+              {isImage ? (
+                <img src={imageUrl} alt="Preview" className="img-fluid" />
               ) : (
                 <div>
-                  <h5>{selectedFile?.name}</h5>
-
-                  <p className="text-body-secondary">
-                    {formatFileSize(selectedFile?.size)}
+                  <h5 className="text-break">{selectedFile?.name}</h5>
+                  <p className="text-body-secondary mb-2">
+                    {selectedFile ? formatFileSize(selectedFile.size) : ""}
                   </p>
+                  <small className="text-body-secondary">
+                    No preview for this file type. The receiver will download it directly.
+                  </small>
                 </div>
               )}
             </div>

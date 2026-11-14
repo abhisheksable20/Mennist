@@ -3,8 +3,15 @@ import axios from "axios";
 import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
 import { useState, useRef, useCallback } from "react";
-import { encryptMessage, encryptedFile } from "../../crypto/encryptMessage";
+import { encryptMessage } from "../../crypto/encryptMessage";
 import { decryptMessage, decryptFile } from "../../crypto/decryptMessage";
+import { startFileEncryption, encryptChunks, startFileDecryption, decryptChunks, encryptedSize } from "../../crypto/chunkCrypto";
+import { uploadChunk } from "../../utils/chunkUpload";
+import { scanFile, checkHeader, validateIncomingMeta } from "../../utils/scanFile";
+import { saveBlobToDevice, safeFileName } from "../../utils/saveFile";
+import { BIG_FILE, MAX_FILE_SIZE, EXT_TO_TYPE, getExt, isAttachmentType, isImageType, isPreviewable } from "../../config/attachmentConfig";
+
+const API = process.env.REACT_APP_API_URL;
 
 const ChatsState = (props) => {
     const [chatFlag, setChatFlag] = useState(false);
@@ -25,7 +32,7 @@ const ChatsState = (props) => {
         // enable or disable chat feature on server side
         try {
             const serverBody = { chatFlag: isChecked };
-            await axios.post(`${process.env.REACT_APP_API_URL}/user/chatFlag`, serverBody, { withCredentials: true });
+            await axios.post(`${API}/user/chatFlag`, serverBody, { withCredentials: true });
         }
         catch (chatFlagError) {
             console.log(chatFlagError);
@@ -38,7 +45,7 @@ const ChatsState = (props) => {
             setLoading(true);
             await allChatsFromLocalStorage();
 
-            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/my-chats`, { withCredentials: true })).data;
+            const rawData = (await axios.get(`${API}/chats/my-chats`, { withCredentials: true })).data;
             if (!rawData) {
                 return;
             }
@@ -48,7 +55,8 @@ const ChatsState = (props) => {
             await Promise.all(
                 rawData.map(async (chat) => {
                     let decryptedMsg = "";
-                    if (chat.type.startsWith("image"))
+                    // For attachments the "message" is just the file name (not encrypted)
+                    if (isAttachmentType(chat.type))
                         decryptedMsg = chat.encryptedMsg;
                     else
                         decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
@@ -57,6 +65,7 @@ const ChatsState = (props) => {
                         chatId: chat.chatId,
                         plainMsg: decryptedMsg,
                         senderPublicKey: chat.senderPublicKey,
+                        type: chat.type,
                         timestamp: chat.timestamp
                     }
 
@@ -145,7 +154,7 @@ const ChatsState = (props) => {
         try {
             await userChatIndexDB(chatId);
 
-            const rawData = (await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat`, { params: { chatId }, signal })).data;
+            const rawData = (await axios.get(`${API}/chats/user-chat`, { params: { chatId }, signal })).data;
 
             if (!rawData || !rawData.messages || rawData.messages.length === 0)
                 return;
@@ -154,7 +163,7 @@ const ChatsState = (props) => {
 
             const newChats = await Promise.all(
                 rawData.messages.map(async (chat) => {
-                    const isAttachment = chat.type && chat.type.startsWith("image");
+                    const isAttachment = !!chat.hasAttachment;
 
                     const data = {
                         firebaseId: chat.id,
@@ -162,7 +171,7 @@ const ChatsState = (props) => {
                         timestamp: chat.timestamp,
                         type: chat.type,
                         fromMe: false,
-                        hasAttachment: !!isAttachment,
+                        hasAttachment: isAttachment,
                         attachmentId: chat.attachmentId || null,
                         plainMsg: ""
                     };
@@ -204,17 +213,16 @@ const ChatsState = (props) => {
             }
 
             // Only text messages are deleted by this endpoint.
-            const textMessageIds = rawData.messages.filter(chat => !(chat.type && chat.type.startsWith("image"))).map(chat => chat.id);
+            const textMessageIds = rawData.messages.filter(chat => !chat.hasAttachment).map(chat => chat.id);
 
             if (textMessageIds.length > 0) {
-                await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat`, {
+                await axios.delete(`${API}/chats/user-chat`, {
                     data: {
                         chatId: rawData.chatId,
                         messagesKeys: textMessageIds
                     },
                     withCredentials: true
-                }
-                );
+                });
             }
 
             await userChatIndexDB(chatId);
@@ -232,94 +240,124 @@ const ChatsState = (props) => {
 
     }, []);
 
-    // Download one attachment when the user requests it
+    /**
+     * Download ONE attachment when the user clicks it.
+     *  - previewable image  -> returns the Blob (the page shows the preview modal)
+     *  - everything else    -> decrypted and saved straight to the user's device, returns null
+     *                          (or the Blob for the in-memory fallback, which the page ignores)
+     * NOTE: when a "Save as" dialog is needed, it is the very first await so the click's user
+     * activation is still valid. Don't put awaits above it.
+     */
     const downloadAttachment = async (chat) => {
         if (!chat || !chat.firebaseId || !chat.chatId)
             return null;
 
-        // If the file is already stored locally, reuse it.
         if (chat.imageBlob)
             return chat.imageBlob;
 
-        try {
-            const keys = await db.keys.get("user-keypair");
+        // Big files on Chromium: stream straight to disk (no memory, no IndexedDB)
+        let fileHandle = null;
+        if (chat.fileSize > BIG_FILE && typeof window.showSaveFilePicker === "function") {
+            fileHandle = await window.showSaveFilePicker({ suggestedName: safeFileName(chat.plainMsg) });
+        }
 
-            // Fetch only the selected attachment.
-            const response = await axios.get(`${process.env.REACT_APP_API_URL}/chats/user-chat/attachment`, {
-                params: {
-                    chatId: chat.chatId,
-                    messageId: chat.firebaseId
-                },
-                withCredentials: true
-            }
-            );
+        const keys = await db.keys.get("user-keypair");
 
-            const attachment = response.data;
+        const { data: att } = await axios.get(`${API}/chats/user-chat/attachment`, {
+            params: { chatId: chat.chatId, messageId: chat.firebaseId },
+            withCredentials: true
+        });
 
-            // Decrypt the attachment on the client.
-            const decryptedFile = await decryptFile(
-                attachment.encryptedFile,
-                attachment.encryptedFileKey,
-                attachment.nounce,
-                keys.publicKey,
-                keys.privateKey
-            );
+        // The sender is the untrusted party: re-validate everything they supplied
+        const metaError = validateIncomingMeta(att.name, att.type, att.size);
+        if (metaError)
+            throw new Error(metaError);
 
-            const imageBlob = new File([decryptedFile], attachment.name || chat.plainMsg, { type: attachment.type || chat.type });
+        let blob = null;
 
-            // Find the existing local message.
-            const localMessage = await db.chats
-                .where("chatId")
-                .equals(chat.chatId)
-                .filter(message => message.firebaseId === chat.firebaseId)
-                .first();
+        if (!att.downloadUrl) {
+            // Legacy record: base64 ciphertext stored in RTDB
+            const bytes = await decryptFile(att.encryptedFile, att.encryptedFileKey, att.nounce, keys.publicKey, keys.privateKey);
+            blob = new File([bytes], att.name, { type: att.type });
+        }
+        else {
+            const state = await startFileDecryption(att.encryptedFileKey, att.nounce, keys.publicKey, keys.privateKey);
+            const chunks = decryptChunks(att.downloadUrl, att.size, state);
+            let received = 0;
 
-            // Save the decrypted file in Dexie before deleting the server copy.
-            if (localMessage) {
-                await db.chats.update(localMessage.id, {
-                    imageBlob,
-                    downloaded: true
-                });
+            if (fileHandle) {
+                const writable = await fileHandle.createWritable();
+                try {
+                    let first = true;
+                    for await (const part of chunks) {
+                        if (first) {
+                            first = false;
+                            const headerError = await checkHeader(new Blob([part]), att.type);
+                            if (headerError) throw new Error(headerError);
+                        }
+                        received += part.length;
+                        await writable.write(part);
+                    }
+                    if (received !== att.size) throw new Error("Downloaded size mismatch");
+                    await writable.close();
+                }
+                catch (e) {
+                    await writable.abort().catch(() => { });
+                    throw e;
+                }
             }
             else {
-                await db.chats.add({
-                    ...chat,
-                    imageBlob,
-                    downloaded: true
+                const parts = [];
+                for await (const part of chunks) {
+                    received += part.length;
+                    parts.push(new Blob([part])); // lets the browser page chunks out of RAM
+                }
+                if (received !== att.size) throw new Error("Downloaded size mismatch");
+                blob = new File(parts, att.name, { type: att.type });
+            }
+        }
+
+        // Full content scan of the decrypted file before we hand it to the user
+        if (blob) {
+            const scan = await scanFile(blob, { name: att.name });
+            if (!scan.ok)
+                throw new Error(scan.reason);
+        }
+
+        const keepLocal = !!blob && att.size <= BIG_FILE;   // small: keep a copy in Dexie
+        const savedToDisk = !!fileHandle;                   // big + picker: it's on disk now
+        const patch = keepLocal
+            ? { imageBlob: blob, downloaded: true }
+            : { downloaded: true, ...(savedToDisk ? { savedToDisk: true } : {}) };
+
+        // 1) local save first
+        if (chat.id !== undefined)
+            await db.chats.update(chat.id, patch);
+
+        setUserMessages(prev =>
+            prev.map(message => message.firebaseId === chat.firebaseId ? { ...message, ...patch } : message)
+        );
+
+        // 2) non-previewable files go straight to the device
+        if (blob && !isPreviewable(att.type, att.size))
+            saveBlobToDevice(blob, att.name);
+
+        // 3) delete the server copy only when we're sure we have a safe local copy.
+        //    A big file saved through the in-memory fallback keeps its server copy (the browser
+        //    download can't be confirmed), so the user can retry.
+        if (keepLocal || savedToDisk) {
+            try {
+                await axios.delete(`${API}/chats/user-chat/attachment`, {
+                    data: { chatId: chat.chatId, messageId: chat.firebaseId },
+                    withCredentials: true
                 });
             }
-
-            // Update the displayed conversation.
-            setUserMessages(prev =>
-                prev.map(message =>
-                    message.firebaseId === chat.firebaseId
-                        ? { ...message, imageBlob, downloaded: true }
-                        : message
-                )
-            );
-
-            // Delete the server copy only after the local save succeeds.
-            try {
-                await axios.delete(`${process.env.REACT_APP_API_URL}/chats/user-chat/attachment`, {
-                    data: {
-                        chatId: chat.chatId,
-                        messageId: chat.firebaseId
-                    },
-                    withCredentials: true
-                }
-                );
-            }
             catch (deleteError) {
-                // The file is already safe in Dexie, so don't block the user.
                 console.error("Failed to delete downloaded attachment from server:", deleteError);
             }
+        }
 
-            return imageBlob;
-        }
-        catch (error) {
-            console.error("Attachment download failed:", error);
-            throw error;
-        }
+        return blob;
     };
 
     // Only fetch single user chat from local Index Database Using Dexie
@@ -362,7 +400,7 @@ const ChatsState = (props) => {
                 nounce: encryptedData.nounce
             }
 
-            await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-chat`, chatBody, { withCredentials: true });
+            await axios.post(`${API}/chats/send-chat`, chatBody, { withCredentials: true });
 
             const timestamp = Date.now();
 
@@ -393,101 +431,93 @@ const ChatsState = (props) => {
         }
     }
 
-    // Sending the attachement to server 
+    // Encrypt + upload a file of any allowed type (images included)
+    // The file is expected to have passed scanFile() already (ConversationPage does that on selection).
     const sendAttachment = async (file, receiverPublicKey) => {
-        if (!chatIdRef.current || !file || !receiverPublicKey)
-            return false
+        const chatId = chatIdRef.current;
+        if (!chatId || !file || !receiverPublicKey)
+            return false;
+
+        const type = EXT_TO_TYPE[getExt(file.name)];
+        if (!type || file.size < 1 || file.size > MAX_FILE_SIZE)
+            throw new Error("This file can't be sent.");
+
+        const keepLocal = file.size <= BIG_FILE;
+        const localFile = file.type === type ? file : new File([file], file.name, { type });
 
         const tempMessage = {
-            chatId: chatIdRef.current,
+            chatId,
             timestamp: Date.now(),
-            imageBlob: file,
             plainMsg: file.name,
-            type: file.type,
+            type,
             fromMe: true,
-            status: "sending"
-        }
+            status: "sending",
+            hasAttachment: true,
+            fileSize: file.size,
+            ...(keepLocal ? { imageBlob: localFile } : {})
+        };
 
-        // Save temporary message immediately
         const id = await db.chats.add(tempMessage);
         setUserMessages(prev => [...prev, { id, ...tempMessage }]);
 
+        const patchMessage = (patch) =>
+            setUserMessages(prev => prev.map(m => (m.id === id ? { ...m, ...patch } : m)));
+
         try {
-            /**
-             * Data recieved from the encryption process
-             * {
-             *  encryptedFile
-             *  encryptedKey
-             *  nounce
-             *  fileName
-             *  fileType
-             * }
-             */
-
             const keys = await db.keys.get("user-keypair");
+            const { state, nounce, encryptedFileKey } = await startFileEncryption(receiverPublicKey);
 
-            const buffer = await file.arrayBuffer();
-            const imageByte = new Uint8Array(buffer);
-            const fileExtension = file.name.split(".").pop();
-            const fileName = `Mennist_${Date.now()}.${fileExtension}`
+            const fileName = `Mennist_${Date.now()}.${getExt(file.name)}`;
 
-            const encryptedFileData = await encryptedFile(imageByte, receiverPublicKey);
-
-            const chatBody = {
-                ...encryptedFileData,
-                chatId: chatIdRef.current,
+            // 1) metadata -> server validates and returns a resumable upload session
+            const { data: init } = await axios.post(`${API}/chats/attachment/init`, {
+                chatId,
                 senderPublicKey: keys.publicKey,
+                encryptedFileKey,
+                nounce,
                 name: fileName,
-                type: file.type,
+                type,
                 size: file.size
+            }, { withCredentials: true });
+
+            // 2) encrypt and upload chunk by chunk straight to Cloud Storage
+            const total = encryptedSize(file.size);
+            let offset = 0;
+            let lastPct = -1;
+
+            for await (const chunk of encryptChunks(file, state)) {
+                await uploadChunk(init.uploadUrl, chunk, offset, total);
+                offset += chunk.length;
+
+                const pct = Math.floor((offset / total) * 100);
+                if (pct !== lastPct) {
+                    lastPct = pct;
+                    patchMessage({ progress: pct });
+                }
             }
 
-            await axios.post(`${process.env.REACT_APP_API_URL}/chats/send-attachment`, chatBody, { withCredentials: true });
+            // 3) server verifies the stored size and publishes the message
+            await axios.post(`${API}/chats/attachment/complete`, { messageId: init.messageId }, { withCredentials: true });
 
-            await db.chats.update(id, {
-                plainMsg: fileName,
-                status: "sent"
-            });
+            const patch = { plainMsg: fileName, status: "sent", firebaseId: init.messageId, attachmentId: init.messageId };
+            await db.chats.update(id, patch);
+            patchMessage({ ...patch, progress: undefined });
 
-            // Update React state
-            setUserMessages(prev =>
-                prev.map(msg =>
-                    msg.id === id
-                        ? { ...msg, plainMsg: fileName, status: "sent" }
-                        : msg
-                )
-            );
-
-            const timestamp = tempMessage.timestamp;
-
-            // Updating last msg in chatUser table in dexie
-            const DBData = {
-                chatId: chatIdRef.current,
+            await saveAndUpdateDBV2({
+                chatId,
                 plainMsg: fileName,
                 senderPublicKey: receiverPublicKey,
-                timestamp,
-                type: file.type
-            }
+                timestamp: tempMessage.timestamp,
+                type
+            });
 
-            await saveAndUpdateDBV2(DBData);
             return true;
         }
         catch (error) {
-            await db.chats.update(id, {
-                status: "failed"
-            });
-
-            setUserMessages(prev =>
-                prev.map(msg =>
-                    msg.id === id
-                        ? { ...msg, status: "failed" }
-                        : msg
-                )
-            );
-
+            await db.chats.update(id, { status: "failed" });
+            patchMessage({ status: "failed", progress: undefined });
             throw error;
         }
-
     }
 
     // Delete single user chats from the server then from local database
@@ -498,7 +528,7 @@ const ChatsState = (props) => {
         try {
             const delChatId = { chatId: chatId };
 
-            await axios.delete(`${process.env.REACT_APP_API_URL}/chats/my-chats`, {
+            await axios.delete(`${API}/chats/my-chats`, {
                 data: delChatId,
                 withCredentials: true
             });
@@ -548,7 +578,7 @@ const ChatsState = (props) => {
                 return userData;
 
             const username = generateUsername();
-            const data = (await axios.post(`${process.env.REACT_APP_API_URL}/chats/get-publicKey`, bodyData)).data
+            const data = (await axios.post(`${API}/chats/get-publicKey`, bodyData)).data
             const publicKey = data.publicKey;
 
             const chatMetaData = {

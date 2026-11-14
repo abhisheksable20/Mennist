@@ -15,6 +15,9 @@ import ChatLoading from './ChatLoading';
 import Avatar from "./Avatar/Avatar";
 import NoContent from './NoContent';
 import FilePreview from "./FilePreview";
+import { scanFile } from "../utils/scanFile";
+import { saveBlobToDevice } from "../utils/saveFile";
+import { ACCEPT_ATTR, BIG_FILE, isImageType, isPreviewable } from "../config/attachmentConfig";
 
 function ConversationPage() {
   const { chatId } = useParams();
@@ -28,6 +31,8 @@ function ConversationPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
   const [attachmentDownloadStatus, setAttachmentDownloadStatus] = useState({});
+  const [attachmentError, setAttachmentError] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
 
   // If this is true sender can send messages and attachments
   // If this is false sender cannot send messages and attachments
@@ -158,109 +163,111 @@ function ConversationPage() {
     setInputMessage(e.target.value)
   }
 
-  // sending attachments to server side using context method
-  const handleAttachmentInput = async () => {
-    setIsSendBtnDisabled(true);
+  // Confirmed in the modal: start the upload in the background so the chat stays usable.
+  // Progress is shown on the message bubble itself.
+  const handleAttachmentInput = () => {
+    if (!selectedFile || !userData.current)
+      return;
 
-    try {
-      if (!selectedFile || !chatIdRef || !userData.current) {
-        return;
-      }
-
-      await sendAttachment(selectedFile, userData.current.recieverPublicKey);
-      setIsSendBtnDisabled(false);
-      setInputMessage("");
-    }
-    catch (attachmentError) {
-      console.log("Error sending attachment: ", attachmentError)
-      if (attachmentError.response?.status)
-        setIsReceiverAvail(false);
-    }
-    finally {
-      const textarea = document.getElementById("chatInput");
-      if (textarea) {
-        textarea.style.height = "auto";
-      }
-
-      setIsSendBtnDisabled(false);
-      setInputMessage("")
-    }
+    sendAttachment(selectedFile, userData.current.recieverPublicKey)
+      .catch((attachmentError) => {
+        console.log("Error sending attachment: ", attachmentError);
+        if (attachmentError.response?.status === 403)
+          setIsReceiverAvail(false);
+        else if (attachmentError.response?.status === 415)
+          setAttachmentError("This file type is not allowed.");
+        else
+          setAttachmentError(attachmentError.message || "Couldn't send the file.");
+      });
   }
 
-  // Handle file attachement
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  // Handle file selection: check it first, then show the confirmation modal
+  const handleFileChange = async (e) => {
+    const input = e.target;
+    const file = input.files[0];
 
     if (!file) return;
 
-    fileDownloadFlag.current = false;
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const copiedFile = new File(
-        [reader.result],
-        file.name,
-        {
-          type: file.type,
-          lastModified: file.lastModified
-        }
-      );
-
-      setSelectedFile(copiedFile);
-    };
-
-    reader.onerror = () => {
-      console.error("Failed to read selected file:", reader.error);
-    };
-
-    reader.readAsArrayBuffer(file);
-  }
-
-  // Handle file download
-  const fileDownload = async (chat) => {
-    const messageId = chat.firebaseId ?? chat.id;
-
-    if (!messageId) return;
-
-    // Nothing in memory and nothing to fetch from the server
-    if (!chat.imageBlob && !chat.firebaseId) return;
-
-    // Prevent multiple simultaneous downloads of the same attachment.
-    if (attachmentDownloadStatus[messageId] === "downloading")
-      return;
-
-    fileDownloadFlag.current = true;
-
-    // Show downloading status.
-    setAttachmentDownloadStatus(prev => ({
-      ...prev,
-      [messageId]: "downloading"
-    }));
+    setAttachmentError("");
+    setIsChecking(true);
 
     try {
-      const imageBlob = chat.imageBlob
-        ? chat.imageBlob
-        : await downloadAttachment(chat);
+      const scan = await scanFile(file);
+      if (!scan.ok) {
+        setAttachmentError(scan.reason);
+        input.value = "";
+        return;
+      }
 
-      if (!imageBlob)
-        throw new Error("Downloaded attachment is empty.");
+      // Small files: snapshot the bytes (as before). Big files: never copy 1 GB into memory.
+      const parts = file.size <= BIG_FILE ? [await file.arrayBuffer()] : [file];
+      const ready = new File(parts, file.name, { type: scan.type, lastModified: file.lastModified });
 
-      setAttachmentDownloadStatus(prev => ({
-        ...prev,
-        [messageId]: "downloaded"
-      }));
+      fileDownloadFlag.current = false;
+      setSelectedFile(ready);
+    }
+    catch (err) {
+      console.error("Failed to read selected file:", err);
+      setAttachmentError("Couldn't read that file.");
+      input.value = "";
+    }
+    finally {
+      setIsChecking(false);
+    }
+  }
 
-      setSelectedFile(imageBlob);
+  // Opens the preview modal in "download" mode (images only)
+  const openPreview = (blob) => {
+    fileDownloadFlag.current = true;
+    setSelectedFile(blob);
+  }
+
+  const setStatus = (messageId, value) =>
+    setAttachmentDownloadStatus(prev => {
+      const next = { ...prev };
+      if (value) next[messageId] = value; else delete next[messageId];
+      return next;
+    });
+
+  // Click on an attachment (image or file card)
+  const fileDownload = async (chat) => {
+    const messageId = chat.firebaseId ?? chat.id;
+    if (!messageId) return;
+
+    // Already have the bytes locally
+    if (chat.imageBlob) {
+      if (isImageType(chat.type)) openPreview(chat.imageBlob);        // image: preview + Download button
+      else saveBlobToDevice(chat.imageBlob, chat.plainMsg);          // anything else: save immediately
+      return;
+    }
+
+    // Nothing local and nothing on the server to fetch
+    if (!chat.firebaseId || chat.fromMe) return;
+
+    // Prevent multiple simultaneous downloads of the same attachment.
+    if (attachmentDownloadStatus[messageId] === "downloading") return;
+
+    setStatus(messageId, "downloading");
+
+    try {
+      // downloadAttachment saves non-image files straight to the device by itself
+      const blob = await downloadAttachment(chat);
+
+      setStatus(messageId, "downloaded");
+
+      if (blob && isPreviewable(chat.type, chat.fileSize ?? blob.size))
+        openPreview(blob);
     }
     catch (error) {
+      if (error.name === "AbortError") {
+        // user closed the "Save as" dialog
+        setStatus(messageId, null);
+        return;
+      }
+
       console.error("Unable to download attachment:", error);
-
-      setAttachmentDownloadStatus(prev => ({
-        ...prev,
-        [messageId]: "failed"
-      }));
-
+      setStatus(messageId, "failed");
+      setAttachmentError(error.message || "Couldn't download the file.");
       fileDownloadFlag.current = false;
     }
   }
@@ -279,7 +286,7 @@ function ConversationPage() {
     }
     catch (error) {
       console.log(error);
-      if (error.response?.status)
+      if (error.response?.status === 403)
         setIsReceiverAvail(false);
     }
     finally {
@@ -331,14 +338,22 @@ function ConversationPage() {
           fileDownloadFlag={fileDownloadFlag}
           onClose={handleFilePreviewClose} />
 
+        {attachmentError && (
+          <div className="alert alert-danger alert-dismissible fade show mx-3 mb-2" role="alert">
+            {attachmentError}
+            <button type="button" className="btn-close" aria-label="Close" onClick={() => setAttachmentError("")}></button>
+          </div>
+        )}
+
         {/* Input component to take msg from the user */}
         <div className={`chat-input-wrapper ${!chatFlag ? "d-none" : ""}`}>
           <div className="chat-input-box">
 
-            {/* Attach the image or file button */}
+            {/* Attach a file button */}
             <button
               className="send-btn"
               style={{ backgroundColor: "#262626" }}
+              disabled={isChecking}
               onClick={() => {
                 document.getElementById("fileInput").click()
               }}>
@@ -346,7 +361,7 @@ function ConversationPage() {
             </button>
             <input
               type="file"
-              id='fileInput' accept="image/*" hidden
+              id='fileInput' accept={ACCEPT_ATTR} hidden
               onChange={handleFileChange} />
 
             <textarea
@@ -363,7 +378,9 @@ function ConversationPage() {
             </button>
 
           </div>
-          <small className="e2ee-notice">Messages are protected with end-to-end encryption.</small>
+          <small className="e2ee-notice">
+            {isChecking ? "Checking file…" : "Messages are protected with end-to-end encryption."}
+          </small>
         </div>
       </div>
     </>
