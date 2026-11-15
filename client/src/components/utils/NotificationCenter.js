@@ -147,7 +147,7 @@ function NotificationCenter() {
 
                 return username ? (
                     <>
-                        <strong>{username}</strong> sent you a photo.
+                        <strong>{username}</strong> sent you a attachment.
                     </>
                 ) : (
                     "Someone sent you a photo."

@@ -31,7 +31,7 @@ const CheckIcon = () => (
 
 function ConversationItem(props) {
   const { fromMe, plainMsg, timestamp, type, imageBlob, status, progress, fileSize, savedToDisk } = props.chat;
-  const { fileDownload, downloadStatus } = props;
+  const { fileDownload, downloadStatus, downloadProgress } = props;
 
   const isAttachment = isAttachmentType(type);
 
@@ -57,14 +57,15 @@ function ConversationItem(props) {
     };
   }, [imageUrl]);
 
-  // Triggering the download method in ConversationPage.js
+  // Triggering the download method in conversationPage.js
   const handleDownloadBtn = () => {
     fileDownload(props.chat);
   }
 
   const isUploading = fromMe && status === "sending";
   const subText =
-    downloadStatus === "downloading" ? "Downloading…" :
+    downloadStatus === "downloading"
+      ? (downloadProgress >= 100 ? "Verifying…" : `Downloading ${downloadProgress ?? 0}%`) :
       downloadStatus === "failed" ? "Download failed. Tap to retry" :
         isUploading && progress != null ? `Uploading ${progress}%` :
           savedToDisk ? "Saved to your device" :

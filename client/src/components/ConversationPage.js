@@ -31,6 +31,7 @@ function ConversationPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [userAvatar, setUserAvatar] = useState(null);
   const [attachmentDownloadStatus, setAttachmentDownloadStatus] = useState({});
+  const [downloadProgress, setDownloadProgress] = useState({});
   const [attachmentError, setAttachmentError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
 
@@ -229,6 +230,13 @@ function ConversationPage() {
       return next;
     });
 
+  const setProgress = (messageId, value) =>
+    setDownloadProgress(prev => {
+      const next = { ...prev };
+      if (value == null) delete next[messageId]; else next[messageId] = value;
+      return next;
+    });
+
   // Click on an attachment (image or file card)
   const fileDownload = async (chat) => {
     const messageId = chat.firebaseId ?? chat.id;
@@ -248,17 +256,21 @@ function ConversationPage() {
     if (attachmentDownloadStatus[messageId] === "downloading") return;
 
     setStatus(messageId, "downloading");
+    setProgress(messageId, 0);
 
     try {
       // downloadAttachment saves non-image files straight to the device by itself
-      const blob = await downloadAttachment(chat);
+      const blob = await downloadAttachment(chat, (pct) => setProgress(messageId, pct));
 
       setStatus(messageId, "downloaded");
+      setProgress(messageId, null);
 
       if (blob && isPreviewable(chat.type, chat.fileSize ?? blob.size))
         openPreview(blob);
     }
     catch (error) {
+      setProgress(messageId, null);
+
       if (error.name === "AbortError") {
         // user closed the "Save as" dialog
         setStatus(messageId, null);
@@ -326,7 +338,13 @@ function ConversationPage() {
           </div>
           {
             userMessages.map((chat) => {
-              return <ConversationItem key={chat.id} chat={chat} fileDownload={fileDownload} downloadStatus={attachmentDownloadStatus[chat.firebaseId ?? chat.id]} />
+              const key = chat.firebaseId ?? chat.id;
+              return <ConversationItem
+                key={chat.id}
+                chat={chat}
+                fileDownload={fileDownload}
+                downloadStatus={attachmentDownloadStatus[key]}
+                downloadProgress={downloadProgress[key]} />
             })
           }
         </div>

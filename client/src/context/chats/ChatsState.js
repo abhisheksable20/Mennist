@@ -9,7 +9,7 @@ import { startFileEncryption, encryptChunks, startFileDecryption, decryptChunks,
 import { uploadChunk } from "../../utils/chunkUpload";
 import { scanFile, checkHeader, validateIncomingMeta } from "../../utils/scanFile";
 import { saveBlobToDevice, safeFileName } from "../../utils/saveFile";
-import { BIG_FILE, MAX_FILE_SIZE, EXT_TO_TYPE, getExt, isAttachmentType, isImageType, isPreviewable } from "../../config/attachmentConfig";
+import { BIG_FILE, MAX_FILE_SIZE, EXT_TO_TYPE, getExt, isAttachmentType, isPreviewable } from "../../config/attachmentConfig";
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -243,12 +243,12 @@ const ChatsState = (props) => {
     /**
      * Download ONE attachment when the user clicks it.
      *  - previewable image  -> returns the Blob (the page shows the preview modal)
-     *  - everything else    -> decrypted and saved straight to the user's device, returns null
-     *                          (or the Blob for the in-memory fallback, which the page ignores)
+     *  - everything else    -> decrypted and saved straight to the user's device
+     * onProgress(percent) is called after every decrypted chunk.
      * NOTE: when a "Save as" dialog is needed, it is the very first await so the click's user
      * activation is still valid. Don't put awaits above it.
      */
-    const downloadAttachment = async (chat) => {
+    const downloadAttachment = async (chat, onProgress) => {
         if (!chat || !chat.firebaseId || !chat.chatId)
             return null;
 
@@ -276,7 +276,7 @@ const ChatsState = (props) => {
         let blob = null;
 
         if (!att.downloadUrl) {
-            // Legacy record: base64 ciphertext stored in RTDB
+            // Legacy record: base64 ciphertext stored in RTDB (no progress available)
             const bytes = await decryptFile(att.encryptedFile, att.encryptedFileKey, att.nounce, keys.publicKey, keys.privateKey);
             blob = new File([bytes], att.name, { type: att.type });
         }
@@ -297,6 +297,7 @@ const ChatsState = (props) => {
                         }
                         received += part.length;
                         await writable.write(part);
+                        if (onProgress) onProgress(Math.floor((received / att.size) * 100));
                     }
                     if (received !== att.size) throw new Error("Downloaded size mismatch");
                     await writable.close();
@@ -311,6 +312,7 @@ const ChatsState = (props) => {
                 for await (const part of chunks) {
                     received += part.length;
                     parts.push(new Blob([part])); // lets the browser page chunks out of RAM
+                    if (onProgress) onProgress(Math.floor((received / att.size) * 100));
                 }
                 if (received !== att.size) throw new Error("Downloaded size mismatch");
                 blob = new File(parts, att.name, { type: att.type });

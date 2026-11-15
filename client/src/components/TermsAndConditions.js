@@ -1,13 +1,13 @@
-import React from "react"
-
 // Terms and Conditions for Mennist's anonymous posting, chat, Veil, and Echoes features.
 function TermsAndConditions() {
+    document.title = "Mennist | Terms & Conditions";
+
     return (
         <div className="container py-5">
             <h1 className="mb-4 post-title">Terms and Conditions</h1>
 
             <p className="post-title">
-                <strong>Last Updated:</strong> Oct 19, 2026
+                <strong>Last Updated:</strong> Nov 15, 2026
             </p>
 
             <p className="testing-notice my-4">
@@ -168,9 +168,31 @@ function TermsAndConditions() {
 
             <h4 className="post-title pt-3">Attachments and File Sharing</h4>
             <p className="terms-para">
+                Mennist chat supports sharing certain image, video, audio, and document
+                files. Supported formats currently include:
+            </p>
+
+            <ul className="terms-para">
+                <li>Images: JPG, JPEG, PNG, WEBP, and GIF.</li>
+                <li>Videos: MP4, 3GP, and MOV.</li>
+                <li>Audio: MP3, M4A, AAC, OGG, OPUS, and WAV.</li>
+                <li>Documents: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV, and ZIP.</li>
+            </ul>
+
+            <p className="terms-para">
+                Supported formats, file-size limits, and availability may change as
+                Mennist develops. We may reject or restrict files that are unsupported,
+                exceed applicable limits, appear unsafe, or violate these Terms.
+            </p>
+
+            <p className="terms-para">
                 You are responsible for files you upload or share and must have the
-                necessary rights to share them. Do not upload unlawful, harmful, or
-                copyrighted material without permission.
+                necessary rights and permissions to share them. Do not upload or send
+                unlawful, harmful, malicious, deceptive, or copyrighted material
+                without permission. Do not use attachments to distribute malware,
+                attempt to compromise another user's device, violate another person's
+                privacy, or otherwise misuse the chat feature. You should only open
+                files from people you trust and use appropriate security precautions.
             </p>
 
             <h4 className="post-title pt-3">Encryption and Security</h4>

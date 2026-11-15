@@ -1,12 +1,12 @@
-import React from 'react'
-
 function PrivacyPolicy() {
+    document.title = "Mennist | Privacy Policy";
+
     return (
         <div className="container py-5">
             <h1 className="mb-4 post-title">Privacy Policy</h1>
 
             <p className="post-title">
-                <strong>Last Updated:</strong> Oct 19, 2026
+                <strong>Last Updated:</strong> Nov 15, 2026
             </p>
 
             <p className="testing-notice my-4">
@@ -75,6 +75,38 @@ function PrivacyPolicy() {
                 processed depends on how the chat feature operates.
             </p>
 
+            <h4 className="post-title pt-3">Chat Attachments and File Sharing</h4>
+            <p className="terms-para">
+                Mennist chat allows users to send supported image, video, audio, and
+                document files. When you upload or send an attachment, we may process
+                the file and related information needed to transfer, store, display,
+                download, and manage it. This information may include the file name,
+                file format or MIME type, file size, upload time, and the chat or
+                message it is associated with.
+            </p>
+
+            <p className="terms-para">
+                Supported formats currently include:
+            </p>
+
+            <ul className="terms-para">
+                <li>Images: JPG, JPEG, PNG, WEBP, and GIF.</li>
+                <li>Videos: MP4, 3GP, and MOV.</li>
+                <li>Audio: MP3, M4A, AAC, OGG, OPUS, and WAV.</li>
+                <li>Documents: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV, and ZIP.</li>
+            </ul>
+
+            <p className="terms-para">
+                Available formats and upload limits may change as the chat feature
+                develops. Attachments and related metadata may be handled by Mennist
+                and its infrastructure or service providers as necessary to provide
+                the feature, protect the platform, and address abuse or technical
+                issues. Please avoid sending files containing information you do not
+                want the recipient or the service to receive. Encryption and other
+                security measures may be used, but no method of transmission or
+                storage can guarantee absolute security.
+            </p>
+
             <h4 className="post-title pt-3">Local Browser Storage</h4>
             <p className="terms-para">
                 Mennist may store information in your browser, including saved post
@@ -95,6 +127,7 @@ function PrivacyPolicy() {
 
             <h3 className="post-title pt-3">3. How We Use Information</h3>
             <p className="terms-para">We may use information to:</p>
+
             <ul className="terms-para">
                 <li>Provide and maintain Mennist and its features.</li>
                 <li>Display posts and manage content submitted by users.</li>
