@@ -4,7 +4,8 @@
       ".read": true,
       ".write": false,
       ".indexOn": [
-        "timestamp"
+        "timestamp",
+        "category"
       ]
     },
     "userPosts": {
@@ -30,6 +31,20 @@
       ".indexOn": [
         ".value"
       ]
+    },
+    "users": {
+      "$uid": {
+        "notification": {
+          ".indexOn": [
+            "timestamp"
+          ]
+        },
+        "posts": {
+          ".indexOn": [
+            "timestamp"
+          ]
+        }
+      }
     }
   }
 }
