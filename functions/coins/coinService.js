@@ -279,6 +279,7 @@ const getWallet = async (uid) => {
     streak: streakView(w, now),
     inventory: w.inventory,
     unlocks: Object.keys(w.unlocks),
+    mythicEdition: w.mythicEdition || null,
     transfers: {
       canSend: w.streak.longest >= cfg.TRANSFER_MIN_LONGEST_STREAK,
       sentToday: daily.sent,
@@ -381,55 +382,161 @@ const recordDailyPost = async (uid, content) => {
 // Shop
 // ---------------------------------------------------------------------
 
-const getShop = () => Object.keys(cfg.SHOP_ITEMS).map((id) => {
-  const item = cfg.SHOP_ITEMS[id];
-  return {id, name: item.name, type: item.type, price: item.price};
-});
+const VIBE_ITEMS = Object.keys(cfg.SHOP_ITEMS).filter((id) => cfg.SHOP_ITEMS[id].category === "vibe");
+
+// Price of the "unlock all remaining vibes" pack for this many missing vibes
+const vibePackPrice = (missing) => {
+  if (missing < 2) {
+    return null;
+  }
+  return Math.min(cfg.VIBE_PACK_MAX, (missing - 1) * cfg.SHOP_ITEMS[VIBE_ITEMS[0]].price);
+};
+
+const getUnlocks = async (uid) => {
+  const snap = await db.ref(`coins/${uid}/unlocks`).get();
+  return snap.val() || {};
+};
+
+// The whole catalogue, marked with what this user owns
+const getShop = async (uid) => {
+  const snap = await db.ref(`coins/${uid}`).get();
+  const w = normalize(snap.val());
+
+  const items = Object.keys(cfg.SHOP_ITEMS).map((id) => {
+    const item = cfg.SHOP_ITEMS[id];
+    const out = {id, ...item};
+    if (item.category === "boost") {
+      out.owned = w.inventory[id] || 0;
+    } else {
+      out.owned = w.unlocks[id] === true;
+    }
+    return out;
+  });
+
+  const missing = VIBE_ITEMS.filter((id) => !w.unlocks[id]).length;
+  let mythicSold = 0;
+  try {
+    mythicSold = (await db.ref("coinStats/mythicSold").get()).val() || 0;
+  } catch (statErr) {
+    console.error("Mythic stat read failed:", statErr);
+  }
+
+  return {
+    items,
+    vibePack: {id: cfg.VIBE_PACK_ID, price: vibePackPrice(missing), missing},
+    mythic: {sold: mythicSold, limit: cfg.SHOP_ITEMS.avatar_set_mythic.limit, edition: w.mythicEdition || null},
+    longestStreak: w.streak.longest,
+  };
+};
 
 const ownsUnlock = async (uid, itemId) => {
   const snap = await db.ref(`coins/${uid}/unlocks/${itemId}`).get();
   return snap.val() === true;
 };
 
+// Reserve one of the limited Mythic editions. Returns the edition number.
+const reserveEdition = async (limit) => {
+  let edition = null;
+  const result = await db.ref("coinStats/mythicSold").transaction((current) => {
+    const sold = current || 0;
+    if (sold >= limit) {
+      edition = null;
+      return sold;
+    }
+    edition = sold + 1;
+    return sold + 1;
+  });
+  return result.committed ? edition : null;
+};
+
+const releaseEdition = async () => {
+  await db.ref("coinStats/mythicSold").transaction((current) => Math.max(0, (current || 0) - 1));
+};
+
 const spend = async (uid, itemId) => {
-  const item = cfg.SHOP_ITEMS[itemId];
+  const isPack = itemId === cfg.VIBE_PACK_ID;
+  const item = isPack ? {category: "vibe_pack", name: "All vibes"} : cfg.SHOP_ITEMS[itemId];
   if (!item) {
     throw new CoinError(404, "UNKNOWN_ITEM", "This item does not exist.");
   }
 
   await ensureWallet(uid);
 
-  const out = await walletTx(uid, (current) => {
-    const w = normalize(current);
-
-    if (item.type === "unlock" && w.unlocks[itemId]) {
-      return {error: new CoinError(409, "ALREADY_OWNED", "You already own this item.")};
+  // Limited items: hold an edition before taking coins, give it back on failure
+  let edition = null;
+  if (item.limit) {
+    const pre = normalize((await db.ref(`coins/${uid}`).get()).val());
+    if (pre.unlocks[itemId]) {
+      throw new CoinError(409, "ALREADY_OWNED", "You already own this item.");
     }
-    if (itemId === "streak_freeze" && (w.inventory.streak_freeze || 0) >= cfg.MAX_STREAK_FREEZES) {
-      return {error: new CoinError(409, "MAX_REACHED", `You can hold at most ${cfg.MAX_STREAK_FREEZES} streak freezes.`)};
+    if (item.requiresStreak && pre.streak.longest < item.requiresStreak) {
+      throw new CoinError(403, "STREAK_REQUIRED", `Reach a ${item.requiresStreak}-day streak to unlock this.`);
     }
-
-    const total = w.bonus + w.earned;
-    if (total < item.price) {
-      return {error: new CoinError(402, "INSUFFICIENT_COINS", `You need ${item.price - total} more coins.`)};
+    if (pre.bonus + pre.earned < item.price) {
+      throw new CoinError(402, "INSUFFICIENT_COINS", `You need ${item.price - pre.bonus - pre.earned} more coins.`);
     }
-
-    // Spend bonus coins first, then earned coins
-    const fromBonus = Math.min(w.bonus, item.price);
-    w.bonus -= fromBonus;
-    w.earned -= item.price - fromBonus;
-
-    if (item.type === "unlock") {
-      w.unlocks[itemId] = true;
-    } else {
-      w.inventory[itemId] = (w.inventory[itemId] || 0) + 1;
+    edition = await reserveEdition(item.limit);
+    if (!edition) {
+      throw new CoinError(410, "SOLD_OUT", "All editions of this item are gone.");
     }
+  }
 
-    return {value: w, out: {balance: w.bonus + w.earned, fromBonus, fromEarned: item.price - fromBonus}};
-  });
+  let out;
+  try {
+    out = await walletTx(uid, (current) => {
+      const w = normalize(current);
+      let price = item.price;
+      let unlockIds = [itemId];
 
-  await addLedger(uid, [{type: "spend", amount: -item.price, item: itemId, fromBonus: out.fromBonus, fromEarned: out.fromEarned}]);
-  return {item: itemId, price: item.price, balance: out.balance};
+      if (isPack) {
+        unlockIds = VIBE_ITEMS.filter((id) => !w.unlocks[id]);
+        price = vibePackPrice(unlockIds.length);
+        if (price === null) {
+          return {error: new CoinError(409, "PACK_NOT_AVAILABLE", "Unlock the last vibe on its own.")};
+        }
+      } else if (item.category !== "boost" && w.unlocks[itemId]) {
+        return {error: new CoinError(409, "ALREADY_OWNED", "You already own this item.")};
+      }
+
+      if (item.max && (w.inventory[itemId] || 0) >= item.max) {
+        return {error: new CoinError(409, "MAX_REACHED", `You can hold at most ${item.max}.`)};
+      }
+      if (item.requiresStreak && w.streak.longest < item.requiresStreak) {
+        return {error: new CoinError(403, "STREAK_REQUIRED", `Reach a ${item.requiresStreak}-day streak to unlock this.`)};
+      }
+
+      const total = w.bonus + w.earned;
+      if (total < price) {
+        return {error: new CoinError(402, "INSUFFICIENT_COINS", `You need ${price - total} more coins.`)};
+      }
+
+      // Spend bonus coins first, then earned coins
+      const fromBonus = Math.min(w.bonus, price);
+      w.bonus -= fromBonus;
+      w.earned -= price - fromBonus;
+
+      if (item.category === "boost") {
+        w.inventory[itemId] = (w.inventory[itemId] || 0) + 1;
+      } else {
+        unlockIds.forEach((id) => {
+          w.unlocks[id] = true;
+        });
+      }
+      if (edition) {
+        w.mythicEdition = edition;
+      }
+
+      return {value: w, out: {balance: w.bonus + w.earned, price, fromBonus, fromEarned: price - fromBonus, unlocked: unlockIds}};
+    });
+  } catch (spendErr) {
+    if (edition) {
+      await releaseEdition();
+    }
+    throw spendErr;
+  }
+
+  await addLedger(uid, [{type: "spend", amount: -out.price, item: itemId, fromBonus: out.fromBonus, fromEarned: out.fromEarned}]);
+  return {item: itemId, price: out.price, balance: out.balance, unlocked: item.category === "boost" ? [] : out.unlocked, edition};
 };
 
 // ---------------------------------------------------------------------
@@ -555,6 +662,7 @@ const createTransfer = async (fromUid, toChatId, amount) => {
     type: "coinTransfer",
     chatId: fromChatId,
     amount: out.receives,
+    transferId,
   });
 
   return {transferId, amount, cut: out.cut, receives: out.receives, cutPercent: out.cutPercent, transferNumber: out.transferNumber, expiresAt};
@@ -793,6 +901,7 @@ module.exports = {
   getHistory,
   recordDailyPost,
   getShop,
+  getUnlocks,
   ownsUnlock,
   spend,
   previewTransfer,

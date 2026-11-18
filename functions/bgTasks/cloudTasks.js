@@ -226,7 +226,7 @@ exports.processNotification = onTaskDispatched({
   },
 
 }, async (request) => {
-  const {eventId, userId, actorId, type, postId, echoId, chatId, vibe, amount, streak} = request.data;
+  const {eventId, userId, actorId, type, postId, echoId, chatId, vibe, amount, streak, transferId} = request.data;
 
   if (!eventId || !userId) {
     return;
@@ -291,6 +291,7 @@ exports.processNotification = onTaskDispatched({
     ...(vibe && {vibe}),
     ...(amount && {amount}),
     ...(streak && {streak}),
+    ...(transferId && {transferId}),
   };
 
   const ref = db.ref(`users/${userId}/notification/${eventId}`);

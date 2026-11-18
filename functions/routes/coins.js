@@ -43,8 +43,9 @@ router.get("/history", isLoggedIn, globalLimiter, handle(async (req) => {
 }));
 
 // Items that can be bought
-router.get("/shop", isLoggedIn, globalLimiter, handle(async () => {
-  return {items: coins.getShop()};
+router.get("/shop", isLoggedIn, globalLimiter, handle(async (req) => {
+  await coins.ensureWallet(req.user.uid);
+  return coins.getShop(req.user.uid);
 }));
 
 // Buy an item

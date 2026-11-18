@@ -3,11 +3,30 @@ const admin = require("firebase-admin");
 const {authUser, isLoggedIn} = require("../middleware/authenticUser");
 const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
 const {signupLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
-const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator");
+const {DEFAULT_AVATAR, validateAvatar, avatarTier} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const crypto = require("crypto");
-const {ensureWallet} = require("../coins/coinService");
+const {ensureWallet, getUnlocks} = require("../coins/coinService");
+
+// Stable per-user seed for the Mythic avatar look (never reveals the user id)
+const mythicSeed = (userId) => crypto
+    .createHmac("sha256", process.env.JWT_SECRET_KEY)
+    .update(`mythic:${userId}`)
+    .digest("hex")
+    .slice(0, 16);
+
+// Add tier, and the Mythic seed/edition, to an avatar that is being sent out
+const withPremiumInfo = async (userId, result) => {
+  const avatar = {...result.avatar};
+  avatar.tier = avatarTier(result.premiumItems);
+  if (avatar.set === "mythic") {
+    avatar.mythicSeed = mythicSeed(userId);
+    const edition = (await db.ref(`coins/${userId}/mythicEdition`).get()).val();
+    avatar.mythicEdition = edition || null;
+  }
+  return avatar;
+};
 
 
 const router = express.Router();
@@ -42,7 +61,12 @@ router.get("/avatar/:chatId", publicReadLimiter, async (req, res) => {
     });
   }
 
-  const userId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+  let userId;
+  try {
+    userId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+  } catch (tokenErr) {
+    return res.status(404).json({success: false, message: "User not found."});
+  }
 
   try {
     const snapshot = await db.ref(`users/${userId}/userDetail/avatar`).get();
@@ -59,7 +83,7 @@ router.get("/avatar/:chatId", publicReadLimiter, async (req, res) => {
     return res.status(200).json({
       success: true,
       avatar: result.valid ?
-        result.avatar :
+        await withPremiumInfo(userId, result) :
         {...DEFAULT_AVATAR},
     });
   } catch (avatarFetchErr) {
@@ -86,6 +110,20 @@ router.post("/set-avatar", isLoggedIn, globalLimiter, async (req, res) => {
   }
 
   try {
+    // Premium items must be unlocked in the coin shop
+    if (result.premiumItems.length > 0) {
+      const unlocks = await getUnlocks(userId);
+      const missing = result.premiumItems.find((id) => unlocks[id] !== true);
+      if (missing) {
+        return res.status(403).json({
+          success: false,
+          code: "ITEM_LOCKED",
+          item: missing,
+          message: "Unlock this item in the shop first.",
+        });
+      }
+    }
+
     await db.ref(`users/${userId}/userDetail`).update(
         {avatar: result.avatar},
     );
@@ -93,7 +131,7 @@ router.post("/set-avatar", isLoggedIn, globalLimiter, async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Avatar saved successfully.",
-      avatar: result.avatar,
+      avatar: await withPremiumInfo(userId, result),
     });
   } catch (avatarSetErr) {
     console.error("Save avatar error:", avatarSetErr);

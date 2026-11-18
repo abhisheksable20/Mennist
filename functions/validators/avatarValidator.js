@@ -83,7 +83,25 @@ const ALLOWED_HAIR_COLORS = new Set([
   "#22A699",
 ]);
 
+// Premium items from the coin shop: slot -> value -> shop item id
+const {SHOP_ITEMS} = require("../config/coins");
+const PREMIUM = {};
+Object.keys(SHOP_ITEMS).forEach((id) => {
+  const item = SHOP_ITEMS[id];
+  if (item.category === "avatar") {
+    PREMIUM[item.slot] = PREMIUM[item.slot] || {};
+    PREMIUM[item.slot][item.value] = id;
+  }
+});
+// Slots that only exist for premium items (empty = not worn)
+const PREMIUM_ONLY_SLOTS = ["hairFx", "aura", "background", "frame", "set"];
+// Filled in by the server when reading; ignored when saving
+const SERVER_FIELDS = new Set(["tier", "mythicSeed", "mythicEdition"]);
+const TIER_RANK = {rare: 1, epic: 2, legendary: 3, mythic: 4};
+
 const ALLOWED_FIELDS = new Set([
+  ...PREMIUM_ONLY_SLOTS,
+  ...SERVER_FIELDS,
   "version",
   "style",
   "skin",
@@ -114,9 +132,17 @@ function validateAvatar(input) {
   }
 
   const avatar = {...DEFAULT_AVATAR};
+  const premiumItems = [];
 
   for (const [field, allowedValues] of Object.entries(ALLOWED_AVATAR_VALUES)) {
     if (input[field] === undefined) {
+      continue;
+    }
+
+    // Premium eyes / accessories from the shop
+    if (PREMIUM[field] && typeof input[field] === "string" && PREMIUM[field][input[field]]) {
+      avatar[field] = input[field];
+      premiumItems.push(PREMIUM[field][input[field]]);
       continue;
     }
 
@@ -141,12 +167,40 @@ function validateAvatar(input) {
     avatar.hairColor = input.hairColor;
   }
 
+  for (const slot of PREMIUM_ONLY_SLOTS) {
+    const value = input[slot];
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    if (typeof value !== "string" || !PREMIUM[slot] || !PREMIUM[slot][value]) {
+      return {
+        valid: false,
+        message: `Invalid avatar ${slot}.`,
+      };
+    }
+    avatar[slot] = value;
+    premiumItems.push(PREMIUM[slot][value]);
+  }
+
   avatar.version = 1;
 
   return {
     valid: true,
     avatar,
+    premiumItems,
   };
 }
 
-module.exports = {DEFAULT_AVATAR, validateAvatar};
+// Highest tier among the premium items worn, or null for a free avatar
+function avatarTier(premiumItems) {
+  let best = null;
+  (premiumItems || []).forEach((id) => {
+    const tier = SHOP_ITEMS[id] && SHOP_ITEMS[id].tier;
+    if (tier && (!best || TIER_RANK[tier] > TIER_RANK[best])) {
+      best = tier;
+    }
+  });
+  return best;
+}
+
+module.exports = {DEFAULT_AVATAR, validateAvatar, avatarTier};

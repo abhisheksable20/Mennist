@@ -7,7 +7,7 @@ const {publicReadLimiter, globalLimiter, postLimiter, dailyAiLimiter, vibeLimite
 const {validate} = require("express-validation");
 const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
-const {recordDailyPost} = require("../coins/coinService");
+const {recordDailyPost, ownsUnlock} = require("../coins/coinService");
 const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
 
@@ -296,8 +296,18 @@ router.post("/vibeCheck", isLoggedIn, vibeLimiter, validate(vibeCheckValidation)
   const userId = req.user.uid;
   const {postId, chatId, postVibe} = req.body;
 
-  await taskQueue.enqueue({postId, actorId: userId, postVibe, userChatId: chatId});
-  return res.status(200).send({Message: "Vibe registered sucessfully!"});
+  try {
+    // Each Vibe Check option is unlocked with Sakesnake Coins
+    if (!(await ownsUnlock(userId, `vibe_${postVibe}`))) {
+      return res.status(402).send({code: "VIBE_LOCKED", vibe: postVibe, message: "Unlock this vibe with coins first."});
+    }
+
+    await taskQueue.enqueue({postId, actorId: userId, postVibe, userChatId: chatId});
+    return res.status(200).send({Message: "Vibe registered sucessfully!"});
+  } catch (vibeCheckErr) {
+    console.error("Vibe check failed:", vibeCheckErr);
+    return res.status(500).send({error: "Internal server error"});
+  }
 });
 
 // Send the type of vibe check to client side

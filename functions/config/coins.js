@@ -37,15 +37,58 @@ module.exports = {
   MAX_STREAK_FREEZES: 2,
 
   // ---------------- Shop ----------------
-  // type "consumable": can be bought many times (stored as a count).
-  // type "unlock":     bought once, unlocked forever.
-  // Add exclusive avatars / vibe packs here once you decide which ones are premium.
+  // category "boost":  consumable, stored as a count (max = most you can hold)
+  // category "vibe":   unlocks one Vibe Check option forever
+  // category "avatar": unlocks one premium avatar item forever.
+  //                    slot/value say where it goes on the avatar.
   SHOP_ITEMS: {
-    streak_freeze: {type: "consumable", price: 30, name: "Streak freeze"},
-    // Examples (uncomment / edit when the frontend is ready):
-    // vibe_pack_premium: {type: "unlock", price: 30, name: "Premium vibe pack"},
-    // avatar_crown: {type: "unlock", price: 80, name: "Crown accessory"},
+    streak_freeze: {category: "boost", price: 30, name: "Streak freeze", max: 2,
+      description: "Saves your streak if you miss a day."},
+
+    vibe_funny: {category: "vibe", price: 15, name: "Funny", vibe: "funny"},
+    vibe_relatable: {category: "vibe", price: 15, name: "Relatable", vibe: "relatable"},
+    vibe_emotional: {category: "vibe", price: 15, name: "Emotional", vibe: "emotional"},
+    vibe_wholesome: {category: "vibe", price: 15, name: "Wholesome", vibe: "wholesome"},
+    vibe_sad: {category: "vibe", price: 15, name: "Sad", vibe: "sad"},
+    vibe_toxic: {category: "vibe", price: 15, name: "Toxic", vibe: "toxic"},
+    vibe_racist: {category: "vibe", price: 15, name: "Racist", vibe: "racist"},
+
+    // Rare
+    avatar_hair_electric: {category: "avatar", tier: "rare", price: 60, name: "Electric Blue Hair", slot: "hairFx", value: "electric_blue"},
+    avatar_hair_toxic: {category: "avatar", tier: "rare", price: 60, name: "Toxic Green Hair", slot: "hairFx", value: "toxic_green"},
+    avatar_hair_sunset: {category: "avatar", tier: "rare", price: 80, name: "Sunset Fade Hair", slot: "hairFx", value: "sunset_fade"},
+    avatar_eyes_blood: {category: "avatar", tier: "rare", price: 80, name: "Blood Moon Eyes", slot: "eyes", value: "eyes-blood"},
+    avatar_eyes_galaxy: {category: "avatar", tier: "rare", price: 80, name: "Galaxy Eyes", slot: "eyes", value: "eyes-galaxy"},
+    avatar_eyes_snake: {category: "avatar", tier: "rare", price: 90, name: "Snake Eyes", slot: "eyes", value: "eyes-snake"},
+    avatar_acc_crown: {category: "avatar", tier: "rare", price: 100, name: "Pixel Crown", slot: "accessories", value: "acc-crown"},
+    avatar_acc_halo: {category: "avatar", tier: "rare", price: 100, name: "Floating Halo", slot: "accessories", value: "acc-halo"},
+    avatar_acc_horns: {category: "avatar", tier: "rare", price: 90, name: "Devil Horns", slot: "accessories", value: "acc-horns"},
+    avatar_acc_visor: {category: "avatar", tier: "rare", price: 100, name: "VR Visor", slot: "accessories", value: "acc-visor"},
+    // Epic
+    avatar_aura_fire: {category: "avatar", tier: "epic", price: 200, name: "Fire Aura", slot: "aura", value: "fire"},
+    avatar_aura_frost: {category: "avatar", tier: "epic", price: 200, name: "Frost Aura", slot: "aura", value: "frost"},
+    avatar_aura_shadow: {category: "avatar", tier: "epic", price: 180, name: "Shadow Aura", slot: "aura", value: "shadow"},
+    avatar_eyes_blink: {category: "avatar", tier: "epic", price: 150, name: "Blinking Eyes", slot: "eyes", value: "eyes-blink"},
+    avatar_eyes_glitch: {category: "avatar", tier: "epic", price: 150, name: "Glitch Eyes", slot: "eyes", value: "eyes-glitch"},
+    avatar_bg_night: {category: "avatar", tier: "epic", price: 180, name: "Starry Night", slot: "background", value: "night"},
+    avatar_bg_code: {category: "avatar", tier: "epic", price: 220, name: "Code Rain", slot: "background", value: "code"},
+    avatar_frame_gold: {category: "avatar", tier: "epic", price: 150, name: "Gold Frame", slot: "frame", value: "gold"},
+    avatar_frame_holo: {category: "avatar", tier: "epic", price: 200, name: "Holo Frame", slot: "frame", value: "holo"},
+    avatar_frame_snake: {category: "avatar", tier: "epic", price: 200, name: "Snakeskin Frame", slot: "frame", value: "snake"},
+    // Legendary (full sets that change the whole look)
+    avatar_set_sakesnake: {category: "avatar", tier: "legendary", price: 600, name: "The Sakesnake", slot: "set", value: "sakesnake"},
+    avatar_set_ghost: {category: "avatar", tier: "legendary", price: 450, name: "Ghost", slot: "set", value: "ghost"},
+    avatar_set_glitch: {category: "avatar", tier: "legendary", price: 500, name: "Glitch", slot: "set", value: "glitch"},
+    avatar_set_cosmic: {category: "avatar", tier: "legendary", price: 550, name: "Cosmic", slot: "set", value: "cosmic"},
+    // Mythic: generated from the owner's account, one of one
+    avatar_set_mythic: {category: "avatar", tier: "mythic", price: 800, name: "Mythic", slot: "set", value: "mythic",
+      requiresStreak: 30, limit: 100},
   },
+
+  // Unlock every Vibe Check option you don't have yet.
+  // Price = 15 per missing vibe minus one free, capped at VIBE_PACK_MAX.
+  VIBE_PACK_ID: "vibe_pack",
+  VIBE_PACK_MAX: 60,
 
   // ---------------- Transfers ----------------
   TRANSFER_MIN_AMOUNT: 5,
