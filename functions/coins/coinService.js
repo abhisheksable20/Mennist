@@ -535,7 +535,10 @@ const spend = async (uid, itemId) => {
     throw spendErr;
   }
 
-  await addLedger(uid, [{type: "spend", amount: -out.price, item: itemId, fromBonus: out.fromBonus, fromEarned: out.fromEarned}]);
+  await addLedger(uid, [{
+    type: "spend", amount: -out.price, item: itemId, itemName: item.name,
+    fromBonus: out.fromBonus, fromEarned: out.fromEarned,
+  }]);
   return {item: itemId, price: out.price, balance: out.balance, unlocked: item.category === "boost" ? [] : out.unlocked, edition};
 };
 

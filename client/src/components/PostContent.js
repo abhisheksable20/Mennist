@@ -7,6 +7,9 @@ import PostContentSkeleton from './LoadingSkeleton/PostContentSkeleton'
 import PostContext from '../context/posts/postContext'
 import ShowSimilarPosts from './ShowSimilarPosts'
 import Avatar from './Avatar/Avatar'
+import CoinsContext from '../context/coins/CoinsContext'
+import VibeUnlockModal from './Coins/VibeUnlockModal'
+import TierBadge from './Coins/TierBadge'
 import chatSVG from '../assets/chat_round-svg.svg'
 import shareSVG from '../assets/share_svg.svg'
 import fullLikeSVG from '../assets/heart_fullsvg.svg'
@@ -38,6 +41,13 @@ function PostContent(props) {
     const [isSaved, setIsSaved] = useState(false);
     const [postVibe, setPostVibe] = useState(null);
     const [userAvatar, setUserAvatar] = useState({});
+    // Vibe Check options are unlocked with Sakesnake Coins
+    const coins = useContext(CoinsContext);
+    const [vibeToUnlock, setVibeToUnlock] = useState(null);
+    const ownedVibes = coins && coins.wallet
+        ? coins.wallet.unlocks.filter((u) => u.startsWith("vibe_")).map((u) => u.replace("vibe_", ""))
+        : null;
+    const isVibeLocked = (vibe) => ownedVibes !== null && !ownedVibes.includes(vibe);
     const [isSimilarPostsLoading, setIsSimilarPostsLoading] = useState(false);
 
     const reportBtnRef = useRef(null);
@@ -168,7 +178,12 @@ function PostContent(props) {
     }
 
     // Handle post vibe check button
-    const postVibeCheckBtn = async (postVibe) => {
+    const postVibeCheckBtn = async (postVibe, justUnlocked = false) => {
+        // Not unlocked yet: offer to unlock it
+        if (!justUnlocked && isVibeLocked(postVibe) && !postVibeAlreadyChecked()) {
+            setVibeToUnlock(postVibe);
+            return;
+        }
         try {
             await getCurrentUserChatId();
 
@@ -187,9 +202,34 @@ function PostContent(props) {
             await axios.post(`${process.env.REACT_APP_API_URL}/vibeCheck`, vibeCheckBody);
         }
         catch (error) {
+            if (error.response?.status === 402) {
+                // The server says this vibe isn't unlocked: undo and offer to unlock it
+                clearPostVibeCheck(id);
+                setPostVibe(null);
+                setVibeToUnlock(postVibe);
+                return;
+            }
             props.alert("Please start a new session.", "alert")
             navigate("/setup-user");
         }
+    }
+
+    const postVibeAlreadyChecked = () => {
+        const postsVibeCheck = JSON.parse(localStorage.getItem("postsVibeCheck") || "{}");
+        return !!postsVibeCheck[id];
+    }
+
+    const clearPostVibeCheck = (postId) => {
+        const postsVibeCheck = JSON.parse(localStorage.getItem("postsVibeCheck") || "{}");
+        delete postsVibeCheck[postId];
+        localStorage.setItem("postsVibeCheck", JSON.stringify(postsVibeCheck));
+    }
+
+    // After unlocking, use the vibe right away
+    const onVibeUnlocked = (unlocked, vibe) => {
+        setVibeToUnlock(null);
+        props.alert(unlocked.length > 1 ? "All vibes unlocked." : "Vibe unlocked.", "success");
+        postVibeCheckBtn(vibe, true);
     }
 
     // Check wheather the post vibe check is already selected
@@ -432,6 +472,7 @@ Share your own vibe on Mennist.`;
                         <div className="mennist-avatar-preview">
                             {userAvatar ? <Avatar avatar={userAvatar} size={64} /> : ""}
                         </div>
+                        {userAvatar && <TierBadge tier={userAvatar.tier} edition={userAvatar.mythicEdition} className="post-tier-badge" />}
                     </div>
                 </div>
                 <div className="post-divider"></div>
@@ -462,64 +503,71 @@ Share your own vibe on Mennist.`;
                     <div className="vibe-options">
 
                         <button
-                            className={`vibe-option ${postVibe === "funny" ? "active" : ""}`}
+                            className={`vibe-option ${postVibe === "funny" ? "active" : ""} ${isVibeLocked("funny") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("funny")}>
                             <img src={funnySVG} alt="Funny_Icon" />
                             {" "}
                             Funny
                             <small>{getPostVibeCount("funny")}</small>
+                            {isVibeLocked("funny") && <VibeLock />}
                         </button>
 
                         <button
-                            className={`vibe-option ${postVibe === "relatable" ? "active" : ""}`}
+                            className={`vibe-option ${postVibe === "relatable" ? "active" : ""} ${isVibeLocked("relatable") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("relatable")}>
                             <img src={relatableSVG} alt="Relatable_Icon" />
                             {" "}
                             Relatable
                             <small>{getPostVibeCount("relatable")}</small>
+                            {isVibeLocked("relatable") && <VibeLock />}
                         </button>
 
                         <button
-                            className={`vibe-option ${postVibe === "emotional" ? "active" : ""}`}
+                            className={`vibe-option ${postVibe === "emotional" ? "active" : ""} ${isVibeLocked("emotional") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("emotional")}>
                             <img src={emotionalSVG} alt="Emotional_Icon" />
                             {" "}
                             Emotional
                             <small>{getPostVibeCount("emotional")}</small>
+                            {isVibeLocked("emotional") && <VibeLock />}
                         </button>
 
                         <button
-                            className={`vibe-option ${postVibe === "wholesome" ? "active" : ""}`}
+                            className={`vibe-option ${postVibe === "wholesome" ? "active" : ""} ${isVibeLocked("wholesome") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("wholesome")}>
                             <img src={wholesomeSVG} alt="Wholesome_Icon" />
                             {" "}
                             Wholesome
                             <small>{getPostVibeCount("wholesome")}</small>
+                            {isVibeLocked("wholesome") && <VibeLock />}
                         </button>
 
                         <button
-                            className={`vibe-option vibe-option-alert ${postVibe === "sad" ? "active" : ""}`}
+                            className={`vibe-option vibe-option-alert ${postVibe === "sad" ? "active" : ""} ${isVibeLocked("sad") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("sad")}>
                             <img src={sadSVG} alt="Sad_Icon" />
                             {" "}
                             Sad
                             <small>{getPostVibeCount("sad")}</small>
+                            {isVibeLocked("sad") && <VibeLock />}
                         </button>
                         <button
-                            className={`vibe-option vibe-option-alert ${postVibe === "toxic" ? "active" : ""}`}
+                            className={`vibe-option vibe-option-alert ${postVibe === "toxic" ? "active" : ""} ${isVibeLocked("toxic") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("toxic")}>
                             <img src={toxicSVG} alt="Toxic_Icon" />
                             {" "}
                             Toxic
                             <small>{getPostVibeCount("toxic")}</small>
+                            {isVibeLocked("toxic") && <VibeLock />}
                         </button>
                         <button
-                            className={`vibe-option vibe-option-alert ${postVibe === "racist" ? "active" : ""}`}
+                            className={`vibe-option vibe-option-alert ${postVibe === "racist" ? "active" : ""} ${isVibeLocked("racist") ? "is-locked" : ""}`}
                             onClick={() => postVibeCheckBtn("racist")}>
                             <img src={racistSVG} alt="Racist_Icon" />
                             {" "}
                             Racist
                             <small>{getPostVibeCount("racist")}</small>
+                            {isVibeLocked("racist") && <VibeLock />}
                         </button>
                     </div>
                 </div>
@@ -534,6 +582,14 @@ Share your own vibe on Mennist.`;
                         Report
                     </button>
                 </div>
+                {vibeToUnlock && (
+                    <VibeUnlockModal
+                        vibe={vibeToUnlock}
+                        owned={ownedVibes || []}
+                        onClose={() => setVibeToUnlock(null)}
+                        onUnlocked={onVibeUnlocked}
+                    />
+                )}
                 <ReportPostComponent reportBtnRef={reportBtnRef} postId={id} chatId={postData.chatId} alert={props.alert} />
                 {/* Show more posts section */}
                 <ShowSimilarPosts similarPosts={similarPosts} isLoading={isSimilarPostsLoading} />
@@ -574,6 +630,16 @@ Share your own vibe on Mennist.`;
                 </div>
             </div>
         </>
+    )
+}
+
+// Small lock shown on Vibe Check options that need coins
+function VibeLock() {
+    return (
+        <svg className="vibe-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" role="img" aria-label="Locked">
+            <rect x="5" y="11" width="14" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
     )
 }
 

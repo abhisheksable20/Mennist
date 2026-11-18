@@ -1,6 +1,7 @@
 import SubmitButton from './SubmitButton'
 import ChatFlagButton from './ChatFlagButton';
 import NotificationCenter from './utils/NotificationCenter';
+import NavCoins from './Coins/NavCoins';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -39,6 +40,8 @@ function Navbar(props) {
 
                 {!isMinimalPage && (
                     <div className="navbar-actions">
+
+                        <NavCoins />
 
                         <NotificationCenter />
 

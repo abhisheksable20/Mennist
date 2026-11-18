@@ -1,4 +1,5 @@
 import './App.css';
+import './styles/Coins.css';
 import Navbar from './components/Navbar';
 import PostState from './context/posts/PostState';
 import { Routes, Route, Outlet } from "react-router-dom";
@@ -8,6 +9,8 @@ import { Toast as BSToast } from 'bootstrap'
 import ChatsState from './context/chats/ChatsState';
 import EchoState from './context/posts/EchoState';
 import LazyLoader from './components/utils/LazyLoader';
+import CoinsState from './context/coins/CoinsState';
+import StreakRewardModal from './components/Coins/StreakRewardModal';
 
 
 // Pages that lazy loaded
@@ -23,6 +26,8 @@ const EchoContent = lazy(() => import('./components/Echoes/EchoContent'));
 const VeilProfile = lazy(() => import('./components/Avatar/VeilProfile'));
 const PageNotFound = lazy(() => import('./components/utils/PageNotFound'));
 const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
+const WalletPage = lazy(() => import('./components/Coins/WalletPage'));
+const ShopPage = lazy(() => import('./components/Coins/ShopPage'));
 
 function Layout(props) {
   return (
@@ -57,6 +62,7 @@ function App() {
   }, [alerts]);
 
   return (
+    <CoinsState>
     <PostState>
       <EchoState>
         <ChatsState>
@@ -80,16 +86,20 @@ function App() {
                 <Route path='/submit-secret' element={<SubmitSecret alert={showAlert} />} />
                 <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
                 <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
-                <Route path='/user-chat/:chatId' element={<ConversationPage />} />
+                <Route path='/user-chat/:chatId' element={<ConversationPage alert={showAlert} />} />
                 <Route path='/echoes' element={<EchoesComponent alert={showAlert} />} />
                 <Route path='/echoes/:id' element={<EchoContent alert={showAlert} />} />
                 <Route path='/veil' element={<VeilProfile alert={showAlert} />} />
+                <Route path='/coins' element={<WalletPage alert={showAlert} />} />
+                <Route path='/coins/shop' element={<ShopPage alert={showAlert} />} />
               </Route>
             </Routes>
           </Suspense>
+          <StreakRewardModal />
         </ChatsState>
       </EchoState>
     </PostState>
+    </CoinsState>
   );
 }
 

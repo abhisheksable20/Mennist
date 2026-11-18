@@ -1,6 +1,7 @@
 import PostContext from "./postContext";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useContext } from "react";
 import axios from "axios";
+import CoinsContext from "../coins/CoinsContext";
 
 const PostState = (props) => {
     const [posts, setPosts] = useState([]);
@@ -12,6 +13,7 @@ const PostState = (props) => {
     // 1 Echo
     const [contentType, setContentType] = useState(0);
     const [similarPosts, setSimilarPosts] = useState([]);
+    const coinsContext = useContext(CoinsContext);
 
     const isFetchingRef = useRef(false);
     const isSimilarPostsFetchingRef = useRef(false);
@@ -161,7 +163,11 @@ const PostState = (props) => {
                 subApi = "echoes/submitEcho"
             }
 
-            await axios.post(`${process.env.REACT_APP_API_URL}/${subApi}`, data)
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/${subApi}`, data)
+            // Posts may earn Sakesnake Coins for the daily streak
+            if (contentType === 0 && coinsContext && response.data && response.data.coins) {
+                coinsContext.showStreakReward(response.data.coins);
+            }
             setContent({
                 title: "",
                 content: ""

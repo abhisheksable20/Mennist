@@ -14,6 +14,9 @@ import relatableSVG from "../../assets/relatable_svg.svg";
 import axios from "axios";
 import { db } from '../../internalDatabase/db';
 import { useNavigate } from "react-router-dom";
+import CoinIcon from "../Coins/CoinIcon";
+import StreakFlame from "../Coins/StreakFlame";
+import TransferRequest from "../Coins/TransferRequest";
 
 
 function NotificationCenter() {
@@ -154,6 +157,20 @@ function NotificationCenter() {
                 );
             }
         },
+        coinTransfer: {
+            title: 'Coins received',
+            iconNode: <CoinIcon size={22} />,
+            color: 'gold',
+            message: (n) => n.amount
+                ? <>Someone sent you <strong>{n.amount} Sakesnake Coins</strong>.</>
+                : "Someone sent you Sakesnake Coins.",
+        },
+        streakReminder: {
+            title: 'Keep your streak alive',
+            iconNode: <StreakFlame size={20} />,
+            color: 'orange',
+            message: (n) => n.message || "Post today to keep your streak!",
+        },
         echoMatch: {
             title: 'Echo match',
             icon: echoSVG,
@@ -194,6 +211,11 @@ function NotificationCenter() {
 
                 case "echoMatch":
                     navigate(`/echoes/${notification.echoId}`);
+                    break;
+
+                case "coinTransfer":
+                case "streakReminder":
+                    navigate("/coins");
                     break;
 
                 default:
@@ -278,6 +300,26 @@ function NotificationCenter() {
                                                 'You have a new notification.',
                                         };
 
+                                    // Coins someone sent: answer right here
+                                    if (notification.type === "coinTransfer" && notification.transferId) {
+                                        return (
+                                            <div className="notification-item notification-item-coins" key={notification.eventId || index}>
+                                                <span className={`notification-icon ${meta.color}`}>{meta.iconNode}</span>
+                                                <span className="notification-text">
+                                                    <strong>{meta.title}</strong>
+                                                    <span className="notification-message">{meta.message(notification)}</span>
+                                                    <TransferRequest
+                                                        compact
+                                                        transfer={{ id: notification.transferId }}
+                                                        onDone={() => {
+                                                            db.notifications.delete(notification.eventId).catch(() => {});
+                                                        }}
+                                                    />
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+
                                     return (
                                         <button
                                             type="button"
@@ -295,14 +337,14 @@ function NotificationCenter() {
                                             <span
                                                 className={`notification-icon ${meta.color}`}
                                             >
-                                                <img
+                                                {meta.iconNode ? meta.iconNode : <img
                                                     src={
                                                         typeof meta.icon === 'function'
                                                             ? meta.icon(notification)
                                                             : meta.icon
                                                     }
                                                     alt="vibe check icon"
-                                                />
+                                                />}
                                             </span>
 
                                             <span className="notification-text">

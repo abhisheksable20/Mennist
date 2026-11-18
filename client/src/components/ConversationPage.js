@@ -18,9 +18,14 @@ import FilePreview from "./FilePreview";
 import { scanFile } from "../utils/scanFile";
 import { saveBlobToDevice } from "../utils/saveFile";
 import { ACCEPT_ATTR, BIG_FILE, isImageType, isPreviewable } from "../config/attachmentConfig";
+import SendCoinsModal from "./Coins/SendCoinsModal";
+import TierBadge from "./Coins/TierBadge";
+import CoinIcon from "./Coins/CoinIcon";
 
-function ConversationPage() {
+function ConversationPage(props) {
   const { chatId } = useParams();
+  const [showSendCoins, setShowSendCoins] = useState(false);
+  const showAlert = props.alert || (() => {});
   const { inputMessage, setInputMessage, chatIdRef,
     userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag, downloadAttachment } = useContext(ChatsContext);
   const userData = useRef(null);
@@ -327,12 +332,26 @@ function ConversationPage() {
             <div className="conversation-user-info">
               <h2 className="card-text mb-2">
                 {username}
+                {userAvatar && <TierBadge tier={userAvatar.tier} edition={userAvatar.mythicEdition} className="ms-2 align-middle" />}
               </h2>
               <h6 className="text-body-secondary mb-3">
                 Hope it's the opposite of your gender.
               </h6>
             </div>
+            <button type="button" className="coin-btn coin-btn-ghost conversation-send-coins" onClick={() => setShowSendCoins(true)}>
+              <CoinIcon size={16} />
+              <span>Send coins</span>
+            </button>
           </div>
+          {showSendCoins && (
+            <SendCoinsModal
+              chatId={chatId}
+              name={username}
+              avatar={userAvatar ? <Avatar avatar={userAvatar} size={48} /> : null}
+              alert={showAlert}
+              onClose={() => setShowSendCoins(false)}
+            />
+          )}
           <div>
             {userMessages.length === 0 ? <NoContent svgType={3} title={"NO MESSAGES YET"} text={"Every great conversation starts with a single awkward message."} /> : ""}
           </div>
