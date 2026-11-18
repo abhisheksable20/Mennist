@@ -2,7 +2,7 @@
   "rules": {
     "posts": {
       ".read": true,
-      ".write": true,
+      ".write": false,
       ".indexOn": [
         "timestamp"
       ]
@@ -13,6 +13,23 @@
           "timestamp"
         ]
       }
+    },
+    "coins": {
+      ".indexOn": [
+        "streak/lastDay"
+      ]
+    },
+    "coinLedger": {
+      "$uid": {
+        ".indexOn": [
+          "timestamp"
+        ]
+      }
+    },
+    "pendingTransfers": {
+      ".indexOn": [
+        ".value"
+      ]
     }
   }
 }

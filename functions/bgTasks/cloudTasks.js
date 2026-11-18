@@ -51,6 +51,8 @@ async (request) => {
       [`echoMatches/${userId}`]: null,
       [`echoes/${userId}`]: null,
       [`postActions/${userId}`]: null,
+      [`coins/${userId}`]: null,
+      [`coinLedger/${userId}`]: null,
     };
 
     if (userPostsSnapshot.exists()) {
@@ -224,13 +226,15 @@ exports.processNotification = onTaskDispatched({
   },
 
 }, async (request) => {
-  const {eventId, userId, actorId, type, postId, echoId, chatId, vibe} = request.data;
+  const {eventId, userId, actorId, type, postId, echoId, chatId, vibe, amount, streak} = request.data;
 
   if (!eventId || !userId) {
     return;
   }
 
-  if (type !== "echoMatch" && (!actorId || userId === actorId)) {
+  // System notifications have no actor
+  const systemTypes = ["echoMatch", "streakReminder"];
+  if (!systemTypes.includes(type) && (!actorId || userId === actorId)) {
     return;
   }
 
@@ -257,6 +261,18 @@ exports.processNotification = onTaskDispatched({
       title: "New attachment",
       message: "Someone sent you an attachment.",
     },
+    coinTransfer: {
+      title: "Coins received",
+      message: amount ?
+        `Someone sent you ${amount} Sakesnake Coins. Accept or decline within 48 hours.` :
+        "Someone sent you Sakesnake Coins.",
+    },
+    streakReminder: {
+      title: "Keep your streak alive",
+      message: streak ?
+        `Your ${streak}-day streak ends at midnight. Post today to keep it!` :
+        "Post today to keep your streak!",
+    },
   };
 
   const content = messages[type];
@@ -273,6 +289,8 @@ exports.processNotification = onTaskDispatched({
     ...(echoId && {echoId}),
     ...(chatId && {chatId}),
     ...(vibe && {vibe}),
+    ...(amount && {amount}),
+    ...(streak && {streak}),
   };
 
   const ref = db.ref(`users/${userId}/notification/${eventId}`);

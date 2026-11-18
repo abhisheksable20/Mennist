@@ -90,6 +90,9 @@ app.use("/api/chats", require("./routes/chats"));
 // Post tracking operations route
 app.use("/api/actions", require("./routes/postTracking"));
 
+// Sakesnake Coins: wallet, streak, shop and transfers
+app.use("/api/coins", require("./routes/coins"));
+
 // Handle validation error
 app.use((err, req, res, next) => {
   if (err instanceof ValidationError) {
@@ -109,4 +112,10 @@ exports.processNotification = processNotification;
 exports.deleteUserData = deleteUserData;
 exports.postVibeCheck = postVibeCheck;
 exports.matchEchoes = matchEchoes;
+
+// Sakesnake Coins scheduled jobs
+const {expireCoinTransfers, coinStreakReminders} = require("./bgTasks/coinTasks");
+
+exports.expireCoinTransfers = expireCoinTransfers;
+exports.coinStreakReminders = coinStreakReminders;
 

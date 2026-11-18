@@ -134,7 +134,11 @@ const reportLimiter = createLimiter({name: "report", max: 5, perUser: true});
 // Very sensitive actions, like delete-account (3 per hour)
 const sensitiveLimiter = createLimiter({name: "sensitive", max: 3, perUser: true, windowMs: 60 * 60 * 1000});
 
+// Coins: spending, sending and answering transfers (10 per minute)
+const coinLimiter = createLimiter({name: "coin", max: 10, perUser: true});
+
 module.exports = {
+  coinLimiter,
   ipLimiter,
   signupLimiter,
   publicReadLimiter,

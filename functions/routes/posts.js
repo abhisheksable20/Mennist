@@ -7,6 +7,7 @@ const {publicReadLimiter, globalLimiter, postLimiter, dailyAiLimiter, vibeLimite
 const {validate} = require("express-validation");
 const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
 const {postFetching} = require("../dataProcessing/postsProcessing");
+const {recordDailyPost} = require("../coins/coinService");
 const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
 
@@ -148,7 +149,15 @@ router.post("/posts", isLoggedIn, postLimiter, dailyAiLimiter, validate(postVali
     // Setting user post data
     await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp, isAdult: aiData.nsfw});
 
-    return res.status(200).send("Post submitted successfully.");
+    // Streak + Sakesnake Coins. A coin error must never fail the post itself.
+    let coins = null;
+    try {
+      coins = await recordDailyPost(userUniqueId, content);
+    } catch (coinError) {
+      console.error("Streak update failed:", coinError);
+    }
+
+    return res.status(200).send({message: "Post submitted successfully.", coins});
   } catch (submitError) {
     console.error("Submit Error:", submitError);
     return res.status(500).send("Internal Server Error.");

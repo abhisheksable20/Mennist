@@ -7,6 +7,7 @@ const {DEFAULT_AVATAR, validateAvatar} = require("../validators/avatarValidator"
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const crypto = require("crypto");
+const {ensureWallet} = require("../coins/coinService");
 
 
 const router = express.Router();
@@ -17,6 +18,16 @@ const taskQueue = getFunctions().taskQueue("deleteUserData");
 const retrieveLimit = 10;
 
 router.post("/create-user", signupLimiter, authUser, async (req, res) => {
+  // New users get their wallet with the welcome bonus right away
+  if (req.user.isNew) {
+    try {
+      await ensureWallet(req.user.uid);
+    } catch (walletError) {
+      // Not fatal: the wallet is also created on first use
+      console.error("Wallet creation failed:", walletError);
+    }
+  }
+
   const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
 });
