@@ -11,6 +11,7 @@ import EchoState from './context/posts/EchoState';
 import LazyLoader from './components/utils/LazyLoader';
 import CoinsState from './context/coins/CoinsState';
 import StreakRewardModal from './components/Coins/StreakRewardModal';
+import IncomingCoinsAlert from './components/Coins/IncomingCoinsAlert';
 
 
 // Pages that lazy loaded
@@ -96,6 +97,7 @@ function App() {
             </Routes>
           </Suspense>
           <StreakRewardModal />
+          <IncomingCoinsAlert alert={showAlert} />
         </ChatsState>
       </EchoState>
     </PostState>

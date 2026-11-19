@@ -10,6 +10,7 @@ export default function NavCoins() {
   if (!wallet) return null;
 
   const streak = wallet.streak.current;
+  const waiting = wallet.transfers.incoming.length;
   return (
     <div className="nav-coins">
       <Link to="/coins" className="nav-coin-chip" title={streak ? `${streak}-day streak` : "Start a streak by posting today"}
@@ -17,9 +18,11 @@ export default function NavCoins() {
         <StreakFlame size={14} dim={!wallet.streak.postedToday} />
         <span className="coin-num">{streak}</span>
       </Link>
-      <Link to="/coins" className="nav-coin-chip" aria-label={`${wallet.balance} Sakesnake Coins`}>
+      <Link to="/coins" className="nav-coin-chip" aria-label={
+        waiting ? `${wallet.balance} Sakesnake Coins, ${waiting} waiting for you` : `${wallet.balance} Sakesnake Coins`}>
         <CoinIcon size={14} />
         <span className="coin-num">{wallet.balance}</span>
+        {waiting > 0 && <span className="nav-coin-dot" aria-hidden="true" />}
       </Link>
     </div>
   );

@@ -236,6 +236,18 @@ const createNotificationId = (eventId) => {
       .digest("hex");
 };
 
+// How many notifications are waiting on the server (for the bell badge, without opening it)
+router.get("/notification-count", isLoggedIn, globalLimiter, async (req, res) => {
+  try {
+    const snapshot = await db.ref(`users/${req.user.uid}/notification`)
+        .orderByChild("timestamp").limitToLast(100).get();
+    return res.status(200).json({count: snapshot.numChildren()});
+  } catch (countErr) {
+    console.log("Failed to count notifications: ", countErr);
+    return res.status(500).json({success: false, error: "Internal server error!"});
+  }
+});
+
 // Fetch user notifications
 router.get("/fetch-notifications", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;

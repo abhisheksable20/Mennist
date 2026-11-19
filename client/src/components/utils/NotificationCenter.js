@@ -13,7 +13,7 @@ import racistSVG from "../../assets/racist_svg.svg";
 import relatableSVG from "../../assets/relatable_svg.svg";
 import axios from "axios";
 import { db } from '../../internalDatabase/db';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import CoinIcon from "../Coins/CoinIcon";
 import StreakFlame from "../Coins/StreakFlame";
 import TransferRequest from "../Coins/TransferRequest";
@@ -25,6 +25,38 @@ function NotificationCenter() {
     const [chatUsernames, setChatUsernames] = useState({});
 
     const navigate = useNavigate();
+    const location = useLocation();
+    // Unread notifications before the panel is opened: waiting on the server + saved locally
+    const [serverCount, setServerCount] = useState(0);
+    const [localUnread, setLocalUnread] = useState(0);
+
+    useEffect(() => {
+        if (isOpen) return undefined;
+        let active = true;
+
+        const check = async () => {
+            if (document.visibilityState !== "visible") return;
+            try {
+                const local = await db.notifications.toArray();
+                if (active) setLocalUnread(local.filter((n) => !n.read).length);
+                const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/notification-count`, { withCredentials: true });
+                if (active) setServerCount(res.data.count || 0);
+            } catch (countErr) {
+                // Signed out or offline: keep the last known count
+            }
+        };
+
+        check();
+        const timer = setInterval(check, 60 * 1000);
+        window.addEventListener("focus", check);
+        document.addEventListener("visibilitychange", check);
+        return () => {
+            active = false;
+            clearInterval(timer);
+            window.removeEventListener("focus", check);
+            document.removeEventListener("visibilitychange", check);
+        };
+    }, [isOpen, location.pathname]);
 
     const vibeIcons = {
         sad: sadSVG,
@@ -75,6 +107,7 @@ function NotificationCenter() {
 
                 setNotifications(updatedNotifications);
                 await loadChatUsernames(updatedNotifications);
+                setServerCount(0);
 
             }
             catch (error) {
@@ -180,9 +213,10 @@ function NotificationCenter() {
         },
     };
 
-    const unreadCount = notifications.filter(
-        (notification) => !notification.read
-    ).length;
+    // While closed, show what's waiting; once opened, everything is downloaded and listed
+    const unreadCount = isOpen
+        ? notifications.filter((notification) => !notification.read).length
+        : localUnread + serverCount;
 
     const onNotificationClick = async (notification) => {
         try {

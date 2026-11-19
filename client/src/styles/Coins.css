@@ -756,3 +756,43 @@
     .conversation-send-coins span { display: none; }
     .conversation-send-coins { width: 44px; padding: 0; }
 }
+
+/* ---------- Coins received: navbar dot and corner card ---------- */
+.nav-coin-chip { position: relative; }
+.nav-coin-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--coin-green);
+    border: 2px solid #171717;
+}
+
+.incoming-coins {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    z-index: 1500;
+    width: min(360px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 14px 12px 16px;
+    border-radius: 14px;
+    background: var(--coin-surface);
+    border: 1px solid var(--coin-gold);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+    color: var(--coin-fg);
+    font-family: var(--font-body);
+    animation: coin-pop .2s ease-out;
+}
+.incoming-coins-head { display: flex; align-items: center; gap: 10px; }
+.incoming-coins-head b { flex: 1; font-family: var(--font-head); font-size: 15px; }
+.incoming-coins-head .coin-icon-btn { width: 36px; height: 36px; margin: -6px -6px -6px 0; }
+.incoming-coins .transfer-request.is-compact { margin-top: 6px; }
+
+@media (max-width: 600px) {
+    .incoming-coins { left: 16px; right: 16px; width: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}

@@ -33,10 +33,18 @@ function CoinsState(props) {
     refreshWallet();
   }, [location.pathname, refreshWallet]);
 
+  // Check again when the user comes back to the tab, and every minute while it's open,
+  // so coins someone sends show up without a reload
   useEffect(() => {
     const onFocus = () => refreshWallet();
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") refreshWallet();
+    }, 60 * 1000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      clearInterval(timer);
+    };
   }, [refreshWallet]);
 
   // Called with the `coins` result the server sends back after a post
