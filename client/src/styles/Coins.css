@@ -243,22 +243,27 @@
 .tier-badge {
     display: inline-flex;
     align-items: center;
-    padding: 2px 9px;
+    justify-content: center;
+    text-align: center;
+    padding: 4px 10px;
     border-radius: 999px;
     border: 1px solid currentColor;
     font-family: var(--font-head);
     font-size: 11px;
     font-weight: 600;
-    line-height: 1.6;
+    line-height: 1;
     white-space: nowrap;
 }
-.tier-badge.is-small { font-size: 10px; padding: 1px 7px; }
+.tier-badge.is-small { font-size: 10px; padding: 3px 7px; }
 .tier-rare { color: var(--tier-rare); }
 .tier-epic { color: var(--tier-epic); }
 .tier-legendary { color: var(--tier-legendary); }
 .tier-mythic { color: var(--tier-mythic); }
 
+/* Badge centred under the avatar on posts and in the Veil editor */
+.post-header-avatar:has(.post-tier-badge) { display: flex; flex-direction: column; align-items: center; }
 .post-tier-badge { margin-top: 8px; }
+.mennist-avatar-preview:has(.editor-tier-badge) { display: flex; flex-direction: column; align-items: center; }
 .editor-tier-badge { margin-top: 8px; }
 
 /* ---------- Modal (centred on desktop, bottom sheet on phones) ---------- */
