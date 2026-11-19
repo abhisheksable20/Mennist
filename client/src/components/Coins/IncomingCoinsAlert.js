@@ -22,7 +22,10 @@ export default function IncomingCoinsAlert({ alert }) {
   const location = useLocation();
   const [hidden, setHidden] = useState(readHidden);
 
-  if (!wallet || location.pathname === "/coins" || location.pathname === "/setup-user") return null;
+  // Not on the wallet (already listed there) or in a chat (shown in the conversation,
+  // and the card would cover the message box)
+  if (!wallet || location.pathname === "/coins" || location.pathname === "/setup-user"
+    || location.pathname.startsWith("/user-chat/")) return null;
   const transfer = wallet.transfers.incoming.find((t) => !hidden.includes(t.id));
   if (!transfer) return null;
 

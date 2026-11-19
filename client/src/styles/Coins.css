@@ -796,3 +796,98 @@
 @media (max-width: 600px) {
     .incoming-coins { left: 16px; right: 16px; width: auto; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ---------- Coin transfers inside a chat ---------- */
+.coin-chat-event {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 14px 0;
+    font-family: var(--font-body);
+}
+.coin-chat-event.is-out { align-items: flex-end; }
+.coin-chat-event.is-in { align-items: flex-start; }
+
+.coin-chat-event-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: min(360px, 85%);
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #1C1A10;
+    border: 1px solid #4A3F17;
+    color: var(--coin-fg);
+}
+.coin-chat-event.is-out .coin-chat-event-card { border-bottom-right-radius: 6px; }
+.coin-chat-event.is-in .coin-chat-event-card { border-bottom-left-radius: 6px; }
+.coin-chat-event.status-declined .coin-chat-event-card,
+.coin-chat-event.status-cancelled .coin-chat-event-card,
+.coin-chat-event.status-expired .coin-chat-event-card,
+.coin-chat-event.status-failed .coin-chat-event-card { background: var(--coin-surface); border-color: var(--coin-border); }
+.coin-chat-event.status-accepted .coin-chat-event-card { border-color: #1E5A35; }
+
+.coin-chat-event-icon {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #2A230C;
+}
+.coin-chat-event-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.coin-chat-event-text b { font-family: var(--font-head); font-size: 15px; font-weight: 600; }
+.coin-chat-event-text .coin-num { color: var(--coin-gold); }
+.coin-chat-event.status-accepted .coin-chat-event-text .coin-small { color: var(--coin-green); }
+.coin-chat-event-text .transfer-request.is-compact { margin-top: 8px; }
+.coin-chat-event-text .transfer-request-actions .coin-btn { min-height: 38px; }
+.coin-chat-cancel { align-self: flex-start; margin-top: 6px; }
+.coin-chat-event-time { color: var(--coin-muted); font-size: 12px; padding: 0 4px; }
+
+/* ---------- Mobile navbar: keep brand and actions on one row ---------- */
+@media (max-width: 576px) {
+    .navbar > .container-fluid {
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding-left: max(12px, env(safe-area-inset-left, 0px));
+        padding-right: max(12px, env(safe-area-inset-right, 0px));
+    }
+    .navbar .navbar-brand {
+        font-size: 24px;
+        padding: 10px 0 !important;
+        margin-right: 0;
+        flex-shrink: 0;
+    }
+    .navbar .beta-badge { margin-left: 4px; padding: 1px 4px; }
+    .navbar-actions { gap: 6px; min-width: 0; }
+
+    /* Streak and coins join into one compact pill */
+    .nav-coins {
+        gap: 0;
+        border-radius: 999px;
+        background: var(--coin-raised);
+        border: 1px solid var(--coin-border);
+        min-width: 0;
+    }
+    .nav-coins .nav-coin-chip {
+        min-height: 36px;
+        padding: 0 8px;
+        gap: 4px;
+        background: none;
+        border: 0;
+        border-radius: 999px;
+        font-size: 12px;
+    }
+    .nav-coins .nav-coin-chip + .nav-coin-chip { border-left: 1px solid var(--coin-border); border-radius: 0 999px 999px 0; }
+    .nav-coins .nav-coin-dot { top: 3px; right: 3px; border-color: var(--coin-raised); }
+
+    .navbar .notification-bell { width: 38px; height: 38px; border-radius: 11px; }
+    .navbar .navbar-more-toggle { width: 38px !important; height: 38px !important; }
+}
+
+/* Very narrow phones: drop the BETA tag rather than wrapping */
+@media (max-width: 359px) {
+    .navbar .beta-badge { display: none; }
+    .navbar .navbar-brand { font-size: 22px; }
+}

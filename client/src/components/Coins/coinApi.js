@@ -29,3 +29,6 @@ export const coinError = (err, fallback = "Something went wrong. Please try agai
 };
 
 export const TIER_LABELS = { rare: "Rare", epic: "Epic", legendary: "Legendary", mythic: "Mythic" };
+
+export const fetchChatTransfers = async (chatId) =>
+  (await axios.get(`${API()}/chat/${encodeURIComponent(chatId)}`)).data.transfers;

@@ -45,6 +45,15 @@
           ]
         }
       }
+    },
+    "coinChat": {
+      "$uid": {
+        "$other": {
+          ".indexOn": [
+            "createdAt"
+          ]
+        }
+      }
     }
   }
 }

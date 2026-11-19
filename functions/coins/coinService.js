@@ -649,6 +649,13 @@ const createTransfer = async (fromUid, toChatId, amount) => {
       },
       [`coinTransfers/${transferId}`]: record,
       [`pendingTransfers/${transferId}`]: expiresAt,
+      // Shown inside the chat between the two people
+      [`coinChat/${fromUid}/${toUid}/${transferId}`]: {
+        dir: "out", amount, cut: out.cut, receives: out.receives, status: "pending", createdAt: now, expiresAt,
+      },
+      [`coinChat/${toUid}/${fromUid}/${transferId}`]: {
+        dir: "in", amount: out.receives, status: "pending", createdAt: now, expiresAt,
+      },
     });
   } catch (inboxErr) {
     console.error("Transfer inbox write failed, refunding:", inboxErr);
@@ -708,7 +715,7 @@ const settleSender = async (fromUid, transferId, status) => {
 
 // Last step: remove from inbox / pending list and record the outcome
 const finalizeTransfer = async (toUid, transferId, status) => {
-  await db.ref(`coinTransfers/${transferId}`).transaction((current) => {
+  const result = await db.ref(`coinTransfers/${transferId}`).transaction((current) => {
     if (current && current.status === "pending") {
       current.status = status;
       current.settledAt = Date.now();
@@ -716,10 +723,23 @@ const finalizeTransfer = async (toUid, transferId, status) => {
     return current;
   });
 
-  await db.ref().update({
+  const updates = {
     [`coins/${toUid}/incoming/${transferId}`]: null,
     [`pendingTransfers/${transferId}`]: null,
-  });
+  };
+
+  // Update the chat view for both people (skipped if either account was deleted)
+  const record = result.snapshot && result.snapshot.val();
+  if (record && record.status !== "pending") {
+    const [outSnap, inSnap] = await Promise.all([
+      db.ref(`coinChat/${record.from}/${record.to}/${transferId}`).get(),
+      db.ref(`coinChat/${record.to}/${record.from}/${transferId}`).get(),
+    ]);
+    if (outSnap.exists()) updates[`coinChat/${record.from}/${record.to}/${transferId}/status`] = record.status;
+    if (inSnap.exists()) updates[`coinChat/${record.to}/${record.from}/${transferId}/status`] = record.status;
+  }
+
+  await db.ref().update(updates);
 };
 
 /*
@@ -853,6 +873,24 @@ const expireTransfers = async (batchSize = 100) => {
 // Settings
 // ---------------------------------------------------------------------
 
+// Coin transfers between this user and the person in a chat, oldest first
+const getChatTransfers = async (uid, otherChatId) => {
+  const otherUid = verifyChatId(otherChatId);
+  if (!otherUid) {
+    throw new CoinError(404, "USER_NOT_FOUND", "User not found.");
+  }
+  const snap = await db.ref(`coinChat/${uid}/${otherUid}`).orderByChild("createdAt").limitToLast(30).get();
+  const now = Date.now();
+  const items = [];
+  snap.forEach((child) => {
+    const t = child.val();
+    // A pending transfer past its deadline is about to be expired by the scheduler
+    const status = t.status === "pending" && t.expiresAt < now ? "expired" : t.status;
+    items.push({id: child.key, ...t, status});
+  });
+  return items;
+};
+
 const setAllowTransfers = async (uid, allow) => {
   await ensureWallet(uid);
   await db.ref(`coins/${uid}/settings/allowTransfers`).set(allow);
@@ -913,6 +951,7 @@ module.exports = {
   cancelTransfer,
   expireTransfers,
   setAllowTransfers,
+  getChatTransfers,
   unblockSender,
   sendStreakReminders,
 };

@@ -21,11 +21,35 @@ import { ACCEPT_ATTR, BIG_FILE, isImageType, isPreviewable } from "../config/att
 import SendCoinsModal from "./Coins/SendCoinsModal";
 import TierBadge from "./Coins/TierBadge";
 import CoinIcon from "./Coins/CoinIcon";
+import CoinChatEvent from "./Coins/CoinChatEvent";
+import CoinsContext from "../context/coins/CoinsContext";
+import { fetchChatTransfers } from "./Coins/coinApi";
 
 function ConversationPage(props) {
   const { chatId } = useParams();
   const [showSendCoins, setShowSendCoins] = useState(false);
   const showAlert = props.alert || (() => {});
+  // Coins sent and received with this person, shown in the chat timeline
+  const coinsCtx = useContext(CoinsContext);
+  const [coinEvents, setCoinEvents] = useState([]);
+  const loadCoinEvents = useCallback(async () => {
+    try {
+      setCoinEvents(await fetchChatTransfers(chatId));
+    } catch (coinErr) {
+      setCoinEvents([]);
+    }
+  }, [chatId]);
+  const walletStamp = coinsCtx && coinsCtx.wallet
+    ? `${coinsCtx.wallet.balance}-${coinsCtx.wallet.transfers.incoming.length}-${coinsCtx.wallet.transfers.outgoing.length}`
+    : "";
+  // Reload when the chat opens and whenever the wallet changes (it refreshes every minute)
+  useEffect(() => {
+    loadCoinEvents();
+  }, [loadCoinEvents, walletStamp]);
+  const onCoinChange = () => {
+    loadCoinEvents();
+    if (coinsCtx) coinsCtx.refreshWallet();
+  };
   const { inputMessage, setInputMessage, chatIdRef,
     userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag, downloadAttachment } = useContext(ChatsContext);
   const userData = useRef(null);
@@ -349,22 +373,34 @@ function ConversationPage(props) {
               name={username}
               avatar={userAvatar ? <Avatar avatar={userAvatar} size={48} /> : null}
               alert={showAlert}
-              onClose={() => setShowSendCoins(false)}
+              onClose={() => {
+                setShowSendCoins(false);
+                onCoinChange();
+              }}
             />
           )}
           <div>
-            {userMessages.length === 0 ? <NoContent svgType={3} title={"NO MESSAGES YET"} text={"Every great conversation starts with a single awkward message."} /> : ""}
+            {userMessages.length === 0 && coinEvents.length === 0 ? <NoContent svgType={3} title={"NO MESSAGES YET"} text={"Every great conversation starts with a single awkward message."} /> : ""}
           </div>
           {
-            userMessages.map((chat) => {
-              const key = chat.firebaseId ?? chat.id;
-              return <ConversationItem
-                key={chat.id}
-                chat={chat}
-                fileDownload={fileDownload}
-                downloadStatus={attachmentDownloadStatus[key]}
-                downloadProgress={downloadProgress[key]} />
-            })
+            [
+              ...userMessages.map((chat) => ({ kind: "msg", ts: chat.timestamp || Number.MAX_SAFE_INTEGER, chat })),
+              ...coinEvents.map((event) => ({ kind: "coin", ts: event.createdAt || 0, event })),
+            ]
+              .sort((a, b) => a.ts - b.ts)
+              .map((item) => {
+                if (item.kind === "coin") {
+                  return <CoinChatEvent key={`coin-${item.event.id}`} event={item.event} alert={showAlert} onChange={onCoinChange} />
+                }
+                const chat = item.chat;
+                const key = chat.firebaseId ?? chat.id;
+                return <ConversationItem
+                  key={chat.id}
+                  chat={chat}
+                  fileDownload={fileDownload}
+                  downloadStatus={attachmentDownloadStatus[key]}
+                  downloadProgress={downloadProgress[key]} />
+              })
           }
         </div>
 
