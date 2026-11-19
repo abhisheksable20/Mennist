@@ -6,6 +6,7 @@
 //   coinLedger/{uid}/{entryId}  history of every coin movement
 //   coinTransfers/{transferId}  one record per transfer (server-side record)
 //   pendingTransfers/{id}       expiresAt of transfers that are still pending
+//   pendingRematches/{id}       echo rematches still running ({uid, echoId, at})
 //
 // Every balance change runs inside a Realtime Database transaction on
 // coins/{uid}, so two requests at the same moment can't spend the same coins.
@@ -83,16 +84,18 @@ const normalize = (w) => {
   wallet.blocked = wallet.blocked || {};
   wallet.settings = wallet.settings || {};
   wallet.daily = wallet.daily || {};
+  wallet.rematches = wallet.rematches || {};
   return wallet;
 };
 
 // Reset the daily counters when the day has changed
 const freshDaily = (wallet, today) => {
   if (wallet.daily.day !== today) {
-    wallet.daily = {day: today, sent: 0, received: 0};
+    wallet.daily = {day: today, sent: 0, received: 0, rematches: 0};
   }
   wallet.daily.sent = wallet.daily.sent || 0;
   wallet.daily.received = wallet.daily.received || 0;
+  wallet.daily.rematches = wallet.daily.rematches || 0;
   return wallet.daily;
 };
 
@@ -280,6 +283,11 @@ const getWallet = async (uid) => {
     inventory: w.inventory,
     unlocks: Object.keys(w.unlocks),
     mythicEdition: w.mythicEdition || null,
+    rematch: {
+      freeLeft: Math.max(0, cfg.ECHO_REMATCH_FREE_PER_DAY - daily.rematches),
+      freePerDay: cfg.ECHO_REMATCH_FREE_PER_DAY,
+      price: cfg.ECHO_REMATCH_PRICE,
+    },
     transfers: {
       canSend: w.streak.longest >= cfg.TRANSFER_MIN_LONGEST_STREAK,
       sentToday: daily.sent,
@@ -936,6 +944,236 @@ const sendStreakReminders = async () => {
   return jobs.length;
 };
 
+// ---------------------------------------------------------------------
+// Echo rematch
+//
+// The first ECHO_REMATCH_FREE_PER_DAY rematches each day are free, then each
+// costs ECHO_REMATCH_PRICE. The charge is kept on the wallet under
+// rematches/{rematchId} until matching finishes:
+//   success -> the record is removed (coins stay spent)
+//   failure -> coins (or the free rematch) are given back
+// If the matching task dies without reporting, the hourly job refunds it.
+// ---------------------------------------------------------------------
+
+const rematchError = (status, code, message) => new CoinError(status, code, message);
+
+// Take a free rematch or the coins for one
+const chargeRematch = async (uid, rematchId, echoId, now) => {
+  await ensureWallet(uid);
+  const today = dayKey(now);
+
+  // Written first so the hourly job can always find a charge that got stuck
+  await db.ref(`pendingRematches/${rematchId}`).set({uid, echoId, at: now});
+
+  let out;
+  try {
+    out = await walletTx(uid, (current) => {
+      const w = normalize(current);
+      const daily = freshDaily(w, today);
+      let charge;
+
+      if (daily.rematches < cfg.ECHO_REMATCH_FREE_PER_DAY) {
+        daily.rematches++;
+        charge = {free: true, day: today, fromBonus: 0, fromEarned: 0};
+      } else {
+        const price = cfg.ECHO_REMATCH_PRICE;
+        const total = w.bonus + w.earned;
+        if (total < price) {
+          return {error: rematchError(402, "INSUFFICIENT_COINS",
+              `A rematch costs ${price} coins. You need ${price - total} more.`)};
+        }
+        const fromBonus = Math.min(w.bonus, price);
+        w.bonus -= fromBonus;
+        w.earned -= price - fromBonus;
+        charge = {free: false, day: today, fromBonus, fromEarned: price - fromBonus};
+      }
+
+      w.rematches[rematchId] = {...charge, echoId, at: now};
+      return {value: w, out: {
+        charge,
+        balance: w.bonus + w.earned,
+        freeLeft: Math.max(0, cfg.ECHO_REMATCH_FREE_PER_DAY - daily.rematches),
+      }};
+    });
+  } catch (chargeErr) {
+    await db.ref(`pendingRematches/${rematchId}`).remove();
+    throw chargeErr;
+  }
+
+  if (!out.charge.free) {
+    await addLedger(uid, [{
+      type: "echo_rematch", amount: -cfg.ECHO_REMATCH_PRICE, echoId,
+      fromBonus: out.charge.fromBonus, fromEarned: out.charge.fromEarned,
+    }]);
+  }
+  return out;
+};
+
+// Matching finished. success=false gives the coins / free rematch back.
+// Safe to call more than once: only the first call does anything.
+const settleRematch = async (uid, rematchId, success) => {
+  if (!uid || !rematchId) {
+    return null;
+  }
+  const now = Date.now();
+  const out = await walletTx(uid, (current) => {
+    if (!current) {
+      return {value: current, out: null};
+    }
+    const w = normalize(current);
+    const charge = w.rematches[rematchId];
+    if (!charge) {
+      return {value: current, out: null};
+    }
+    delete w.rematches[rematchId];
+
+    let refunded = 0;
+    if (!success) {
+      if (charge.free) {
+        const daily = freshDaily(w, dayKey(now));
+        if (charge.day === daily.day && daily.rematches > 0) {
+          daily.rematches--;
+        }
+      } else {
+        w.bonus += charge.fromBonus || 0;
+        w.earned += charge.fromEarned || 0;
+        refunded = (charge.fromBonus || 0) + (charge.fromEarned || 0);
+      }
+    }
+    return {value: w, out: {charge, refunded}};
+  });
+
+  await db.ref(`pendingRematches/${rematchId}`).remove();
+
+  if (out && out.refunded) {
+    await addLedger(uid, [{
+      type: "echo_rematch_refund", amount: out.refunded, echoId: out.charge.echoId,
+      fromBonus: out.charge.fromBonus || 0, fromEarned: out.charge.fromEarned || 0,
+    }]);
+  }
+  return out;
+};
+
+// Put an echo back the way it was if the rematch never started
+const unlockEcho = async (uid, echoId, rematchId, status) => {
+  await db.ref(`echoes/${uid}/${echoId}`).transaction((current) => {
+    if (!current || current.rematchId !== rematchId) {
+      return current;
+    }
+    return {...current, status, rematchId: null, processingSince: null};
+  });
+};
+
+/*
+  Start a rematch of one of the user's echoes.
+  enqueue(payload) sends the matching task. Returns what the button needs.
+*/
+const startEchoRematch = async (uid, echoId, enqueue) => {
+  const now = Date.now();
+  const rematchId = db.ref().push().key;
+
+  // 1. Lock the echo so a double tap can't start (or pay for) two rematches
+  let lockError = null;
+  let previous = null;
+  const lock = await db.ref(`echoes/${uid}/${echoId}`).transaction((current) => {
+    lockError = null;
+    previous = null;
+    if (!current) {
+      return current;
+    }
+    if (!current.echo) {
+      lockError = rematchError(400, "ECHO_EMPTY", "Echo content is missing!");
+      return current;
+    }
+    const since = current.processingSince || current.timestamp || 0;
+    if (current.status === "processing" && now - since < cfg.ECHO_REMATCH_STALE_MS) {
+      lockError = rematchError(409, "ALREADY_MATCHING", "This echo is still matching. Check back in a moment.");
+      return current;
+    }
+    previous = current.status || "completed";
+    return {...current, status: "processing", processingSince: now, rematchId};
+  });
+
+  if (lockError) {
+    throw lockError;
+  }
+  if (!lock.committed || !lock.snapshot.exists()) {
+    throw rematchError(404, "ECHO_NOT_FOUND", "Echo not found!");
+  }
+  const echo = lock.snapshot.val().echo;
+
+  // 2. Take a free rematch or the coins
+  let charged;
+  try {
+    charged = await chargeRematch(uid, rematchId, echoId, now);
+  } catch (chargeErr) {
+    await unlockEcho(uid, echoId, rematchId, previous);
+    throw chargeErr;
+  }
+
+  // 3. Start matching
+  const matchRef = db.ref(`echoMatches/${uid}/${echoId}`);
+  const previousMatch = (await matchRef.child("status").get()).val();
+  try {
+    await matchRef.update({status: "processing"});
+    await enqueue({userId: uid, echoId, echo, rematchId});
+  } catch (startErr) {
+    console.error("Echo rematch could not start:", startErr);
+    await settleRematch(uid, rematchId, false);
+    await unlockEcho(uid, echoId, rematchId, previous);
+    if (previousMatch) {
+      await matchRef.update({status: previousMatch});
+    }
+    throw rematchError(503, "REMATCH_NOT_STARTED",
+        charged.charge.free ? "Couldn't start matching. Please try again." :
+          "Couldn't start matching. Your coins are back in your wallet.");
+  }
+
+  return {
+    status: "processing",
+    free: charged.charge.free,
+    price: charged.charge.free ? 0 : cfg.ECHO_REMATCH_PRICE,
+    balance: charged.balance,
+    freeLeft: charged.freeLeft,
+  };
+};
+
+// Refund rematches whose matching task never reported back
+const refundStaleRematches = async (limit = 100) => {
+  const cutoff = Date.now() - cfg.ECHO_REMATCH_STALE_MS;
+  const snap = await db.ref("pendingRematches").orderByChild("at").endAt(cutoff).limitToFirst(limit).get();
+  const jobs = [];
+  snap.forEach((child) => {
+    const {uid, echoId} = child.val() || {};
+    const rematchId = child.key;
+    jobs.push((async () => {
+      try {
+        if (!uid) {
+          await child.ref.remove();
+          return;
+        }
+        await settleRematch(uid, rematchId, false);
+        if (echoId) {
+          await db.ref(`echoes/${uid}/${echoId}`).transaction((current) => {
+            if (!current || current.rematchId !== rematchId || current.status !== "processing") {
+              return current;
+            }
+            return {...current, status: "failed", rematchId: null, processingSince: null};
+          });
+          const matchStatus = db.ref(`echoMatches/${uid}/${echoId}/status`);
+          if ((await matchStatus.get()).val() === "processing") {
+            await matchStatus.set("failed");
+          }
+        }
+      } catch (staleErr) {
+        console.error(`Stale rematch refund failed: ${rematchId}`, staleErr);
+      }
+    })());
+  });
+  await Promise.all(jobs);
+  return jobs.length;
+};
+
 module.exports = {
   CoinError,
   dayKey,
@@ -958,4 +1196,7 @@ module.exports = {
   getChatTransfers,
   unblockSender,
   sendStreakReminders,
+  startEchoRematch,
+  settleRematch,
+  refundStaleRematches,
 };

@@ -32,6 +32,11 @@
         ".value"
       ]
     },
+    "pendingRematches": {
+      ".indexOn": [
+        "at"
+      ]
+    },
     "users": {
       "$uid": {
         "notification": {

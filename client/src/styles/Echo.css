@@ -25,6 +25,29 @@
     width: 100%;
 }
 
+/* Rematch button with its cost label */
+.echo-rematch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.echo-rematch-cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 13px;
+    color: #A3A3A3;
+    white-space: nowrap;
+}
+
+.echo-rematch-cost.is-paid {
+    font-family: 'Silkscreen', 'Courier New', monospace;
+    color: #F4C542;
+}
+
 /* Rematch button */
 .echo-rematch-button {
     display: inline-flex;

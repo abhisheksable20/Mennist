@@ -90,6 +90,15 @@ module.exports = {
   VIBE_PACK_ID: "vibe_pack",
   VIBE_PACK_MAX: 60,
 
+  // ---------------- Echo rematch ----------------
+  // Free rematches per day (all echoes together), then each one costs coins.
+  // A rematch that fails gives the coins (or the free rematch) back.
+  ECHO_REMATCH_FREE_PER_DAY: 3,
+  ECHO_REMATCH_PRICE: 5,
+  // A rematch still "processing" after this long is treated as dead:
+  // the button unlocks and its coins are refunded.
+  ECHO_REMATCH_STALE_MS: 30 * 60 * 1000,
+
   // ---------------- Transfers ----------------
   TRANSFER_MIN_AMOUNT: 5,
   TRANSFER_DAILY_SEND_LIMIT: 100,

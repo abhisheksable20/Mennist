@@ -910,3 +910,9 @@
 .menu-coins-stats > span { display: inline-flex; align-items: center; gap: 4px; }
 .menu-coins-waiting { font-size: 12px; color: var(--coin-green); font-weight: 600; }
 .menu-coins-arrow { flex: none; color: var(--coin-muted); }
+
+/* Echo rematch confirm */
+.rematch-confirm { display: flex; flex-direction: column; gap: 14px; }
+.rematch-confirm p { margin: 0; }
+.rematch-confirm-points { margin: 0; padding-left: 18px; color: var(--coin-fg-2); font-size: 14px; display: grid; gap: 6px; }
+.rematch-confirm .coin-btn-block { display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }

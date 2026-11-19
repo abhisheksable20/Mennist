@@ -3,6 +3,7 @@ const {onTaskDispatched} = require("firebase-functions/tasks");
 const {findEchoMatches} = require("../dataProcessing/geminiProcessing");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
+const {settleRematch} = require("../coins/coinService");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -112,6 +113,19 @@ async (request) => {
 },
 );
 
+// Settle the rematch charge without letting a coin error break matching
+const settleRematchSafely = async (userId, rematchId, success) => {
+  if (!rematchId) {
+    return;
+  }
+  try {
+    await settleRematch(userId, rematchId, success);
+  } catch (settleErr) {
+    // The hourly job refunds anything left behind
+    console.error(`Rematch settle failed: ${rematchId}`, settleErr);
+  }
+};
+
 // background work for checking echo similarities
 exports.matchEchoes = onTaskDispatched({
   retryConfig: {
@@ -121,13 +135,14 @@ exports.matchEchoes = onTaskDispatched({
     maxConcurrentDispatches: 5,
   },
 }, async (req) => {
-  const {userId, echoId, echo} = req.data;
+  const {userId, echoId, echo, rematchId} = req.data;
 
   try {
     const snapshot = await db.ref("echoes").once("value");
 
     if (!snapshot.exists()) {
       await markEchoCompleted(userId, echoId, []);
+      await settleRematchSafely(userId, rematchId, true);
       return;
     }
 
@@ -156,6 +171,7 @@ exports.matchEchoes = onTaskDispatched({
 
     if (candidates.length === 0) {
       await markEchoCompleted(userId, echoId, []);
+      await settleRematchSafely(userId, rematchId, true);
       return;
     }
 
@@ -183,6 +199,9 @@ exports.matchEchoes = onTaskDispatched({
         `echoes/${userId}/${echoId}/status`,
     ).set("completed");
 
+    // Paid/free rematch went through: the charge stays
+    await settleRematchSafely(userId, rematchId, true);
+
 
     if (top10.length > 0) {
       // eventId, userId, actorId, type, postId, echoId, chatId, vibe
@@ -208,6 +227,9 @@ exports.matchEchoes = onTaskDispatched({
     await db.ref(
         `echoes/${userId}/${echoId}/status`,
     ).set("failed");
+
+    // Matching failed: give the coins (or the free rematch) back
+    await settleRematchSafely(userId, rematchId, false);
 
     throw error;
   }

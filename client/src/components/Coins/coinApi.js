@@ -33,3 +33,7 @@ export const TIER_LABELS = { rare: "Rare", epic: "Epic", legendary: "Legendary",
 
 export const fetchChatTransfers = async (chatId) =>
   (await axios.get(`${API()}/chat/${encodeURIComponent(chatId)}`)).data.transfers;
+
+// Rematch an echo (free a few times a day, then costs coins)
+export const rematchEcho = async (echoId) =>
+  (await axios.post(`${process.env.REACT_APP_API_URL}/echoes/rematch/${encodeURIComponent(echoId)}`)).data;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { convertTimestampToReadable } from '../../dataProcessing/dataProcessing';
@@ -8,6 +8,23 @@ import MatchingEchoesItems from './MatchingEchoesItems';
 import SimilarEchoModal from './SimilarEchoModal';
 import { db } from '../../internalDatabase/db'
 import "../../styles/Echo.css"
+import CoinsContext from '../../context/coins/CoinsContext';
+import CoinIcon from '../Coins/CoinIcon';
+import RematchConfirmModal from '../Coins/RematchConfirmModal';
+import { coinError, rematchEcho } from '../Coins/coinApi';
+
+// Remember that the user already confirmed a paid rematch once
+const CONFIRMED_KEY = "mennist-rematch-confirmed";
+const readConfirmed = () => {
+    try { return localStorage.getItem(CONFIRMED_KEY) === "1"; } catch (e) { return false; }
+};
+const saveConfirmed = () => {
+    try { localStorage.setItem(CONFIRMED_KEY, "1"); } catch (e) { /* private mode */ }
+};
+
+// While matching runs, check the result this often, for at most this long
+const POLL_MS = 6000;
+const POLL_FOR_MS = 3 * 60 * 1000;
 
 function EchoContent(props) {
     const { id } = useParams();
@@ -17,6 +34,15 @@ function EchoContent(props) {
     const [loading, setLoading] = useState(false);
     const [selectedEcho, setSelectedEcho] = useState(null);
     const [rematching, setRematching] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const coins = useContext(CoinsContext);
+    const wallet = coins ? coins.wallet : null;
+    const rematchInfo = wallet ? wallet.rematch : null;
+    const [watching, setWatching] = useState(false);
+    // "Matching" only while we are still checking; after that the button opens
+    // again and the server decides (it refunds and unlocks stuck rematches).
+    const isMatching = echoData.status === "processing" && watching;
+    const pollStart = useRef(0);
 
     const loadEcho = async () => {
         try {
@@ -78,28 +104,82 @@ function EchoContent(props) {
         }
     }
 
-    // Rechecking the echo matches of the echo post
-    const recheckEchoMatches = async () => {
-        if (!id) {
-            console.log("Echo ID is missing.")
-            return
-        }
-
+    // Start the rematch on the server
+    const runRematch = async () => {
         try {
             setRematching(true);
-            await axios.get(`${process.env.REACT_APP_API_URL}/echoes/rematch/${id}`);
-            setEchoData(prev => ({
-                ...prev,
-                status: "processing"
-            }));
+            const out = await rematchEcho(id);
+            setConfirmOpen(false);
+            setEchoData(prev => ({ ...prev, status: "processing" }));
+            if (!out.free) {
+                saveConfirmed();
+            }
         }
         catch (error) {
-            console.log(error);
+            setConfirmOpen(false);
+            if (error.response?.status === 401) {
+                props.alert("Please start a new session.", "alert");
+                navigate("/setup-user");
+                return;
+            }
+            if (error.response?.data?.code === "ALREADY_MATCHING") {
+                setEchoData(prev => ({ ...prev, status: "processing" }));
+            }
+            props.alert(coinError(error, "Couldn't start matching. Please try again."), "alert");
         }
         finally {
             setRematching(false);
+            if (coins) coins.refreshWallet();
         }
     }
+
+    // Free rematches go straight through; a paid one asks first (once)
+    const recheckEchoMatches = () => {
+        if (!id || rematching || isMatching) return;
+        if (rematchInfo && rematchInfo.freeLeft === 0) {
+            const short = rematchInfo.price > wallet.balance;
+            if (short || !readConfirmed()) {
+                setConfirmOpen(true);
+                return;
+            }
+        }
+        runRematch();
+    }
+
+    // Keep checking while matching runs, only while the tab is visible
+    const processing = echoData.status === "processing";
+    useEffect(() => {
+        if (!processing) {
+            setWatching(false);
+            return undefined;
+        }
+        pollStart.current = Date.now();
+        setWatching(true);
+        const timer = setInterval(() => {
+            if (Date.now() - pollStart.current > POLL_FOR_MS) {
+                clearInterval(timer);
+                setWatching(false);
+                return;
+            }
+            if (document.visibilityState === "visible") loadMatchingEchoes();
+        }, POLL_MS);
+        return () => clearInterval(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [processing, id]);
+
+    let rematchLabel = null;
+    if (isMatching) {
+        rematchLabel = "Matching...";
+    } else if (rematchInfo) {
+        rematchLabel = rematchInfo.freeLeft > 0
+            ? `Free · ${rematchInfo.freeLeft} left`
+            : <><CoinIcon size={12} /> {rematchInfo.price}</>;
+    }
+    const rematchTitle = isMatching
+        ? "Matching in progress"
+        : rematchInfo && rematchInfo.freeLeft === 0
+            ? `Rematch for ${rematchInfo.price} coins`
+            : rematchInfo ? `Rematch (${rematchInfo.freeLeft} free left today)` : "Rematch Echo";
 
     useEffect(() => {
         loadEcho();
@@ -126,15 +206,22 @@ function EchoContent(props) {
                         </span>
                     </p>
 
-                    <button
-                        type="button"
-                        className={`echo-rematch-button ${rematching ? 'is-rematching' : ''}`}
-                        aria-label="Rematch echo"
-                        title={rematching ? "Checking..." : "Rematch Echo"}
-                        onClick={recheckEchoMatches}
-                        disabled={rematching}>
-                        <img src={ReloadSVG} alt="Reload Echo" />
-                    </button>
+                    <div className="echo-rematch">
+                        {rematchLabel && (
+                            <span className={`echo-rematch-cost ${rematchInfo && rematchInfo.freeLeft === 0 && !isMatching ? "is-paid" : ""}`}>
+                                {rematchLabel}
+                            </span>
+                        )}
+                        <button
+                            type="button"
+                            className={`echo-rematch-button ${rematching || isMatching ? 'is-rematching' : ''}`}
+                            aria-label={rematchTitle}
+                            title={rematchTitle}
+                            onClick={recheckEchoMatches}
+                            disabled={rematching || isMatching}>
+                            <img src={ReloadSVG} alt="" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Green dash */}
@@ -173,6 +260,15 @@ function EchoContent(props) {
                 </div>
 
                 <SimilarEchoModal echo={selectedEcho} startConversation={startConversation} alert={props.alert} />
+
+                {confirmOpen && rematchInfo && (
+                    <RematchConfirmModal
+                        info={rematchInfo}
+                        balance={wallet ? wallet.balance : 0}
+                        busy={rematching}
+                        onConfirm={runRematch}
+                        onClose={() => setConfirmOpen(false)} />
+                )}
             </div>
         </>
     )

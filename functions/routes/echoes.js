@@ -7,6 +7,7 @@ const {echoValidation} = require("../validators/postValidator");
 const {globalLimiter, postLimiter, dailyAiLimiter} = require("../middleware/rateLimiter");
 const {getFunctions} = require("firebase-admin/functions");
 const {userEchoesFetching} = require("../dataProcessing/postsProcessing");
+const {startEchoRematch, CoinError} = require("../coins/coinService");
 
 const echoMatchingQueue = getFunctions().taskQueue("matchEchoes");
 
@@ -134,48 +135,23 @@ router.post("/submitEcho", isLoggedIn, postLimiter, dailyAiLimiter, validate(ech
   }
 });
 
-// Router to reinitiate the echo matching of the echo post
-router.get("/rematch/:echoId", isLoggedIn, postLimiter, dailyAiLimiter, async (req, res) => {
+// Rematch an echo: free a few times a day, then it costs coins.
+// POST so a link or image on another site can't trigger a paid rematch.
+router.post("/rematch/:echoId", isLoggedIn, postLimiter, dailyAiLimiter, async (req, res) => {
+  const echoId = req.params.echoId;
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(echoId || "")) {
+    return res.status(400).send({success: false, error: "Invalid echo."});
+  }
+
   try {
-    const echoId = req.params.echoId;
-    const userId = req.user.uid;
-
-    const echoRef = db.ref(`echoes/${userId}/${echoId}`);
-
-    const snapshot = await echoRef.once("value");
-
-    if (!snapshot.exists()) {
-      return res.status(404).send({
-        success: false,
-        error: "Echo not found!",
-      });
-    }
-
-    const echoData = snapshot.val();
-
-    if (!echoData.echo) {
-      return res.status(400).send({
-        success: false,
-        error: "Echo content is missing!",
-      });
-    }
-
-    await db.ref(`echoMatches/${userId}/${echoId}`).update({
-      status: "processing",
-    });
-
-    await echoMatchingQueue.enqueue({
-      userId,
-      echoId,
-      echo: echoData.echo,
-    });
-
-    return res.status(202).send({
-      success: true,
-      status: "processing",
-      message: "Echo matching started.",
-    });
+    const result = await startEchoRematch(req.user.uid, echoId, (payload) => echoMatchingQueue.enqueue(payload));
+    return res.status(202).send({success: true, message: "Echo matching started.", ...result});
   } catch (rematchErr) {
+    if (rematchErr instanceof CoinError) {
+      return res.status(rematchErr.status).send({
+        success: false, code: rematchErr.code, error: rematchErr.message, message: rematchErr.message,
+      });
+    }
     console.log("Echo Rematching Error: ", rematchErr);
     return res.status(500).send({
       success: false,
