@@ -293,9 +293,13 @@ const getWallet = async (uid) => {
   };
 };
 
-const getHistory = async (uid, endAt, limit = 20) => {
+// Newest first, 10 per page. For the next page pass the last entry's timestamp and id.
+const getHistory = async (uid, endAt, endKey, limit = 10) => {
   let query = db.ref(`coinLedger/${uid}`).orderByChild("timestamp");
-  if (endAt) {
+  if (endAt && endKey) {
+    // Continue exactly after the last entry shown (entries can share a timestamp)
+    query = query.endBefore(endAt, endKey);
+  } else if (endAt) {
     query = query.endAt(endAt - 1);
   }
   const snap = await query.limitToLast(limit).get();

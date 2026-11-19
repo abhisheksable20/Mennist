@@ -5,8 +5,9 @@ const API = () => `${process.env.REACT_APP_API_URL}/coins`;
 
 export const fetchWallet = async (signal) => (await axios.get(`${API()}/wallet`, { signal })).data.wallet;
 export const fetchShop = async (signal) => (await axios.get(`${API()}/shop`, { signal })).data;
-export const fetchHistory = async (endAt) =>
-  (await axios.get(`${API()}/history`, { params: endAt ? { endAt } : {} })).data.history;
+// 10 entries at a time; pass the last entry shown to get the next 10
+export const fetchHistory = async (after) =>
+  (await axios.get(`${API()}/history`, { params: after ? { endAt: after.timestamp, endKey: after.id } : {} })).data.history;
 
 export const buyItem = async (itemId) => (await axios.post(`${API()}/spend`, { itemId })).data;
 

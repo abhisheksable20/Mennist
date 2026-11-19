@@ -46,7 +46,7 @@ function WalletPage(props) {
     refreshWallet();
     fetchHistory().then((items) => {
       setHistory(items);
-      setHistoryDone(items.length < 20);
+      setHistoryDone(items.length < 10);
     }).catch((err) => {
       if (err.response && err.response.status === 401) navigate("/setup-user");
     });
@@ -56,9 +56,9 @@ function WalletPage(props) {
     if (!history.length) return;
     setLoadingMore(true);
     try {
-      const more = await fetchHistory(history[history.length - 1].timestamp);
+      const more = await fetchHistory(history[history.length - 1]);
       setHistory((prev) => [...prev, ...more]);
-      setHistoryDone(more.length < 20);
+      setHistoryDone(more.length < 10);
     } catch (err) {
       props.alert(coinError(err), "alert");
     } finally {

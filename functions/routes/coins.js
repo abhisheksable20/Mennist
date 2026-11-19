@@ -36,10 +36,12 @@ router.get("/wallet", isLoggedIn, globalLimiter, handle(async (req) => {
   return {wallet: await coins.getWallet(req.user.uid)};
 }));
 
-// Coin history (newest first). Pass ?endAt=<timestamp of last item> for the next page.
+// Coin history (newest first, 10 at a time).
+// For the next page pass ?endAt=<timestamp of last item>&endKey=<id of last item>.
 router.get("/history", isLoggedIn, globalLimiter, handle(async (req) => {
   const endAt = req.query.endAt ? Number(req.query.endAt) : null;
-  return {history: await coins.getHistory(req.user.uid, Number.isFinite(endAt) ? endAt : null)};
+  const endKey = typeof req.query.endKey === "string" && SAFE_ID.test(req.query.endKey) ? req.query.endKey : null;
+  return {history: await coins.getHistory(req.user.uid, Number.isFinite(endAt) ? endAt : null, endKey)};
 }));
 
 // Items that can be bought
