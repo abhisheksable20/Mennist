@@ -33,9 +33,13 @@ function NotificationCenter() {
     useEffect(() => {
         if (isOpen) return undefined;
         let active = true;
+        let lastCheck = 0;
 
         const check = async () => {
-            if (document.visibilityState !== "visible") return;
+            // Only while the tab is on screen, and at most once every few seconds
+            // (coming back to the tab fires both focus and visibilitychange)
+            if (document.visibilityState !== "visible" || Date.now() - lastCheck < 5000) return;
+            lastCheck = Date.now();
             try {
                 const local = await db.notifications.toArray();
                 if (active) setLocalUnread(local.filter((n) => !n.read).length);
