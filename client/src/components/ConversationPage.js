@@ -350,13 +350,15 @@ function ConversationPage(props) {
         <div className='content-wrapper'>
           {/* Conversation Header */}
           <div className="conversation-header mb-4">
-            <div className="mennist-avatar-preview">
-              {userAvatar ? <Avatar avatar={userAvatar} size={64} className="conversation-avatar" /> : ""}
+            <div className="conversation-avatar-col">
+              <div className="mennist-avatar-preview">
+                {userAvatar ? <Avatar avatar={userAvatar} size={64} className="conversation-avatar" /> : ""}
+              </div>
+              {userAvatar && <TierBadge tier={userAvatar.tier} edition={userAvatar.mythicEdition} className="conversation-tier-badge" />}
             </div>
             <div className="conversation-user-info">
               <h2 className="card-text mb-2">
                 {username}
-                {userAvatar && <TierBadge tier={userAvatar.tier} edition={userAvatar.mythicEdition} className="ms-2 align-middle" />}
               </h2>
               <h6 className="text-body-secondary mb-3">
                 Hope it's the opposite of your gender.
