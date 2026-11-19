@@ -2,14 +2,18 @@ import SubmitButton from './SubmitButton'
 import ChatFlagButton from './ChatFlagButton';
 import NotificationCenter from './utils/NotificationCenter';
 import NavCoins from './Coins/NavCoins';
+import MenuCoinsCard from './Coins/MenuCoinsCard';
+import CoinsContext from '../context/coins/CoinsContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 
 function Navbar(props) {
     const navigate = useNavigate();
     const location = useLocation();
 
     const [moreOpen, setMoreOpen] = useState(false);
+    const coins = useContext(CoinsContext);
+    const coinsWaiting = coins && coins.wallet ? coins.wallet.transfers.incoming.length : 0;
 
     const isMinimalPage = ["/terms-and-conditions", "/privacy-policy"].includes(location.pathname);
 
@@ -49,14 +53,18 @@ function Navbar(props) {
                             <button
                                 type="button"
                                 className="navbar-more-toggle"
-                                aria-label="More options"
+                                aria-label={coinsWaiting ? "More options, coins waiting for you" : "More options"}
                                 aria-expanded={moreOpen}
                                 onClick={() => setMoreOpen(prev => !prev)}
                             >
                                 &#8942;
+                                {coinsWaiting > 0 && <span className="navbar-more-dot" aria-hidden="true" />}
                             </button>
 
                             <div className="navbar-more-content">
+                                <div className="mobile-coins-menu">
+                                    <MenuCoinsCard />
+                                </div>
                                 {!isSubmitPage && (
                                     <SubmitButton alert={props.alert} menu />
                                 )}
