@@ -6,16 +6,32 @@ import CoinModal from "./CoinModal";
 import CoinIcon from "./CoinIcon";
 import TierBadge from "./TierBadge";
 import { buyItem, coinError } from "./coinApi";
+import { AVATAR_OPTIONS, DEFAULT_AVATAR } from "../Avatar/avatarOptions";
 
 const SLOT_LABELS = {
   hairFx: "Hair colour", eyes: "Eyes", accessories: "Accessory", aura: "Aura",
   background: "Background", frame: "Frame", set: "Full set",
 };
 
-// What wearing an item changes on an avatar
+const FREE_EYES = new Set(AVATAR_OPTIONS.eyes.map((o) => o.id));
+const FREE_ACCESSORIES = new Set(AVATAR_OPTIONS.accessories.map((o) => o.id));
+
+// The avatar with every premium item taken off, so a preview shows one item at a time
+export const withoutPremium = (avatar) => {
+  const plain = { ...avatar, hairFx: null, aura: null, background: null, frame: null, set: null };
+  if (!FREE_EYES.has(plain.eyes)) plain.eyes = DEFAULT_AVATAR.eyes;
+  if (!FREE_ACCESSORIES.has(plain.accessories)) plain.accessories = DEFAULT_AVATAR.accessories;
+  delete plain.tier;
+  delete plain.mythicSeed;
+  delete plain.mythicEdition;
+  return plain;
+};
+
+// Preview of one item on the user's Veil, without the premium items they already wear
 export const wearItem = (avatar, item) => {
-  const next = { ...avatar, [item.slot]: item.value };
-  if (item.value === "mythic" && !next.mythicSeed) next.mythicSeed = "preview";
+  const next = { ...withoutPremium(avatar), [item.slot]: item.value };
+  // Owners see their own Mythic; everyone else sees an example
+  if (item.value === "mythic") next.mythicSeed = avatar.mythicSeed || "preview";
   return next;
 };
 
@@ -34,7 +50,7 @@ export default function ItemPreviewModal({ item, myAvatar, setMyAvatar, onClose,
   const needsStreak = item.requiresStreak && longestStreak < item.requiresStreak;
   const wearing = myAvatar && myAvatar[item.slot] === item.value;
 
-  const preview = showWith ? wearItem(myAvatar, item) : myAvatar;
+  const preview = showWith ? wearItem(myAvatar, item) : withoutPremium(myAvatar);
 
   const buy = async () => {
     setBusy(true);
@@ -92,7 +108,7 @@ export default function ItemPreviewModal({ item, myAvatar, setMyAvatar, onClose,
             </p>
           )}
           {item.slot !== "set" && myAvatar && myAvatar.set && (
-            <p className="coin-muted coin-small">You're wearing a full set, so some colours may look different.</p>
+            <p className="coin-muted coin-small">The preview shows this item on its own. With your full set on, some colours will look different.</p>
           )}
         </div>
 
