@@ -17,8 +17,14 @@ const PREMIUM_SLOTS = [
   { id: "eyes", label: "Eyes" },
   { id: "accessories", label: "Accessory" },
 ];
-// Slots that are empty unless a premium item is worn
-const OPTIONAL_SLOTS = ["set", "aura", "background", "frame", "hairFx"];
+// What "None" means for each premium slot: empty, or back to a regular choice
+const NONE_VALUE = {
+  set: null, aura: null, background: null, frame: null, hairFx: null,
+  accessories: "accessory-00",
+  eyes: DEFAULT_AVATAR.eyes,
+};
+// Regular tabs where tapping the selected option again takes it off
+const REMOVABLE = { accessories: "accessory-00", facialHair: "beard-00" };
 
 export default function AvatarEditor({ chatId, alert, sessionExpired }) {
   const [avatar, setAvatar] = useState({ ...DEFAULT_AVATAR });
@@ -69,11 +75,21 @@ export default function AvatarEditor({ chatId, alert, sessionExpired }) {
   }, [chatId]);
 
   function chooseOption(option) {
-    setAvatar((current) => ({ ...current, [category]: option.id }));
+    setAvatar((current) => {
+      // Tapping the selected accessory or facial hair again removes it
+      if (REMOVABLE[category] && current[category] === option.id) {
+        return { ...current, [category]: REMOVABLE[category] };
+      }
+      return { ...current, [category]: option.id };
+    });
   }
 
   function wearPremium(slot, value) {
-    setAvatar((current) => ({ ...current, [slot]: value }));
+    setAvatar((current) => ({
+      ...current,
+      // Tapping the item you're wearing again takes it off
+      [slot]: current[slot] === value ? NONE_VALUE[slot] : value,
+    }));
   }
 
   async function handleSave() {
@@ -202,18 +218,18 @@ function PremiumPicker({ avatar, ownedItems, onWear }) {
       {PREMIUM_SLOTS.map((slot) => {
         const items = ownedItems.filter((i) => i.slot === slot.id);
         if (items.length === 0) return null;
-        const optional = OPTIONAL_SLOTS.includes(slot.id);
+        const noneValue = NONE_VALUE[slot.id];
+        const wearingOne = items.some((i) => avatar[slot.id] === i.value);
         return (
           <div key={slot.id} className="premium-slot">
             <p className="mennist-avatar-section-label">{slot.label}</p>
             <div className="mennist-avatar-options">
-              {optional && (
-                <button type="button" className={!avatar[slot.id] ? "mennist-avatar-option is-selected" : "mennist-avatar-option"}
-                  aria-pressed={!avatar[slot.id]} onClick={() => onWear(slot.id, null)}>
-                  <Avatar avatar={{ ...avatar, [slot.id]: null }} size={68} title="Without" />
-                  <span className="mennist-avatar-option-label">None</span>
-                </button>
-              )}
+              <button type="button" className={!wearingOne ? "mennist-avatar-option is-selected" : "mennist-avatar-option"}
+                aria-pressed={!wearingOne}
+                onClick={() => { if (wearingOne) onWear(slot.id, avatar[slot.id]); }}>
+                <Avatar avatar={{ ...avatar, [slot.id]: noneValue }} size={68} title="Without" />
+                <span className="mennist-avatar-option-label">{slot.id === "eyes" ? "Regular" : "None"}</span>
+              </button>
               {items.map((item) => {
                 const selected = avatar[slot.id] === item.value;
                 return (
