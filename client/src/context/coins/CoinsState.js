@@ -14,14 +14,25 @@ function CoinsState(props) {
   const location = useLocation();
   const loadingRef = useRef(false);
 
+  const againRef = useRef(false);
+
   const refreshWallet = useCallback(async () => {
-    if (loadingRef.current) return;
+    // A check is already running: run once more after it, so a fresh change isn't missed
+    if (loadingRef.current) {
+      againRef.current = true;
+      return;
+    }
     loadingRef.current = true;
     try {
-      setWallet(await fetchWallet());
-    } catch (err) {
-      // Not logged in yet, or offline: hide coin UI instead of failing
-      if (err.response && err.response.status === 401) setWallet(null);
+      do {
+        againRef.current = false;
+        try {
+          setWallet(await fetchWallet());
+        } catch (err) {
+          // Not logged in yet, or offline: hide coin UI instead of failing
+          if (err.response && err.response.status === 401) setWallet(null);
+        }
+      } while (againRef.current);
     } finally {
       loadingRef.current = false;
     }

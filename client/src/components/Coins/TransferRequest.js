@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import CoinsContext from "../../context/coins/CoinsContext";
 import CoinIcon from "./CoinIcon";
 import { answerTransfer, coinError } from "./coinApi";
 
@@ -11,6 +12,7 @@ const hoursLeft = (expiresAt) => Math.max(0, Math.ceil((expiresAt - Date.now()) 
 export default function TransferRequest({ transfer, onDone, alert, compact = false }) {
   const [busy, setBusy] = useState(null);
   const [result, setResult] = useState(null);
+  const coins = useContext(CoinsContext);
 
   const act = async (action) => {
     setBusy(action);
@@ -29,6 +31,8 @@ export default function TransferRequest({ transfer, onDone, alert, compact = fal
       if (err.response && [404, 410].includes(err.response.status) && onDone) onDone(null);
     } finally {
       setBusy(null);
+      // Update the wallet everywhere (navbar, corner card, wallet page, chat)
+      if (coins) coins.refreshWallet();
     }
   };
 
