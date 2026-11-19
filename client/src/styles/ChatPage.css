@@ -144,7 +144,7 @@
     width: 100%;
     min-height: 100vh;
     background: #0D0D0D;
-    padding-bottom: 120px;
+    padding-bottom: 150px;
 }
 
 .content-wrapper {
@@ -173,6 +173,25 @@
     width: 100%;
     max-width: 850px;
     padding: 0 15px;
+}
+
+/* Blurred band behind the input and the encryption note, so messages
+   scrolling underneath fade out instead of showing through */
+.chat-input-wrapper::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    top: -28px;
+    bottom: -20px;
+    pointer-events: none;
+    background: rgba(13, 13, 13, 0.72);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 44px);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 44px);
 }
 
 .chat-input-box {
