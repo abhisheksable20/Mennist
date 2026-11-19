@@ -110,6 +110,14 @@ export default function AvatarEditor({ chatId, alert, sessionExpired }) {
     setAvatar({ ...DEFAULT_AVATAR });
   }
 
+  // Badge for what is selected right now (before saving): the highest tier worn
+  const TIER_RANK = { rare: 1, epic: 2, legendary: 3, mythic: 4 };
+  const liveTier = ownedItems === null
+    ? avatar.tier
+    : ownedItems
+      .filter((i) => avatar[i.slot] === i.value)
+      .reduce((best, i) => (!best || TIER_RANK[i.tier] > TIER_RANK[best] ? i.tier : best), null);
+
   if (loading) return <AvatarLoading />;
 
   const options = AVATAR_OPTIONS[category] || [];
@@ -122,7 +130,7 @@ export default function AvatarEditor({ chatId, alert, sessionExpired }) {
         </div>
         <div className="mennist-avatar-preview">
           <Avatar avatar={avatar} size={128} title="Veil Preview" />
-          {avatar.tier && <TierBadge tier={avatar.tier} edition={avatar.mythicEdition} className="editor-tier-badge" />}
+          {liveTier && <TierBadge tier={liveTier} edition={avatar.mythicEdition} className="editor-tier-badge" />}
         </div>
       </header>
 
