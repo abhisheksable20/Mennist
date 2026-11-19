@@ -487,6 +487,12 @@ body {
   background: #16A34A;
 }
 
+/* Feed tabs (All / Mine / Saved): same font as before, normal stacking so menus open above them */
+.feed-tab {
+  font-family: "Open Sans", sans-serif;
+  font-weight: normal;
+}
+
 /* Unselected tabs */
 .nav-pills .nav-link:not(.active) {
   background-color: transparent !important;

@@ -121,18 +121,18 @@ function Posts(props) {
                 <ul className="nav nav-pills gap-3">
                     <li className="nav-item">
                         <button
-                            className={`nav-link custom-toast rounded-pill px-4 ${activeBtn === 0 ? "active" : ""}`}
+                            className={`nav-link feed-tab rounded-pill px-4 ${activeBtn === 0 ? "active" : ""}`}
                             aria-current="page"
                             onClick={() => setActiveBtn(0)}>All</button>
                     </li>
                     <li className="nav-item">
                         <button
-                            className={`nav-link custom-toast rounded-pill px-4 ${activeBtn === 1 ? "active" : ""}`}
+                            className={`nav-link feed-tab rounded-pill px-4 ${activeBtn === 1 ? "active" : ""}`}
                             onClick={() => setActiveBtn(1)}>Mine</button>
                     </li>
                     <li className="nav-item">
                         <button
-                            className={`nav-link custom-toast rounded-pill px-4 ${activeBtn === 2 ? "active" : ""}`}
+                            className={`nav-link feed-tab rounded-pill px-4 ${activeBtn === 2 ? "active" : ""}`}
                             onClick={() => setActiveBtn(2)}>Saved</button>
                     </li>
                 </ul>
