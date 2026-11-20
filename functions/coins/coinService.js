@@ -7,6 +7,9 @@
 //   coinTransfers/{transferId}  one record per transfer (server-side record)
 //   pendingTransfers/{id}       expiresAt of transfers that are still pending
 //   pendingRematches/{id}       echo rematches still running ({uid, echoId, at})
+//   chatOpen/{uid}/{otherUid}   true once the two have a conversation (free forever);
+//                               a startId while a paid start waits for uid's reply
+//   pendingChatStarts/{id}      paid chat starts waiting for a reply ({from, to, at, ...})
 //
 // Every balance change runs inside a Realtime Database transaction on
 // coins/{uid}, so two requests at the same moment can't spend the same coins.
@@ -91,11 +94,12 @@ const normalize = (w) => {
 // Reset the daily counters when the day has changed
 const freshDaily = (wallet, today) => {
   if (wallet.daily.day !== today) {
-    wallet.daily = {day: today, sent: 0, received: 0, rematches: 0};
+    wallet.daily = {day: today, sent: 0, received: 0, rematches: 0, chats: 0};
   }
   wallet.daily.sent = wallet.daily.sent || 0;
   wallet.daily.received = wallet.daily.received || 0;
   wallet.daily.rematches = wallet.daily.rematches || 0;
+  wallet.daily.chats = wallet.daily.chats || 0;
   return wallet.daily;
 };
 
@@ -283,6 +287,12 @@ const getWallet = async (uid) => {
     inventory: w.inventory,
     unlocks: Object.keys(w.unlocks),
     mythicEdition: w.mythicEdition || null,
+    chats: {
+      freeLeft: Math.max(0, cfg.CHAT_START_FREE_PER_DAY - daily.chats),
+      freePerDay: cfg.CHAT_START_FREE_PER_DAY,
+      price: cfg.CHAT_START_PRICE,
+      refundHours: Math.round(cfg.CHAT_START_REFUND_MS / cfg.HOUR),
+    },
     rematch: {
       freeLeft: Math.max(0, cfg.ECHO_REMATCH_FREE_PER_DAY - daily.rematches),
       freePerDay: cfg.ECHO_REMATCH_FREE_PER_DAY,
@@ -1174,6 +1184,205 @@ const refundStaleRematches = async (limit = 100) => {
   return jobs.length;
 };
 
+// ---------------------------------------------------------------------
+// New chats
+//
+// The first message between two people "opens" the pair. After that both
+// can message each other for free, forever. Opening costs the starter one of
+// CHAT_START_FREE_PER_DAY free starts, then CHAT_START_PRICE coins. A paid
+// start the other person never replies to is refunded by the hourly job.
+//
+// Load: an open pair is remembered in memory, so ordinary messages in an
+// existing chat cost no extra database reads at all.
+// ---------------------------------------------------------------------
+
+const openPairs = new Set();
+const OPEN_CACHE_MAX = 20000;
+const rememberOpen = (uid, otherUid) => {
+  if (openPairs.size >= OPEN_CACHE_MAX) {
+    openPairs.clear();
+  }
+  openPairs.add(`${uid}_${otherUid}`);
+};
+
+// true = open, a string = open but a paid start waits for uid's reply, false = not open
+const readChatOpen = async (uid, otherUid) => {
+  if (openPairs.has(`${uid}_${otherUid}`)) {
+    return true;
+  }
+  const val = (await db.ref(`chatOpen/${uid}/${otherUid}`).get()).val();
+  if (val === true) {
+    rememberOpen(uid, otherUid);
+    return true;
+  }
+  if (typeof val === "string") {
+    return val;
+  }
+
+  // Conversations from before this feature stay free (checked once per pair)
+  const [mine, theirs] = await Promise.all([
+    db.ref(`chats/${uid}/${otherUid}/timestamp`).get(),
+    db.ref(`chats/${otherUid}/${uid}/timestamp`).get(),
+  ]);
+  if (mine.exists() || theirs.exists()) {
+    await db.ref().update({[`chatOpen/${uid}/${otherUid}`]: true, [`chatOpen/${otherUid}/${uid}`]: true});
+    rememberOpen(uid, otherUid);
+    return true;
+  }
+  return false;
+};
+
+// Remove a pending paid start; returns what was there (only one caller gets it)
+const claimChatStart = async (startId) => {
+  let claimed = null;
+  await db.ref(`pendingChatStarts/${startId}`).transaction((current) => {
+    claimed = current;
+    return null;
+  });
+  return claimed;
+};
+
+const refundCoins = async (uid, fromBonus, fromEarned) => walletTx(uid, (current) => {
+  if (!current) {
+    return {value: current, out: false};
+  }
+  const w = normalize(current);
+  w.bonus += fromBonus || 0;
+  w.earned += fromEarned || 0;
+  return {value: w, out: true};
+});
+
+// Take a free start or the coins for one
+const startChat = async (from, to) => {
+  await ensureWallet(from);
+  const now = Date.now();
+  const today = dayKey(now);
+
+  const out = await walletTx(from, (current) => {
+    const w = normalize(current);
+    const daily = freshDaily(w, today);
+
+    // Two first messages sent at the same moment: charge only once
+    w.recentStarts = w.recentStarts || {};
+    Object.keys(w.recentStarts).forEach((id) => {
+      if (now - w.recentStarts[id] > 60 * 1000) delete w.recentStarts[id];
+    });
+    if (w.recentStarts[to]) {
+      return {value: w, out: {free: true, again: true}};
+    }
+    w.recentStarts[to] = now;
+
+    if (daily.chats < cfg.CHAT_START_FREE_PER_DAY) {
+      daily.chats++;
+      return {value: w, out: {free: true, freeLeft: cfg.CHAT_START_FREE_PER_DAY - daily.chats}};
+    }
+    const price = cfg.CHAT_START_PRICE;
+    const total = w.bonus + w.earned;
+    if (total < price) {
+      delete w.recentStarts[to];
+      return {error: new CoinError(402, "CHAT_LOCKED",
+          `You've used your ${cfg.CHAT_START_FREE_PER_DAY} free new chats today. ` +
+          `Starting another costs ${price} coins. You need ${price - total} more.`)};
+    }
+    const fromBonus = Math.min(w.bonus, price);
+    w.bonus -= fromBonus;
+    w.earned -= price - fromBonus;
+    return {value: w, out: {free: false, fromBonus, fromEarned: price - fromBonus, balance: w.bonus + w.earned, freeLeft: 0}};
+  });
+
+  if (out.again) {
+    return {started: true, free: true};
+  }
+
+  const startId = db.ref().push().key;
+  const updates = {[`chatOpen/${from}/${to}`]: true};
+  if (out.free) {
+    updates[`chatOpen/${to}/${from}`] = true;
+  } else {
+    updates[`chatOpen/${to}/${from}`] = startId;
+    updates[`pendingChatStarts/${startId}`] = {from, to, at: now, fromBonus: out.fromBonus, fromEarned: out.fromEarned};
+  }
+
+  try {
+    await db.ref().update(updates);
+  } catch (openErr) {
+    if (!out.free) {
+      await refundCoins(from, out.fromBonus, out.fromEarned);
+    }
+    throw openErr;
+  }
+  rememberOpen(from, to);
+
+  if (!out.free) {
+    await addLedger(from, [{
+      type: "chat_start", amount: -cfg.CHAT_START_PRICE,
+      fromBonus: out.fromBonus, fromEarned: out.fromEarned,
+    }]);
+  }
+  return {started: true, free: out.free, price: out.free ? 0 : cfg.CHAT_START_PRICE, freeLeft: out.freeLeft};
+};
+
+/*
+  Call before saving any message from `from` to `to`.
+  Free for open pairs; opens (and charges for) new ones; throws CHAT_LOCKED
+  when a new chat can't be paid for.
+*/
+const allowChatMessage = async (from, to) => {
+  const open = await readChatOpen(from, to);
+  if (open === true) {
+    return {started: false};
+  }
+  if (typeof open === "string") {
+    // First reply to a paid start: the starter keeps paying nothing more, no refund due
+    await claimChatStart(open);
+    await db.ref(`chatOpen/${from}/${to}`).set(true);
+    rememberOpen(from, to);
+    return {started: false};
+  }
+  return startChat(from, to);
+};
+
+// For the chat screen: is this conversation already open?
+const isChatOpen = async (uid, otherChatId) => {
+  const otherUid = verifyChatId(otherChatId);
+  if (!otherUid || otherUid === uid) {
+    return true;
+  }
+  return (await readChatOpen(uid, otherUid)) !== false;
+};
+
+// Hourly: refund paid starts nobody replied to
+const expireChatStarts = async (limit = 100) => {
+  const cutoff = Date.now() - cfg.CHAT_START_REFUND_MS;
+  const snap = await db.ref("pendingChatStarts").orderByChild("at").endAt(cutoff).limitToFirst(limit).get();
+  const ids = [];
+  snap.forEach((child) => {
+    ids.push(child.key);
+  });
+
+  let refunded = 0;
+  await Promise.all(ids.map(async (startId) => {
+    try {
+      const start = await claimChatStart(startId);
+      if (!start) {
+        return;
+      }
+      // The chat stays open; the other person can still reply for free
+      await db.ref(`chatOpen/${start.to}/${start.from}`).transaction((current) => (current === startId ? true : current));
+      if (await refundCoins(start.from, start.fromBonus, start.fromEarned)) {
+        refunded++;
+        await addLedger(start.from, [{
+          type: "chat_start_refund", amount: (start.fromBonus || 0) + (start.fromEarned || 0),
+          fromBonus: start.fromBonus || 0, fromEarned: start.fromEarned || 0,
+        }]);
+      }
+    } catch (expireErr) {
+      console.error(`Chat start refund failed: ${startId}`, expireErr);
+    }
+  }));
+  return refunded;
+};
+
 module.exports = {
   CoinError,
   dayKey,
@@ -1199,4 +1408,7 @@ module.exports = {
   startEchoRematch,
   settleRematch,
   refundStaleRematches,
+  allowChatMessage,
+  isChatOpen,
+  expireChatStarts,
 };

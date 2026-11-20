@@ -99,6 +99,14 @@ module.exports = {
   // the button unlocks and its coins are refunded.
   ECHO_REMATCH_STALE_MS: 30 * 60 * 1000,
 
+  // ---------------- New chats ----------------
+  // Starting a conversation with someone new: free this many times a day,
+  // then it costs coins. Replying and continuing a chat are always free.
+  CHAT_START_FREE_PER_DAY: 3,
+  CHAT_START_PRICE: 5,
+  // A paid start the other person never replies to is refunded after this.
+  CHAT_START_REFUND_MS: 48 * HOUR,
+
   // ---------------- Transfers ----------------
   TRANSFER_MIN_AMOUNT: 5,
   TRANSFER_DAILY_SEND_LIMIT: 100,

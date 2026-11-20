@@ -55,6 +55,7 @@ async (request) => {
       [`coins/${userId}`]: null,
       [`coinLedger/${userId}`]: null,
       [`coinChat/${userId}`]: null,
+      [`chatOpen/${userId}`]: null,
     };
 
     if (userPostsSnapshot.exists()) {

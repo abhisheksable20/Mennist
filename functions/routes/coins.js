@@ -77,9 +77,13 @@ router.post("/transfer/:transferId/cancel", isLoggedIn, coinLimiter, handle(asyn
   return {transfer: await coins.cancelTransfer(req.user.uid, transferId(req))};
 }));
 
-// Coins sent and received with the person in a chat
+// Coins sent and received with the person in a chat, and whether the chat is open
 router.get("/chat/:chatId", isLoggedIn, globalLimiter, handle(async (req) => {
-  return {transfers: await coins.getChatTransfers(req.user.uid, req.params.chatId)};
+  const [transfers, open] = await Promise.all([
+    coins.getChatTransfers(req.user.uid, req.params.chatId),
+    coins.isChatOpen(req.user.uid, req.params.chatId),
+  ]);
+  return {transfers, chatOpen: open};
 }));
 
 // Allow or refuse coin transfers from everyone

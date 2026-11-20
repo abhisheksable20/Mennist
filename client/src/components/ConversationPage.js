@@ -2,7 +2,7 @@ import "../styles/ChatPage.css"
 import sendSVG from "../assets/send_svg.svg"
 import uploadFileSVG from "../assets/add_svg_icon.svg"
 import { useEffect, useContext, useRef, useCallback, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import ChatsContext from '../context/chats/chatsContext';
 import ConversationItem from './ConversationItem';
 import ChatFeatureAlert from "./ChatFeatureAlert";
@@ -23,7 +23,7 @@ import TierBadge from "./Coins/TierBadge";
 import CoinIcon from "./Coins/CoinIcon";
 import CoinChatEvent from "./Coins/CoinChatEvent";
 import CoinsContext from "../context/coins/CoinsContext";
-import { fetchChatTransfers } from "./Coins/coinApi";
+import { fetchChatInfo } from "./Coins/coinApi";
 
 function ConversationPage(props) {
   const { chatId } = useParams();
@@ -32,13 +32,18 @@ function ConversationPage(props) {
   // Coins sent and received with this person, shown in the chat timeline
   const coinsCtx = useContext(CoinsContext);
   const [coinEvents, setCoinEvents] = useState([]);
+  // null = not known yet, false = sending the first message starts a new chat
+  const [chatOpen, setChatOpen] = useState(null);
   const loadCoinEvents = useCallback(async () => {
     try {
-      setCoinEvents(await fetchChatTransfers(chatId));
+      const info = await fetchChatInfo(chatId);
+      setCoinEvents(info.transfers);
+      setChatOpen(info.chatOpen);
     } catch (coinErr) {
       setCoinEvents([]);
     }
   }, [chatId]);
+  useEffect(() => setChatOpen(null), [chatId]);
   const walletStamp = coinsCtx && coinsCtx.wallet
     ? `${coinsCtx.wallet.balance}-${coinsCtx.wallet.transfers.incoming.length}-${coinsCtx.wallet.transfers.outgoing.length}`
     : "";
@@ -200,10 +205,13 @@ function ConversationPage(props) {
       return;
 
     sendAttachment(selectedFile, userData.current.recieverPublicKey)
+      .then(afterFirstMessage)
       .catch((attachmentError) => {
         console.log("Error sending attachment: ", attachmentError);
         if (attachmentError.response?.status === 403)
           setIsReceiverAvail(false);
+        else if (attachmentError.response?.status === 402)
+          setAttachmentError(attachmentError.response.data?.message || "Starting a new chat needs coins.");
         else if (attachmentError.response?.status === 415)
           setAttachmentError("This file type is not allowed.");
         else
@@ -313,31 +321,51 @@ function ConversationPage(props) {
     }
   }
 
+  // New chat: the first message uses a free start or costs coins
+  const chatRules = coinsCtx && coinsCtx.wallet ? coinsCtx.wallet.chats : null;
+  const isNewChat = chatOpen === false && userMessages.length === 0;
+  const startBlocked = isNewChat && !!chatRules && chatRules.freeLeft === 0
+    && coinsCtx.wallet.balance < chatRules.price;
+
+  // After the first message opens the chat, show the new balance / free count
+  const afterFirstMessage = () => {
+    if (!isNewChat) return;
+    setChatOpen(true);
+    if (coinsCtx) coinsCtx.refreshWallet();
+  };
+
   // Send the message to the reciever side
   const sendMsg = async () => {
     setIsSendBtnDisabled(true);
+    let sent = false;
     try {
       if (!chatIdRef || !userData.current) {
         return;
       }
 
       await sendChat(userData.current.recieverPublicKey);
-      setIsSendBtnDisabled(false);
-      setInputMessage("");
+      sent = true;
+      afterFirstMessage();
     }
     catch (error) {
       console.log(error);
       if (error.response?.status === 403)
         setIsReceiverAvail(false);
+      else if (error.response?.status === 402) {
+        // Keep what they typed so nothing is lost
+        showAlert(error.response.data?.message || "Starting a new chat needs coins.", "alert");
+        if (coinsCtx) coinsCtx.refreshWallet();
+      }
     }
     finally {
-      const textarea = document.getElementById("chatInput");
-      if (textarea) {
-        textarea.style.height = "auto";
-      }
-
       setIsSendBtnDisabled(false);
-      setInputMessage("")
+      if (sent) {
+        const textarea = document.getElementById("chatInput");
+        if (textarea) {
+          textarea.style.height = "auto";
+        }
+        setInputMessage("");
+      }
     }
   }
 
@@ -422,13 +450,29 @@ function ConversationPage(props) {
 
         {/* Input component to take msg from the user */}
         <div className={`chat-input-wrapper ${!chatFlag ? "d-none" : ""}`}>
+          {isNewChat && chatRules && isReceiverAvail && (
+            <div className={`chat-start-note ${startBlocked ? "is-blocked" : ""}`} role="status">
+              {chatRules.freeLeft > 0 ? (
+                <span>New chat · <b>Free</b> ({chatRules.freeLeft} of {chatRules.freePerDay} left today)</span>
+              ) : startBlocked ? (
+                <span>
+                  Free chats used · this one costs <CoinIcon size={12} /> {chatRules.price} ·{" "}
+                  <Link to="/coins">Earn coins</Link>
+                </span>
+              ) : (
+                <span>
+                  New chat · <CoinIcon size={12} /> <b>{chatRules.price}</b> · refunded if they don't reply in {chatRules.refundHours}h
+                </span>
+              )}
+            </div>
+          )}
           <div className="chat-input-box">
 
             {/* Attach a file button */}
             <button
               className="send-btn"
               style={{ backgroundColor: "#262626" }}
-              disabled={isChecking}
+              disabled={isChecking || startBlocked}
               onClick={() => {
                 document.getElementById("fileInput").click()
               }}>
@@ -448,7 +492,8 @@ function ConversationPage(props) {
               placeholder="Type something..."
               onChange={handleInputOnChange} />
 
-            <button className="send-btn" onClick={sendMsg} disabled={isSendBtnDisabled}>
+            <button className={`send-btn ${startBlocked ? "is-locked" : ""}`} onClick={sendMsg} disabled={isSendBtnDisabled || startBlocked}
+              title={startBlocked ? "Not enough coins to start this chat" : undefined}>
               <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
             </button>
 

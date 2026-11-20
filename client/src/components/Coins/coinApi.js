@@ -31,8 +31,13 @@ export const coinError = (err, fallback = "Something went wrong. Please try agai
 
 export const TIER_LABELS = { rare: "Rare", epic: "Epic", legendary: "Legendary", mythic: "Mythic" };
 
-export const fetchChatTransfers = async (chatId) =>
-  (await axios.get(`${API()}/chat/${encodeURIComponent(chatId)}`)).data.transfers;
+export const fetchChatTransfers = async (chatId) => (await fetchChatInfo(chatId)).transfers;
+
+// Coin events in a chat + whether the conversation is already open (free to message)
+export const fetchChatInfo = async (chatId) => {
+  const data = (await axios.get(`${API()}/chat/${encodeURIComponent(chatId)}`)).data;
+  return { transfers: data.transfers || [], chatOpen: data.chatOpen !== false };
+};
 
 // Rematch an echo (free a few times a day, then costs coins)
 export const rematchEcho = async (echoId) =>

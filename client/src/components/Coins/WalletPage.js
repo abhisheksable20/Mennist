@@ -19,6 +19,8 @@ const describe = (e) => {
     case "spend": return `Bought ${e.itemName || (e.item || "an item").replace(/^(avatar_|vibe_)/, "").replace(/_/g, " ")}`;
     case "transfer_out": return "Sent coins";
     case "transfer_in": return "Received coins";
+    case "chat_start": return "Started a new chat";
+    case "chat_start_refund": return "No reply in 48h · refunded";
     case "echo_rematch": return "Echo rematch";
     case "echo_rematch_refund": return "Echo rematch failed · refunded";
     case "transfer_refund": return e.reason === "declined" ? "Transfer declined · refunded" : "Transfer refunded";

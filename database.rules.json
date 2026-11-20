@@ -32,6 +32,11 @@
         ".value"
       ]
     },
+    "pendingChatStarts": {
+      ".indexOn": [
+        "at"
+      ]
+    },
     "pendingRematches": {
       ".indexOn": [
         "at"

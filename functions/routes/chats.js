@@ -9,6 +9,7 @@ const {isLoggedIn} = require("../middleware/authenticUser");
 const {validate} = require("express-validation");
 const {getFunctions} = require("firebase-admin/functions");
 const cfg = require("../config/attachments");
+const {allowChatMessage, CoinError} = require("../coins/coinService");
 
 const db = admin.database();
 const getBucket = () => admin.storage().bucket();
@@ -30,6 +31,23 @@ const verifyChatId = (chatId) => {
 // Storage object path: chat-attachments/<receiver>/<sender>/<messageId>
 const objectPath = (receiverId, senderId, messageId) =>
   `chat-attachments/${receiverId}/${senderId}/${messageId}`;
+
+// New chats cost coins after the daily free ones. Sends the error and returns
+// false when the sender can't start this chat.
+const passChatGate = async (res, senderId, receiverId) => {
+  try {
+    await allowChatMessage(senderId, receiverId);
+    return true;
+  } catch (gateErr) {
+    if (gateErr instanceof CoinError) {
+      res.status(gateErr.status).send({error: gateErr.message, code: gateErr.code, message: gateErr.message});
+    } else {
+      console.log("Chat gate error:", gateErr);
+      res.status(500).send({error: "Something went wrong"});
+    }
+    return false;
+  }
+};
 
 const isAttachmentMessage = (m) => !!m && (!!m.attachmentId || !!m.encryptedFile);
 
@@ -105,6 +123,10 @@ router.post("/send-chat", isLoggedIn, chatSendLimiter, validate(chatBlobValidati
     return res.status(403).send({error: "Reciever chat is disabled!"});
   }
 
+  if (!(await passChatGate(res, senderUserId, recieverUserId))) {
+    return;
+  }
+
   const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
   const timestamp = Date.now();
 
@@ -150,6 +172,10 @@ router.post("/attachment/init", isLoggedIn, attachmentLimiter, validate(attachme
     const ext = path.extname(name).slice(1).toLowerCase();
     if (cfg.BLOCKED_EXT.has(ext) || !cfg.ALLOWED_TYPES[type].includes(ext)) {
       return res.status(415).send({error: "This file type is not allowed."});
+    }
+
+    if (!(await passChatGate(res, senderId, receiverId))) {
+      return;
     }
 
     const messageId = db.ref(`chats/${receiverId}/${senderId}/messages`).push().key;
