@@ -32,3 +32,16 @@ export async function decryptFile(encryptedFile, encryptedFileKey, nounce, recie
 
     return imageByte;
 }
+// Shown instead of a message this device can't decrypt (for example one sent
+// to the old key before the account was recovered on a new device)
+export const UNREADABLE_MESSAGE = "This message can't be opened on this device.";
+
+// Like decryptMessage, but never throws: one bad message must not stop the
+// whole chat list from loading
+export async function decryptMessageOrPlaceholder(encryptedMessage, nounce, senderPublicKey, recieverPrivateKey) {
+    try {
+        return await decryptMessage(encryptedMessage, nounce, senderPublicKey, recieverPrivateKey);
+    } catch (decryptErr) {
+        return UNREADABLE_MESSAGE;
+    }
+}

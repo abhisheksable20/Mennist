@@ -1,4 +1,5 @@
 import '../styles/LandingPage.css'
+import '../styles/Recovery.css'
 import creatAccSVG from "../assets/right_arrow_svg.svg"
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
@@ -131,11 +132,19 @@ function LandingPage(props) {
         </p>
 
         {/* Create account button */}
-        <button className="btn create-acc justify-content-center gap-2 mt-4" onClick={setupUser} disabled={btnDisabled}>
-          Get Started
-          {" "}
-          <img src={creatAccSVG} alt="submitButton" width="28px" height="28px" />
-        </button>
+        <div className="landing-actions">
+          <button className="btn create-acc justify-content-center gap-2 mt-4" onClick={setupUser} disabled={btnDisabled}>
+            Get Started
+            {" "}
+            <img src={creatAccSVG} alt="submitButton" width="28px" height="28px" />
+          </button>
+
+          {/* Coming back on a new device */}
+          <Link to="/recover" className="recover-link-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4" /><path d="M10.8 12.2 20 3M17 6l3 3M14 9l2 2" /></svg>
+            I have a recovery key
+          </Link>
+        </div>
 
         <p className="mt-3 px-2">
           By clicking <strong>Get Started</strong>, you agree to our{" "}

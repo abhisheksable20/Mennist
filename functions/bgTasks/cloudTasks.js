@@ -44,9 +44,10 @@ async (request) => {
   const {userId, sessionId} = request.data;
 
   try {
-    const [userPostsSnapshot, keySnapshot] = await Promise.all([
+    const [userPostsSnapshot, keySnapshot, recoverySnapshot] = await Promise.all([
       db.ref(`users/${userId}/posts`).get(),
       db.ref(`users/${userId}/userDetail/publicKey`).get(),
+      db.ref(`users/${userId}/recovery/hash`).get(),
     ]);
 
     const updates = {
@@ -65,6 +66,10 @@ async (request) => {
     // The public key -> account entry, so the key can't point at a deleted account
     if (keySnapshot.exists()) {
       updates[`keyIndex/${keyHash(keySnapshot.val())}`] = null;
+    }
+    // A deleted account's recovery key must not lead anywhere
+    if (recoverySnapshot.exists()) {
+      updates[`recoveryIndex/${recoverySnapshot.val()}`] = null;
     }
 
     if (userPostsSnapshot.exists()) {

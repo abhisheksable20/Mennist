@@ -3,6 +3,9 @@ import { db } from '../../internalDatabase/db'
 import AvatarEditor from './AvatarEditor'
 import { useNavigate } from 'react-router-dom'
 import DeleteUserProfile from './DeleteUserProfile'
+import RecoveryCard from '../Recovery/RecoveryCard'
+import '../../styles/Coins.css'
+import '../../styles/Recovery.css'
 import WhiteDeleteSVG from "../../assets/delete_svg_white.svg"
 import RedDeleteSVG from "../../assets/delete_svg_icon.svg"
 
@@ -53,6 +56,7 @@ function VeilProfile(props) {
     return (
         <div className="container mt-5 mb-5">
             {chatId ? <AvatarEditor chatId={chatId} alert={showToast} sessionExpired={sessionIsExpired}/> : ""}
+            {chatId ? <RecoveryCard /> : ""}
             <section
                 className="mennist-delete-profile"
                 aria-labelledby="mennist-delete-profile-title"

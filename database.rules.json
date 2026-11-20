@@ -32,6 +32,11 @@
         ".value"
       ]
     },
+    "sessions": {
+      ".indexOn": [
+        "userId"
+      ]
+    },
     "loginChallenges": {
       ".indexOn": [
         "expiresAt"

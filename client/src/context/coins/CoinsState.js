@@ -40,7 +40,7 @@ function CoinsState(props) {
 
   // Load once, and again when the user comes back to the tab
   useEffect(() => {
-    if (location.pathname === "/setup-user") return;
+    if (location.pathname === "/setup-user" || location.pathname === "/recover") return;
     refreshWallet();
   }, [location.pathname, refreshWallet]);
 

@@ -25,6 +25,10 @@ import CoinChatEvent from "./Coins/CoinChatEvent";
 import CoinsContext from "../context/coins/CoinsContext";
 import { fetchChatInfo } from "./Coins/coinApi";
 
+// When each chat partner's public key was last checked (this tab only)
+const keyCheckedAt = new Map();
+const KEY_CHECK_EVERY_MS = 10 * 60 * 1000;
+
 function ConversationPage(props) {
   const { chatId } = useParams();
   const [showSendCoins, setShowSendCoins] = useState(false);
@@ -100,12 +104,35 @@ function ConversationPage(props) {
       }
 
       await db.chatUser.add(chatMetaData);
+      keyCheckedAt.set(chatIdRef.current, Date.now());
       return chatMetaData;
     }
     catch (error) {
       throw error
     }
   }, [])
+
+  /*
+    The other person's public key is cached in this browser. It changes when
+    they recover their account on a new device, and messages sent to the old
+    key can't be read. So check it in the background, at most every 10 minutes.
+  */
+  const refreshReceiverKey = useCallback(async (forChatId, signal) => {
+    const last = keyCheckedAt.get(forChatId) || 0;
+    if (Date.now() - last < KEY_CHECK_EVERY_MS) return;
+    keyCheckedAt.set(forChatId, Date.now());
+    try {
+      const data = (await axios.post(`${process.env.REACT_APP_API_URL}/chats/get-publicKey`, { chatId: forChatId }, { signal })).data;
+      if (chatIdRef.current !== forChatId) return;
+      setIsReceiverAvail(!!data.chatFlag);
+      if (data.publicKey && userData.current && data.publicKey !== userData.current.recieverPublicKey) {
+        userData.current.recieverPublicKey = data.publicKey;
+        await db.chatUser.update(forChatId, { publicKey: data.publicKey });
+      }
+    } catch (keyErr) {
+      keyCheckedAt.delete(forChatId);
+    }
+  }, [chatIdRef])
 
   const handleFilePreviewClose = useCallback(() => {
     setSelectedFile(null);
@@ -141,6 +168,7 @@ function ConversationPage(props) {
         setUsername(user.username);
         userChatServer(controller.signal);
         getUserAvatar();
+        refreshReceiverKey(chatId, controller.signal);
       }
       catch (error) {
         if (error.name !== "AbortError" && error.code !== "ERR_CANCELED") {
@@ -158,7 +186,7 @@ function ConversationPage(props) {
       controller.abort();
     }
 
-  }, [chatId, userChatServer, getUserData]);
+  }, [chatId, userChatServer, getUserData, refreshReceiverKey]);
 
   useEffect(() => {
     if (inputMessage.trim().length <= 0) {

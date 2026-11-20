@@ -83,6 +83,7 @@ app.use("/api/echoes", require("./routes/echoes"));
 
 // Post CRUD operation route for user
 app.use("/api/user", require("./routes/userOperation"));
+app.use("/api/user", require("./routes/recovery"));
 
 // Chats operation route
 app.use("/api/chats", require("./routes/chats"));

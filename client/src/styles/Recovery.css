@@ -1,0 +1,450 @@
+/* =====================================================================
+   Account recovery: Veil card, setup popup, /recover page, landing link.
+   Uses the colour tokens from Coins.css.
+   ===================================================================== */
+
+/* ---------- Landing page link ---------- */
+.landing-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.landing-actions .create-acc,
+.recover-link-btn {
+    min-width: 250px;
+    justify-content: center;
+}
+
+.recover-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 14px;
+    background: #171717;
+    border: 1px solid #2E2E2E;
+    color: #FAFAFA;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    transition: border-color .2s ease;
+}
+
+.recover-link-btn:hover,
+.recover-link-btn:focus-visible {
+    color: #FAFAFA;
+    border-color: #22C55E;
+}
+
+/* ---------- Veil card ---------- */
+.recovery-card {
+    width: 100%;
+    max-width: 720px;
+    box-sizing: border-box;
+    margin: 14px auto 0;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--coin-green-bg);
+    border: 1px solid #1F5A35;
+    border-radius: 16px;
+    color: var(--coin-fg);
+    font-family: var(--font-body);
+}
+
+.recovery-card.is-on {
+    background: var(--coin-surface);
+    border-color: var(--coin-border);
+    gap: 8px;
+}
+
+.recovery-card h2 {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.recovery-card p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--coin-fg-2);
+}
+
+.recovery-card ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--coin-fg-2);
+}
+
+.recovery-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.recovery-card-icon {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--coin-bg);
+    color: var(--coin-green);
+}
+
+.recovery-card-reward {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.recovery-card-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--coin-bg);
+    color: var(--coin-gold);
+    font-family: var(--font-pixel);
+    font-size: 12px;
+}
+
+.recovery-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.recovery-card-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px !important;
+}
+
+.recovery-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--coin-green);
+}
+
+/* ---------- Key box (setup + after recovery) ---------- */
+.recovery-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.recovery-flow p {
+    margin: 0;
+}
+
+.recovery-key {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recovery-key-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px 10px;
+    background: var(--coin-bg);
+    border: 1px solid var(--coin-border);
+    border-radius: 14px;
+}
+
+.recovery-key-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--coin-muted);
+}
+
+.recovery-key-value {
+    margin: 0;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    font-weight: 700;
+    font-size: clamp(13px, 3.9vw, 19px);
+    letter-spacing: .5px;
+    color: var(--coin-fg);
+    text-align: center;
+    white-space: nowrap;
+    user-select: all;
+}
+
+.recovery-key-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.recovery-key-actions .coin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.recovery-warning {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #2A2208;
+    border: 1px solid #4A3A12;
+    color: var(--coin-gold);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.recovery-warning svg {
+    flex: none;
+    margin-top: 1px;
+}
+
+.recovery-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--coin-fg-2);
+    cursor: pointer;
+}
+
+.recovery-check input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--coin-green);
+}
+
+/* ---------- Confirm two groups ---------- */
+.recovery-mask {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--coin-muted);
+}
+
+.recovery-mask .is-asked {
+    color: var(--coin-green);
+}
+
+.recovery-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.recovery-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.recovery-group label,
+.recover-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--coin-fg-2);
+}
+
+.recovery-input {
+    min-height: 52px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: var(--coin-surface);
+    border: 1px solid var(--coin-hover);
+    color: var(--coin-fg);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+}
+
+.recovery-input:focus {
+    border-color: var(--coin-fg-2);
+}
+
+.recovery-input.is-ok {
+    border-color: var(--coin-green);
+}
+
+.recovery-done-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    background: var(--coin-green-bg);
+    border: 1px solid #1F5A35;
+    color: var(--coin-green);
+}
+
+.recovery-reward {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    background: #2A2208;
+    border: 1px solid #4A3A12;
+    font-size: 14px;
+}
+
+.recovery-reward b {
+    font-family: var(--font-pixel);
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--coin-gold);
+}
+
+/* ---------- /recover page ---------- */
+.recover-page {
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 48px;
+    background: var(--coin-bg);
+    color: var(--coin-fg);
+    font-family: var(--font-body);
+}
+
+.recover-panel {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recover-panel p {
+    margin: 0;
+}
+
+.recover-back {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px 0 10px;
+    border-radius: 10px;
+    border: 1px solid var(--coin-border);
+    color: var(--coin-fg);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.recover-back:hover {
+    color: var(--coin-fg);
+    border-color: var(--coin-hover);
+}
+
+.recover-title {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.recover-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.recover-key-input {
+    min-height: 56px;
+    font-size: clamp(14px, 4.2vw, 18px);
+    letter-spacing: .5px;
+    text-align: left;
+    padding: 0 12px;
+}
+
+.recover-key-input::placeholder {
+    color: #6B6B6B;
+}
+
+.recovery-new-key,
+.recovery-restored {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 16px;
+}
+
+.recovery-new-key {
+    background: var(--coin-green-bg);
+    border: 1px solid #1F5A35;
+}
+
+.recovery-restored {
+    background: var(--coin-surface);
+    border: 1px solid var(--coin-border);
+}
+
+.recovery-new-key h2,
+.recovery-restored h2 {
+    margin: 0;
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.recovery-new-key > p,
+.recovery-restored > p {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--coin-fg-2);
+}
+
+.recovery-restored-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: var(--font-pixel);
+    font-size: 13px;
+}
+
+.recovery-restored-chips span {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--coin-raised);
+}
+
+.recovery-restored-chips .is-coins { color: var(--coin-gold); }
+.recovery-restored-chips .is-streak { color: var(--coin-orange); }

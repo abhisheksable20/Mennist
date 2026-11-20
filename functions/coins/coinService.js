@@ -1383,6 +1383,28 @@ const expireChatStarts = async (limit = 100) => {
   return refunded;
 };
 
+// ---------------------------------------------------------------------
+// Account recovery reward (once per account)
+// ---------------------------------------------------------------------
+
+const grantRecoveryReward = async (uid) => {
+  await ensureWallet(uid);
+  const out = await walletTx(uid, (current) => {
+    const w = normalize(current);
+    w.rewards = w.rewards || {};
+    if (w.rewards.recovery) {
+      return {value: w, out: {granted: 0, balance: w.bonus + w.earned}};
+    }
+    w.rewards.recovery = Date.now();
+    w.earned += cfg.RECOVERY_REWARD;
+    return {value: w, out: {granted: cfg.RECOVERY_REWARD, balance: w.bonus + w.earned}};
+  });
+  if (out.granted) {
+    await addLedger(uid, [{type: "recovery_reward", amount: out.granted}]);
+  }
+  return out;
+};
+
 module.exports = {
   CoinError,
   dayKey,
@@ -1411,4 +1433,5 @@ module.exports = {
   allowChatMessage,
   isChatOpen,
   expireChatStarts,
+  grantRecoveryReward,
 };

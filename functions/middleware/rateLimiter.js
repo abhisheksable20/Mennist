@@ -100,6 +100,9 @@ const signupLimiter = createLimiter({name: "signup", max: 10, windowMs: 60 * 60 
 // Answering a login challenge (proving you own an account's key): 20 per IP per hour
 const loginLimiter = createLimiter({name: "login", max: 20, windowMs: 60 * 60 * 1000});
 
+// Using a recovery key: 5 tries per IP per hour (keys can't be guessed, this stops scripts)
+const recoveryLimiter = createLimiter({name: "recovery", max: 5, windowMs: 60 * 60 * 1000});
+
 // Public pages that need no login (shared post link, suggestions, vibe counts). Counted by IP.
 const publicReadLimiter = createLimiter({name: "publicread", max: 60});
 
@@ -145,6 +148,7 @@ module.exports = {
   ipLimiter,
   signupLimiter,
   loginLimiter,
+  recoveryLimiter,
   publicReadLimiter,
   globalLimiter,
   postLimiter,

@@ -19,6 +19,7 @@ const Home = lazy(() => import('./components/Home'));
 const SubmitSecret = lazy(() => import('./components/SubmitSecret'));
 const PostContent = lazy(() => import('./components/PostContent'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
+const RecoverPage = lazy(() => import('./components/Recovery/RecoverPage'));
 const ChatsPage = lazy(() => import('./components/ChatsPage'));
 const ConversationPage = lazy(() => import('./components/ConversationPage'));
 const TermsAndConditions = lazy(() => import('./components/TermsAndConditions'));
@@ -78,6 +79,7 @@ function App() {
             <Routes>
               {/* This is landing page */}
               <Route path='/setup-user' element={<LandingPage alert={showAlert} />} />
+              <Route path='/recover' element={<RecoverPage alert={showAlert} />} />
               <Route path="*" element={<PageNotFound />} />
 
               <Route element={<Layout alert={showAlert} />}>

@@ -15,6 +15,9 @@ module.exports = {
   // they can be spent but never transferred.
   WELCOME_BONUS: 50,
 
+  // Coins for setting up account recovery (once per account).
+  RECOVERY_REWARD: 15,
+
   // ---------------- Streaks ----------------
   // A post only counts for the streak if its content has at least this many characters.
   STREAK_MIN_CONTENT_LENGTH: 20,

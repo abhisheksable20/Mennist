@@ -4,7 +4,7 @@ import { db } from "../../internalDatabase/db"
 import { generateUsername } from "unique-username-generator";
 import { useState, useRef, useCallback } from "react";
 import { encryptMessage } from "../../crypto/encryptMessage";
-import { decryptMessage, decryptFile } from "../../crypto/decryptMessage";
+import { decryptFile, decryptMessageOrPlaceholder } from "../../crypto/decryptMessage";
 import { startFileEncryption, encryptChunks, startFileDecryption, decryptChunks, encryptedSize } from "../../crypto/chunkCrypto";
 import { uploadChunk } from "../../utils/chunkUpload";
 import { scanFile, checkHeader, validateIncomingMeta } from "../../utils/scanFile";
@@ -59,7 +59,7 @@ const ChatsState = (props) => {
                     if (isAttachmentType(chat.type))
                         decryptedMsg = chat.encryptedMsg;
                     else
-                        decryptedMsg = await decryptMessage(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
+                        decryptedMsg = await decryptMessageOrPlaceholder(chat.encryptedMsg, chat.nounce, chat.senderPublicKey, privateKey);
 
                     const DBData = {
                         chatId: chat.chatId,
@@ -181,7 +181,7 @@ const ChatsState = (props) => {
                         data.plainMsg = chat.name;
                         data.fileSize = chat.size;
                     } else {
-                        data.plainMsg = await decryptMessage(
+                        data.plainMsg = await decryptMessageOrPlaceholder(
                             chat.encryptedMsg,
                             chat.nounce,
                             rawData.senderPublicKey,
