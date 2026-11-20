@@ -19,11 +19,12 @@ function PostHeaders(props) {
             return;
         }
 
-        const chatId = (await db.keys.get("user-keypair")).chatId;
-        if (!chatId)
-            return;
-
         try {
+            // No key pair yet (fresh browser, not set up): nothing to show
+            const chatId = (await db.keys.get("user-keypair"))?.chatId;
+            if (!chatId)
+                return;
+
             avatar = await loadAvatar(chatId);
             localStorage.setItem("mennist-avatar", JSON.stringify(avatar));
             setUserAvatar(avatar);

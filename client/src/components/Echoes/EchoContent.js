@@ -94,7 +94,7 @@ function EchoContent(props) {
     // Start the conversation with the user
     const startConversation = async (echo) => {
         if (echo.chatId) {
-            const userChatId = (await db.keys.get("user-keypair")).chatId;
+            const userChatId = (await db.keys.get("user-keypair"))?.chatId;
             if (echo.chatId === userChatId) {
                 navigate('/my-chats');
                 return;
