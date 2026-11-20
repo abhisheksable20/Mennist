@@ -238,7 +238,13 @@
     padding: 10px 14px;
     display: flex;
     align-items: flex-end;
-    gap: 12px;
+    gap: 6px;
+}
+
+/* Bootstrap gives .form-control 12px side padding; keep the text close to the + button */
+.chat-input-box .chat-textarea {
+    padding-left: 4px;
+    padding-right: 4px;
 }
 
 .chat-textarea {
