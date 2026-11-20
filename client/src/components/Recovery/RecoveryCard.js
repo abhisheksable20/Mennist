@@ -16,7 +16,8 @@ export default function RecoveryCard() {
     try {
       setStatus(await fetchRecoveryStatus());
     } catch (statusErr) {
-      setStatus(null);
+      // Not logged in: nothing to show. Anything else: say so, don't vanish.
+      setStatus(statusErr.response?.status === 401 ? null : { error: true });
     }
   }, []);
 
@@ -30,6 +31,20 @@ export default function RecoveryCard() {
   }, [load]);
 
   if (!status) return null;
+
+  if (status.error) {
+    return (
+      <section className="recovery-card is-on" aria-labelledby="recovery-card-title">
+        <div className="recovery-card-row">
+          <div>
+            <h2 id="recovery-card-title" className="recovery-card-status">Account recovery</h2>
+            <span className="coin-muted coin-small">Couldn't check your recovery status right now.</span>
+          </div>
+          <button type="button" className="coin-btn coin-btn-ghost coin-btn-small" onClick={load}>Try again</button>
+        </div>
+      </section>
+    );
+  }
 
   const protectedOk = status.enabled && status.confirmed;
 
