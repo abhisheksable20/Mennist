@@ -3,7 +3,7 @@ import creatAccSVG from "../assets/right_arrow_svg.svg"
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 import { useState, useEffect } from 'react'
-import { generateKeyPair } from '../crypto/keyManager'
+import { generateKeyPair, answerLoginChallenge } from '../crypto/keyManager'
 import { db } from '../internalDatabase/db'
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { deleteUserInternalData } from '../internalDatabase/UserData'
@@ -32,7 +32,14 @@ function LandingPage(props) {
         deviceFingerprint
       }
 
-      const data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, postData, { withCredentials: true })).data;
+      let data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, postData, { withCredentials: true })).data;
+
+      // Existing account: prove this browser holds its private key
+      if (data.challenge) {
+        const answer = await answerLoginChallenge(keys.privateKey, data.challenge);
+        data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/login`,
+          { challengeId: data.challenge.id, answer }, { withCredentials: true })).data;
+      }
       await db.keys.put({
         id: "user-keypair",
         privateKey: keys.privateKey,
@@ -53,6 +60,10 @@ function LandingPage(props) {
     catch (setupErr) {
       if (setupErr.response && setupErr.response.status === 401) {
         props.alert("Please try again.", "alert");
+        return;
+      }
+      if (setupErr.response && setupErr.response.status === 403 && setupErr.response.data?.code === "KEY_REPLACED") {
+        props.alert("This browser's key was replaced. Use your recovery key to sign in.", "alert");
         return;
       }
       console.log("Error: ", setupErr)

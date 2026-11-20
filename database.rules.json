@@ -32,6 +32,11 @@
         ".value"
       ]
     },
+    "loginChallenges": {
+      ".indexOn": [
+        "expiresAt"
+      ]
+    },
     "pendingChatStarts": {
       ".indexOn": [
         "at"

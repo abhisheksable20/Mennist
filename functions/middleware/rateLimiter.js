@@ -97,6 +97,9 @@ const ipLimiter = createLimiter({name: "ip", max: 100});
 // Account creation: 10 new accounts per IP per hour
 const signupLimiter = createLimiter({name: "signup", max: 10, windowMs: 60 * 60 * 1000});
 
+// Answering a login challenge (proving you own an account's key): 20 per IP per hour
+const loginLimiter = createLimiter({name: "login", max: 20, windowMs: 60 * 60 * 1000});
+
 // Public pages that need no login (shared post link, suggestions, vibe counts). Counted by IP.
 const publicReadLimiter = createLimiter({name: "publicread", max: 60});
 
@@ -141,6 +144,7 @@ module.exports = {
   coinLimiter,
   ipLimiter,
   signupLimiter,
+  loginLimiter,
   publicReadLimiter,
   globalLimiter,
   postLimiter,

@@ -1,6 +1,7 @@
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {expireTransfers, sendStreakReminders, refundStaleRematches, expireChatStarts} = require("../coins/coinService");
 const cfg = require("../config/coins");
+const {purgeExpiredChallenges} = require("../auth/keyLogin");
 
 // Timezone name matching cfg.TIMEZONE_OFFSET_MINUTES (330 = IST)
 const TIME_ZONE = "Asia/Kolkata";
@@ -41,6 +42,9 @@ exports.expireCoinTransfers = onSchedule({
   if (chats) {
     console.log(`Refunded ${chats} unanswered chat starts`);
   }
+
+  // Login challenges nobody answered (they expire after 2 minutes)
+  await purgeExpiredChallenges(500);
 });
 
 // Every day at 8 PM: remind users whose streak ends at midnight

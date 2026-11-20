@@ -4,6 +4,7 @@ const {findEchoMatches} = require("../dataProcessing/geminiProcessing");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const {settleRematch} = require("../coins/coinService");
+const {keyHash} = require("../auth/keyLogin");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -43,7 +44,10 @@ async (request) => {
   const {userId, sessionId} = request.data;
 
   try {
-    const userPostsSnapshot = await db.ref(`users/${userId}/posts`).get();
+    const [userPostsSnapshot, keySnapshot] = await Promise.all([
+      db.ref(`users/${userId}/posts`).get(),
+      db.ref(`users/${userId}/userDetail/publicKey`).get(),
+    ]);
 
     const updates = {
       [`sessions/${sessionId}`]: null,
@@ -57,6 +61,11 @@ async (request) => {
       [`coinChat/${userId}`]: null,
       [`chatOpen/${userId}`]: null,
     };
+
+    // The public key -> account entry, so the key can't point at a deleted account
+    if (keySnapshot.exists()) {
+      updates[`keyIndex/${keyHash(keySnapshot.val())}`] = null;
+    }
 
     if (userPostsSnapshot.exists()) {
       userPostsSnapshot.forEach((postSnapshot) => {

@@ -2,18 +2,12 @@ const admin = require("firebase-admin");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
+const {keyHash, decodePublicKey, resolveAccount, issueChallenge} = require("../auth/keyLogin");
 
 const taskQueue = getFunctions().taskQueue("deleteUserData");
 
 const db = admin.database();
 
-// Generate user id using ip and user agent
-function generateUserId(publicKey) {
-  return crypto
-      .createHmac("sha256", process.env.JWT_SECRET_KEY)
-      .update(publicKey)
-      .digest("hex");
-}
 
 // Check wheather the user has sessionId or not
 const isLoggedIn = async (req, res, next) => {
@@ -52,17 +46,13 @@ const authUser = async (req, res, next) => {
     return res.status(400).send({error: "Public key not found"});
   }
 
-  // Create a new user
-  if (!sessionId) {
-    const session = await createSession(req, res, publicKey, deviceFingerprint);
+  if (!decodePublicKey(publicKey)) {
+    return res.status(400).send({error: "Invalid public key"});
+  }
 
-    const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
-    req.user = {
-      uid: session.userId,
-      isNew: true,
-      chatId,
-    };
-    return next();
+  // No session in this browser: new account, or prove you own an existing one
+  if (!sessionId) {
+    return startLogin(req, res, next, publicKey, deviceFingerprint);
   }
 
   const snap = await db.ref(`sessions/${sessionId}`).once("value");
@@ -75,15 +65,7 @@ const authUser = async (req, res, next) => {
       sameSite: "none",
     });
 
-    const session = await createSession(req, res, publicKey, deviceFingerprint);
-
-    const chatId = jwt.sign(session.userId, process.env.JWT_SECRET_KEY);
-    req.user = {
-      uid: session.userId,
-      isNew: true,
-      chatId,
-    };
-    return next();
+    return startLogin(req, res, next, publicKey, deviceFingerprint);
   }
 
   const data = snap.val();
@@ -114,39 +96,81 @@ const deleteUserData = async (userId, sessionId) => {
   await taskQueue.enqueue({userId, sessionId});
 };
 
-const createSession = async (req, res, publicKey, deviceFingerprint) => {
-  const userId = generateUserId(publicKey);
-  const sessionId = crypto.randomBytes(8).toString("hex");
+const SESSION_TTL_MS = 10 * 365 * 24 * 60 * 60 * 1000;
 
-  const expiresAt = Date.now() + 10 * 365 * 24 * 60 * 60 * 1000;
+// Create a login session for an account and set the cookie
+const issueSession = async (res, userId) => {
+  const sessionId = crypto.randomBytes(32).toString("hex");
   const createdAt = Date.now();
 
   await db.ref(`sessions/${sessionId}`).set({
     userId,
-    expiresAt,
+    expiresAt: createdAt + SESSION_TTL_MS,
     createdAt,
   });
 
-  // Creating storage to store user basic details
-  await db.ref(`users/${userId}/userDetail`).set({
-    publicKey: publicKey,
-    deviceFingerprint: deviceFingerprint,
-    chatFlag: true,
-    createdAt,
-  });
-
-  // Make it Secure: true in production
   res.cookie("__session", sessionId, {
     httpOnly: true,
     secure: true,
     sameSite: "none",
     path: "/",
-    maxAge: 10 * 365 * 24 * 60 * 60 * 1000,
+    maxAge: SESSION_TTL_MS,
   });
 
-  return {userId, sessionId};
+  return sessionId;
 };
 
-module.exports = {authUser, isLoggedIn};
+/*
+  No session: create a new account for a key nobody uses yet. For a key that
+  belongs to an existing account, send a challenge instead; the browser answers
+  it at POST /user/login. A public key alone never logs anyone in.
+*/
+const startLogin = async (req, res, next, publicKey, deviceFingerprint) => {
+  try {
+    return await startLoginInner(req, res, next, publicKey, deviceFingerprint);
+  } catch (loginErr) {
+    console.error("Login start failed:", loginErr);
+    return res.status(500).send({error: "Something went wrong. Please try again."});
+  }
+};
+
+const startLoginInner = async (req, res, next, publicKey, deviceFingerprint) => {
+  const account = await resolveAccount(publicKey);
+
+  if (account.status === "replaced") {
+    return res.status(403).send({
+      error: "This key was replaced. Use your recovery key to sign in.",
+      code: "KEY_REPLACED",
+    });
+  }
+
+  if (account.status === "existing") {
+    const challenge = await issueChallenge(account.uid, publicKey);
+    return res.status(200).send({challenge});
+  }
+
+  // New account
+  const userId = account.uid;
+  const createdAt = Date.now();
+  await db.ref().update({
+    [`users/${userId}/userDetail`]: {
+      publicKey,
+      deviceFingerprint: deviceFingerprint || null,
+      chatFlag: true,
+      createdAt,
+    },
+    [`keyIndex/${keyHash(publicKey)}`]: userId,
+  });
+  await issueSession(res, userId);
+
+  req.user = {
+    uid: userId,
+    isNew: true,
+    chatId: jwt.sign(userId, process.env.JWT_SECRET_KEY),
+  };
+  return next();
+};
+
+module.exports = {authUser, isLoggedIn, issueSession};
 
 

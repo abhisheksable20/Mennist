@@ -1,8 +1,9 @@
 const express = require("express");
 const admin = require("firebase-admin");
-const {authUser, isLoggedIn} = require("../middleware/authenticUser");
+const {authUser, isLoggedIn, issueSession} = require("../middleware/authenticUser");
+const {verifyChallenge} = require("../auth/keyLogin");
 const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
-const {signupLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
+const {signupLimiter, loginLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
 const {DEFAULT_AVATAR, validateAvatar, avatarTier} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
@@ -49,6 +50,29 @@ router.post("/create-user", signupLimiter, authUser, async (req, res) => {
 
   const payload = {chatId: req.user.chatId, isNew: req.user.isNew};
   return res.status(200).send(payload);
+});
+
+// Second step of logging in to an existing account: the browser answers the
+// challenge it got from create-user, proving it holds the private key.
+router.post("/login", loginLimiter, async (req, res) => {
+  const {challengeId, answer} = req.body || {};
+  try {
+    const userId = await verifyChallenge(challengeId, answer);
+    if (!userId) {
+      return res.status(401).send({error: "Couldn't verify this device. Please try again."});
+    }
+    // Account was deleted while the challenge was open
+    const exists = (await db.ref(`users/${userId}/userDetail/publicKey`).get()).exists();
+    if (!exists) {
+      return res.status(401).send({error: "Couldn't verify this device. Please try again."});
+    }
+
+    await issueSession(res, userId);
+    return res.status(200).send({chatId: jwt.sign(userId, process.env.JWT_SECRET_KEY), isNew: false});
+  } catch (loginErr) {
+    console.error("Login error:", loginErr);
+    return res.status(500).send({error: "Internal server error!"});
+  }
 });
 
 // Get the user avatar
