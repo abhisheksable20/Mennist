@@ -19,6 +19,8 @@ export async function deleteUserInternalData(whole = false) {
         localStorage.removeItem("vibes");
         localStorage.removeItem("chatEnableStatus");
         localStorage.removeItem("deviceFingerprint");
+        localStorage.removeItem("mennist-hidden-transfers");
+        localStorage.removeItem("mennist-rematch-confirmed");
     }
     catch (error) {
         console.log("Failed to delete the internal database: ", error)

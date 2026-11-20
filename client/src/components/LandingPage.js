@@ -8,6 +8,7 @@ import { generateKeyPair, answerLoginChallenge } from '../crypto/keyManager'
 import { db } from '../internalDatabase/db'
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { deleteUserInternalData } from '../internalDatabase/UserData'
+import { fetchKeyStatus } from './Recovery/recoveryApi'
 
 function LandingPage(props) {
   const [btnDisabled, setBtnDisabled] = useState(false);
@@ -15,6 +16,26 @@ function LandingPage(props) {
 
   useEffect(() => {
     document.title = "Mennist - Anonymous Chats & Posts";
+  }, [])
+
+  // This browser's account may have been recovered on another device. If so,
+  // its key here was replaced: remove the local copy (keys, chats, settings).
+  useEffect(() => {
+    let cancelled = false;
+    const checkKey = async () => {
+      try {
+        const keys = await db.keys.get("user-keypair");
+        if (!keys?.publicKey) return;
+        if ((await fetchKeyStatus(keys.publicKey)) !== "replaced" || cancelled) return;
+        await deleteUserInternalData(true);
+        props.alert("Your account was moved to another device with a recovery key. Its data on this browser was removed.", "alert");
+      } catch (keyCheckErr) {
+        // Offline or server busy: try again next visit
+      }
+    };
+    checkKey();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Setup the user
@@ -64,7 +85,9 @@ function LandingPage(props) {
         return;
       }
       if (setupErr.response && setupErr.response.status === 403 && setupErr.response.data?.code === "KEY_REPLACED") {
-        props.alert("This browser's key was replaced. Use your recovery key to sign in.", "alert");
+        // Moved to another device: drop this browser's old copy
+        await deleteUserInternalData(true).catch(() => {});
+        props.alert("Your account was moved to another device. Its data on this browser was removed. Tap Get Started for a new account, or use your recovery key.", "alert");
         return;
       }
       console.log("Error: ", setupErr)

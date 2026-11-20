@@ -5,6 +5,8 @@ const API = () => `${process.env.REACT_APP_API_URL}/user`;
 export const fetchRecoveryStatus = async () => (await axios.get(`${API()}/recovery/status`)).data;
 export const createRecoveryKey = async () => (await axios.post(`${API()}/recovery/create`)).data.recoveryCode;
 export const confirmRecoveryKey = async () => (await axios.post(`${API()}/recovery/confirm`)).data;
+// "replaced" when this browser's key was moved to another device by a recovery
+export const fetchKeyStatus = async (publicKey) => (await axios.post(`${API()}/key-status`, { publicKey })).data.status;
 export const recoverAccount = async (recoveryCode, publicKey, deviceFingerprint) =>
   (await axios.post(`${API()}/recover`, { recoveryCode, publicKey, deviceFingerprint })).data;
 

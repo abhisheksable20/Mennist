@@ -18,8 +18,8 @@ const admin = require("firebase-admin");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const {isLoggedIn, issueSession} = require("../middleware/authenticUser");
-const {sensitiveLimiter, globalLimiter, recoveryLimiter} = require("../middleware/rateLimiter");
-const {keyHash, decodePublicKey} = require("../auth/keyLogin");
+const {sensitiveLimiter, globalLimiter, recoveryLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
+const {keyHash, decodePublicKey, resolveAccount} = require("../auth/keyLogin");
 const {grantRecoveryReward} = require("../coins/coinService");
 
 const router = express.Router();
@@ -76,6 +76,25 @@ async function saveNewRecoveryCode(userId) {
   await db.ref().update(updates);
   return code;
 }
+
+// ---------------------------------------------------------------------------
+// Is this browser's key still the account's key? After the account is
+// recovered on another device the old browser asks this, and on "replaced"
+// it deletes its local copy (keys, chats). Reveals nothing beyond that.
+// ---------------------------------------------------------------------------
+router.post("/key-status", publicReadLimiter, async (req, res) => {
+  const {publicKey} = req.body || {};
+  if (!decodePublicKey(publicKey)) {
+    return res.status(400).send({error: "Invalid public key"});
+  }
+  try {
+    const account = await resolveAccount(publicKey);
+    return res.status(200).send({status: account.status === "replaced" ? "replaced" : "ok"});
+  } catch (err) {
+    console.error("Key status error:", err);
+    return res.status(500).send({error: "Internal server error!"});
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Status for the Veil page

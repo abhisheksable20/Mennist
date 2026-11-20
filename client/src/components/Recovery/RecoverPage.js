@@ -81,8 +81,13 @@ export default function RecoverPage(props) {
       const fingerprint = await getFingerprint();
       const out = await recoverAccount(value, keys.publicKey, fingerprint);
 
-      // This browser now belongs to the recovered account
-      await deleteUserInternalData(true);
+      // This browser now belongs to the recovered account. The server already used
+      // up the old key, so the new keys must be saved even if clearing fails.
+      try {
+        await deleteUserInternalData(true);
+      } catch (clearErr) {
+        console.log("Couldn't clear old local data:", clearErr);
+      }
       if (fingerprint) localStorage.setItem("deviceFingerprint", fingerprint);
       localStorage.setItem("chatEnableStatus", "true");
       await db.keys.put({ id: "user-keypair", privateKey: keys.privateKey, publicKey: keys.publicKey, chatId: out.chatId });
