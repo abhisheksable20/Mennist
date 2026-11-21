@@ -347,12 +347,22 @@ router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), as
   }
 
   try {
-    // Report the post's real owner, read from the post (not from the request)
-    const ownerChatId = (await db.ref(`posts/${postId}/chatId`).get()).val();
-    if (!ownerChatId) {
+    // Report the real owner, read from our data (not from the request).
+    // The same form reports posts and Echo matches; an echo's owner is in echoFeed.
+    const [ownerSnap, echoOwnerSnap] = await Promise.all([
+      db.ref(`posts/${postId}/chatId`).get(),
+      db.ref(`echoFeed/${postId}/uid`).get(),
+    ]);
+    let kind = "posts";
+    let recieverUserId = null;
+    if (ownerSnap.exists()) {
+      recieverUserId = jwt.verify(ownerSnap.val(), process.env.JWT_SECRET_KEY);
+    } else if (echoOwnerSnap.exists()) {
+      kind = "echoes";
+      recieverUserId = echoOwnerSnap.val();
+    } else {
       return res.status(404).send({error: "Post not found."});
     }
-    const recieverUserId = jwt.verify(ownerChatId, process.env.JWT_SECRET_KEY);
 
     const reportData = {
       reason: reason,
@@ -360,7 +370,7 @@ router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), as
       userUniqueId: recieverUserId,
     };
 
-    await db.ref(`reports/posts/${postId}/${user}`).set(reportData);
+    await db.ref(`reports/${kind}/${postId}/${user}`).set(reportData);
     return res.status(200).send({message: "Post reported successfully!"});
   } catch (reportError) {
     console.log("Failed to report post: ", reportError);

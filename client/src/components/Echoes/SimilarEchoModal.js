@@ -8,9 +8,11 @@ function SimilarEchoModal(props) {
     const { echo, startConversation } = props;
     const reportBtnRef = useRef(null);
 
-    // Report Echo Btn Handler
+    // Bootstrap can't stack two modals: close this one first (data-bs-dismiss),
+    // then open the report once it's fully hidden, so no backdrop is left behind
     const reportEchoBtn = () => {
-        reportBtnRef.current.click();
+        const echoModal = document.getElementById("echoModal");
+        echoModal.addEventListener("hidden.bs.modal", () => reportBtnRef.current?.click(), { once: true });
     }
 
     if (!echo) {
@@ -82,6 +84,7 @@ function SimilarEchoModal(props) {
                                     type="button"
                                     className="btn echo-modal-report-button"
                                     aria-label="Report echo"
+                                    data-bs-dismiss="modal"
                                     onClick={reportEchoBtn}>
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"

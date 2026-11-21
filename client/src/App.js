@@ -5,7 +5,6 @@ import PostState from './context/posts/PostState';
 import { Routes, Route, Outlet } from "react-router-dom";
 import ToastComponent from './components/ToastComponent';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Toast as BSToast } from 'bootstrap'
 import ChatsState from './context/chats/ChatsState';
 import EchoState from './context/posts/EchoState';
 import LazyLoader from './components/utils/LazyLoader';
@@ -58,8 +57,10 @@ function App() {
 
   useEffect(() => {
     if (alerts && toastRef.current) {
-      const toast = new BSToast(toastRef.current);
-      toast.show();
+      // Bootstrap comes from the CDN script in index.html. Importing the npm copy too
+      // ran two Bootstraps at once, so every modal got two backdrops.
+      const BSToast = window.bootstrap?.Toast;
+      if (BSToast) BSToast.getOrCreateInstance(toastRef.current).show();
     }
   }, [alerts]);
 
