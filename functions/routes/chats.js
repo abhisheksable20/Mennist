@@ -10,6 +10,7 @@ const {validate} = require("express-validation");
 const {getFunctions} = require("firebase-admin/functions");
 const cfg = require("../config/attachments");
 const {allowChatMessage, CoinError} = require("../coins/coinService");
+const {objectPath} = require("../chats/attachmentCleanup");
 
 const db = admin.database();
 const getBucket = () => admin.storage().bucket();
@@ -28,9 +29,6 @@ const verifyChatId = (chatId) => {
   }
 };
 
-// Storage object path: chat-attachments/<receiver>/<sender>/<messageId>
-const objectPath = (receiverId, senderId, messageId) =>
-  `chat-attachments/${receiverId}/${senderId}/${messageId}`;
 
 // New chats cost coins after the daily free ones. Sends the error and returns
 // false when the sender can't start this chat.
@@ -243,6 +241,8 @@ router.post("/attachment/complete", isLoggedIn, attachmentLimiter, validate(atta
     updates[`${base}/nounce`] = pending.nounce;
     updates[`${base}/encryptedMsg`] = pending.name;
     updates[`pendingUploads/${messageId}`] = null;
+    // So the hourly cleanup can remove it if it's never downloaded
+    updates[`attachmentIndex/${messageId}`] = {r: pending.receiverId, s: senderId, at: timestamp};
     await db.ref().update(updates);
 
     await notificationQueue.enqueue({
@@ -349,6 +349,7 @@ router.delete("/user-chat/attachment", isLoggedIn, chatReadLimiter, async (req, 
     await db.ref().update({
       [`${conversationPath}/attachments/${attachmentId}`]: null,
       [`${conversationPath}/messages/${messageId}`]: null,
+      ...(SAFE_ID.test(attachmentId) ? {[`attachmentIndex/${attachmentId}`]: null} : {}),
     });
 
     if (message.storage && SAFE_ID.test(attachmentId)) {

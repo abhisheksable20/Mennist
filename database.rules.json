@@ -86,6 +86,16 @@
       ".indexOn": [
         "timestamp"
       ]
+    },
+    "attachmentIndex": {
+      ".indexOn": [
+        "at"
+      ]
+    },
+    "pendingUploads": {
+      ".indexOn": [
+        "createdAt"
+      ]
     }
   }
 }

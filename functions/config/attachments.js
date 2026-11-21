@@ -3,6 +3,11 @@ const ENC_CHUNK = 8 * 1024 * 1024; // must be a multiple of 256 KiB (GCS rule)
 const ABYTES = 17; // libsodium secretstream overhead per chunk
 const PLAIN_CHUNK = ENC_CHUNK - ABYTES;
 
+// Attachments nobody downloads are deleted after this long
+const ATTACHMENT_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+// Uploads that were started but never finished
+const PENDING_UPLOAD_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 const encryptedSize = (size) => size + Math.ceil(size / PLAIN_CHUNK) * ABYTES;
 
 const ALLOWED_TYPES = {
@@ -37,4 +42,4 @@ const BLOCKED_EXT = new Set([
   "jar", "apk", "app", "dmg", "sh", "bin", "lnk", "reg", "hta", "cpl", "docm", "xlsm", "pptm",
 ]);
 
-module.exports = {MAX_FILE_SIZE, ENC_CHUNK, PLAIN_CHUNK, ABYTES, ALLOWED_TYPES, BLOCKED_EXT, encryptedSize};
+module.exports = {ATTACHMENT_TTL_MS, PENDING_UPLOAD_TTL_MS, MAX_FILE_SIZE, ENC_CHUNK, PLAIN_CHUNK, ABYTES, ALLOWED_TYPES, BLOCKED_EXT, encryptedSize};

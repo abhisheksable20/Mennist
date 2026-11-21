@@ -2,6 +2,7 @@ const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {expireTransfers, sendStreakReminders, refundStaleRematches, expireChatStarts} = require("../coins/coinService");
 const cfg = require("../config/coins");
 const {purgeExpiredChallenges} = require("../auth/keyLogin");
+const {cleanupAttachments} = require("../chats/attachmentCleanup");
 
 // Timezone name matching cfg.TIMEZONE_OFFSET_MINUTES (330 = IST)
 const TIME_ZONE = "Asia/Kolkata";
@@ -45,6 +46,17 @@ exports.expireCoinTransfers = onSchedule({
 
   // Login challenges nobody answered (they expire after 2 minutes)
   await purgeExpiredChallenges(500);
+
+  // Chat files: unfinished uploads, and attachments nobody downloaded in 30 days.
+  // A Storage problem must not stop the coin jobs above, so it runs last and is caught.
+  try {
+    const files = await cleanupAttachments();
+    if (files.indexed || files.abandoned || files.expired) {
+      console.log("Attachment cleanup:", files);
+    }
+  } catch (cleanupErr) {
+    console.error("Attachment cleanup failed:", cleanupErr);
+  }
 });
 
 // Every day at 8 PM: remind users whose streak ends at midnight

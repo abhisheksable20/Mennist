@@ -79,6 +79,9 @@ async (request) => {
     });
 
     await db.ref().update(updates);
+
+    // Files people sent to this user (Storage isn't part of the database update)
+    await admin.storage().bucket().deleteFiles({prefix: `chat-attachments/${userId}/`, force: true});
   } catch (deleteError) {
     console.log("Failed to delete user data: ", deleteError);
     throw deleteError;

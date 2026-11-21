@@ -344,10 +344,10 @@ const ChatsState = (props) => {
         if (blob && !isPreviewable(att.type, att.size))
             saveBlobToDevice(blob, att.name);
 
-        // 3) delete the server copy only when we're sure we have a safe local copy.
-        //    A big file saved through the in-memory fallback keeps its server copy (the browser
-        //    download can't be confirmed), so the user can retry.
-        if (keepLocal || savedToDisk) {
+        // 3) The file is fully downloaded, decrypted and scanned, and is now kept locally,
+        //    written to disk, or handed to the browser's download from memory (no network
+        //    involved). Delete the server copy so nothing is left in Storage.
+        if (keepLocal || savedToDisk || blob) {
             try {
                 await axios.delete(`${API}/chats/user-chat/attachment`, {
                     data: { chatId: chat.chatId, messageId: chat.firebaseId },
