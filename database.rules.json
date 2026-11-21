@@ -74,6 +74,18 @@
           ]
         }
       }
+    },
+    "echoes": {
+      "$uid": {
+        ".indexOn": [
+          "timestamp"
+        ]
+      }
+    },
+    "echoFeed": {
+      ".indexOn": [
+        "timestamp"
+      ]
     }
   }
 }

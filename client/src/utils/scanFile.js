@@ -1,5 +1,5 @@
-import { fileTypeFromBlob } from "file-type";
-import { ZipReader, BlobReader } from "@zip.js/zip.js";
+// file-type and zip.js are big, and only needed when a file is sent or opened,
+// so they load on first use instead of with the site.
 import { ALLOWED_TYPES, BLOCKED_EXT, EXT_TO_TYPE, MAX_FILE_SIZE, getExt } from "../config/attachmentConfig";
 
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -44,6 +44,7 @@ async function containsToken(file, tokens) {
 }
 
 async function inspectZip(file, isOffice) {
+    const { ZipReader, BlobReader } = await import("@zip.js/zip.js");
     const reader = new ZipReader(new BlobReader(file));
     try {
         const entries = await reader.getEntries(); // reads only the central directory
@@ -80,6 +81,7 @@ export async function checkHeader(blob, type) {
         return null;
     }
 
+    const { fileTypeFromBlob } = await import("file-type");
     const detected = await fileTypeFromBlob(blob);
     if (!detected) return "Could not verify file content.";
     if (!MAGIC_OK[type]?.includes(detected.ext)) return "File content doesn't match its type.";

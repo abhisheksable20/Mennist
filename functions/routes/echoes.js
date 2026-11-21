@@ -14,6 +14,7 @@ const echoMatchingQueue = getFunctions().taskQueue("matchEchoes");
 const db = admin.database();
 
 const retrieveLimit = 10;
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 // Fetch only user echoes from the database
 router.get("/", isLoggedIn, globalLimiter, async (req, res) => {
@@ -35,7 +36,7 @@ router.get("/echo/:echoId", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const echoId = req.params.echoId;
 
-  if (!echoId) {
+  if (!SAFE_ID.test(echoId || "")) {
     return res.status(400).send({error: "Something went wrong!"});
   }
 
@@ -64,7 +65,7 @@ router.get("/:echoId", isLoggedIn, globalLimiter, async (req, res) => {
     const userId = req.user.uid;
     const echoId = req.params.echoId;
 
-    if (!echoId) {
+    if (!SAFE_ID.test(echoId || "")) {
       return res.status(400).send({
         error: "Echo Id is required!",
       });
@@ -97,6 +98,7 @@ router.get("/:echoId", isLoggedIn, globalLimiter, async (req, res) => {
     });
   } catch (echoFetchError) {
     console.log("Error while fetching the echo matches: ", echoFetchError);
+    return res.status(500).send({error: "Something went wrong!"});
   }
 });
 
@@ -109,17 +111,12 @@ router.post("/submitEcho", isLoggedIn, postLimiter, dailyAiLimiter, validate(ech
 
     const timestamp = Date.now();
 
-    const snapshotRef = db.ref(`echoes/${userId}`).push();
-    const echoData = {
-      echo,
-      timestamp,
-      status: "processing",
-      chatId,
-    };
-
-    await snapshotRef.set(echoData);
-
-    const echoId = snapshotRef.key;
+    // The echo, plus its entry in the shared list that matching reads
+    const echoId = db.ref(`echoes/${userId}`).push().key;
+    await db.ref().update({
+      [`echoes/${userId}/${echoId}`]: {echo, timestamp, status: "processing", chatId},
+      [`echoFeed/${echoId}`]: {uid: userId, echo, timestamp, chatId},
+    });
 
     // Queue Gemini matching
     await echoMatchingQueue.enqueue({

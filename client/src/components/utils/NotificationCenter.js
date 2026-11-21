@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import "../../styles/NotificationCenter.css"
 import notificationSVG from "../../assets/notification_svg.svg"
 import vibeSVG from "../../assets/heart_fill_svg.svg";
@@ -29,20 +29,23 @@ function NotificationCenter() {
     // Unread notifications before the panel is opened: waiting on the server + saved locally
     const [serverCount, setServerCount] = useState(0);
     const [localUnread, setLocalUnread] = useState(0);
+    // Last server check, kept across page changes so moving around doesn't re-ask
+    const lastServerCheck = useRef(0);
 
     useEffect(() => {
         if (isOpen) return undefined;
         let active = true;
-        let lastCheck = 0;
 
         const check = async () => {
-            // Only while the tab is on screen, and at most once every few seconds
-            // (coming back to the tab fires both focus and visibilitychange)
-            if (document.visibilityState !== "visible" || Date.now() - lastCheck < 5000) return;
-            lastCheck = Date.now();
+            // Only while the tab is on screen
+            if (document.visibilityState !== "visible") return;
             try {
-                const local = await db.notifications.toArray();
-                if (active) setLocalUnread(local.filter((n) => !n.read).length);
+                // Local count is free (IndexedDB), so always refresh it
+                const unread = await db.notifications.filter((n) => !n.read).count();
+                if (active) setLocalUnread(unread);
+                // Server at most every 30 s (page changes, focus and visibilitychange all call this)
+                if (Date.now() - lastServerCheck.current < 30 * 1000) return;
+                lastServerCheck.current = Date.now();
                 const res = await axios.get(`${process.env.REACT_APP_API_URL}/user/notification-count`, { withCredentials: true });
                 if (active) setServerCount(res.data.count || 0);
             } catch (countErr) {

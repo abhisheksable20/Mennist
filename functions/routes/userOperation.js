@@ -1,6 +1,6 @@
 const express = require("express");
 const admin = require("firebase-admin");
-const {authUser, isLoggedIn, issueSession} = require("../middleware/authenticUser");
+const {authUser, isLoggedIn, issueSession, chatIdFor, forgetSession} = require("../middleware/authenticUser");
 const {verifyChallenge} = require("../auth/keyLogin");
 const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
 const {signupLimiter, loginLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
@@ -68,7 +68,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     await issueSession(res, userId);
-    return res.status(200).send({chatId: jwt.sign(userId, process.env.JWT_SECRET_KEY), isNew: false});
+    return res.status(200).send({chatId: chatIdFor(userId), isNew: false});
   } catch (loginErr) {
     console.error("Login error:", loginErr);
     return res.status(500).send({error: "Internal server error!"});
@@ -196,8 +196,6 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
 
-  console.log("Session ID: ", userId);
-
   try {
     const ref = db.ref(`/users/${userId}/posts`);
     const data = await fetchPosts(ref, endAt, retrieveLimit);
@@ -221,14 +219,18 @@ router.delete("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
 
   try {
     // Only the person who wrote the post may delete it
-    const owned = await db.ref(`userPosts/${userId}/${postId}`).get();
+    const owned = await db.ref(`users/${userId}/posts/${postId}/timestamp`).get();
     if (!owned.exists()) {
       return res.status(404).send({error: "Post not found."});
     }
 
-    const updates = {};
-    updates[`posts/${postId}`] = null;
-    updates[`userPosts/${userId}/${postId}`] = null;
+    // The post, its copy on the profile, and its vibe data, in one write
+    const updates = {
+      [`posts/${postId}`]: null,
+      [`users/${userId}/posts/${postId}`]: null,
+      [`vibes/${postId}`]: null,
+      [`postVibeChecks/${postId}`]: null,
+    };
 
     await db.ref().update(updates);
     return res.status(200).send({success: "Post deleted successfully!"});
@@ -245,6 +247,7 @@ router.delete("/delete-account", isLoggedIn, sensitiveLimiter, async (req, res) 
 
   try {
     await taskQueue.enqueue({userId, sessionId});
+    forgetSession(sessionId);
     res.clearCookie("__session");
     return res.status(200).send({
       message: "Your data deletion has been initiated.",
@@ -281,7 +284,8 @@ router.get("/notification-count", isLoggedIn, globalLimiter, async (req, res) =>
 // Fetch user notifications
 router.get("/fetch-notifications", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
-  const notificationLimit = 20;
+  // Same cap as the badge count: the client deletes them all after this fetch
+  const notificationLimit = 100;
 
   try {
     const snapshot = await db.ref(`users/${userId}/notification`).orderByChild("timestamp").limitToLast(notificationLimit).get();

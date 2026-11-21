@@ -13,18 +13,12 @@ if (!admin.apps.length) {
 const db = admin.database();
 const processNotification = getFunctions().taskQueue("processNotification");
 
+// Save the matches and mark the echo done, in one write
 const markEchoCompleted = async (userId, echoId, matches) => {
-  await db.ref(
-      `echoMatches/${userId}/${echoId}`,
-  ).set({
-    status: "completed",
-    completedAt: Date.now(),
-    matches,
+  await db.ref().update({
+    [`echoMatches/${userId}/${echoId}`]: {status: "completed", completedAt: Date.now(), matches},
+    [`echoes/${userId}/${echoId}/status`]: "completed",
   });
-
-  await db.ref(
-      `echoes/${userId}/${echoId}/status`,
-  ).set("completed");
 };
 
 
@@ -44,10 +38,11 @@ async (request) => {
   const {userId, sessionId} = request.data;
 
   try {
-    const [userPostsSnapshot, keySnapshot, recoverySnapshot] = await Promise.all([
+    const [userPostsSnapshot, keySnapshot, recoverySnapshot, echoesSnapshot] = await Promise.all([
       db.ref(`users/${userId}/posts`).get(),
       db.ref(`users/${userId}/userDetail/publicKey`).get(),
       db.ref(`users/${userId}/recovery/hash`).get(),
+      db.ref(`echoes/${userId}`).get(),
     ]);
 
     const updates = {
@@ -72,12 +67,16 @@ async (request) => {
       updates[`recoveryIndex/${recoverySnapshot.val()}`] = null;
     }
 
-    if (userPostsSnapshot.exists()) {
-      userPostsSnapshot.forEach((postSnapshot) => {
-        const postId = postSnapshot.key;
-        updates[`posts/${postId}`] = null;
-      });
-    }
+    // Their posts (with vibe data) and their echoes in the shared match list
+    userPostsSnapshot.forEach((postSnapshot) => {
+      const postId = postSnapshot.key;
+      updates[`posts/${postId}`] = null;
+      updates[`vibes/${postId}`] = null;
+      updates[`postVibeChecks/${postId}`] = null;
+    });
+    echoesSnapshot.forEach((echoSnapshot) => {
+      updates[`echoFeed/${echoSnapshot.key}`] = null;
+    });
 
     await db.ref().update(updates);
   } catch (deleteError) {
@@ -97,18 +96,24 @@ exports.postVibeCheck = onTaskDispatched({
   },
 },
 async (request) => {
-  const {postId, actorId, postVibe, userChatId} = request.data;
+  const {postId, actorId, postVibe} = request.data;
   try {
-    const vibeChecksRef = db.ref(`postVibeChecks/${postId}/${actorId}`);
-    const snapshot = await vibeChecksRef.get();
-    if (snapshot.exists()) {
+    // The notification goes to the post's real owner, read from the post (not the request)
+    const [snapshot, ownerSnap] = await Promise.all([
+      db.ref(`postVibeChecks/${postId}/${actorId}`).get(),
+      db.ref(`posts/${postId}/chatId`).get(),
+    ]);
+    if (snapshot.exists() || !ownerSnap.exists()) {
       return;
     }
 
-    await vibeChecksRef.set(postVibe);
-    await db.ref(`posts/${postId}/vibeCheck/${postVibe}`).transaction((current) => (current || 0) + 1);
+    // Record it and count it in one write
+    await db.ref().update({
+      [`postVibeChecks/${postId}/${actorId}`]: postVibe,
+      [`posts/${postId}/vibeCheck/${postVibe}`]: admin.database.ServerValue.increment(1),
+    });
 
-    const userId = jwt.verify(userChatId, process.env.JWT_SECRET_KEY);
+    const userId = jwt.verify(ownerSnap.val(), process.env.JWT_SECRET_KEY);
 
     // eventId, userId, actorId, type, postId, echoId, chatId, vibe
     const notificationData = {
@@ -141,6 +146,52 @@ const settleRematchSafely = async (userId, rematchId, success) => {
   }
 };
 
+// How many recent echoes from other people each match compares against.
+// Keeps the database read and the Gemini prompt the same size as the site grows.
+const ECHO_CANDIDATES = 150;
+let echoFeedReady = false;
+
+/*
+  echoFeed/{echoId} = {uid, echo, timestamp, chatId}: every echo in one flat,
+  indexed list, so matching reads only the newest ones. Echoes saved before the
+  feed existed are copied in once, the first time matching runs.
+*/
+const ensureEchoFeed = async () => {
+  if (echoFeedReady) return;
+  if ((await db.ref("echoFeedMeta/ready").get()).val() === true) {
+    echoFeedReady = true;
+    return;
+  }
+  const all = await db.ref("echoes").get();
+  const updates = {};
+  all.forEach((userSnap) => {
+    userSnap.forEach((echoSnap) => {
+      const e = echoSnap.val();
+      if (e && e.echo) {
+        updates[`echoFeed/${echoSnap.key}`] = {
+          uid: userSnap.key, echo: e.echo, timestamp: e.timestamp || 0, chatId: e.chatId || null,
+        };
+      }
+    });
+  });
+  updates["echoFeedMeta/ready"] = true;
+  await db.ref().update(updates);
+  echoFeedReady = true;
+};
+
+const loadEchoCandidates = async (userId) => {
+  await ensureEchoFeed();
+  // A little extra, since the user's own echoes are skipped
+  const snap = await db.ref("echoFeed").orderByChild("timestamp").limitToLast(ECHO_CANDIDATES + 25).get();
+  const candidates = [];
+  snap.forEach((child) => {
+    const e = child.val();
+    if (!e || !e.echo || e.uid === userId) return;
+    candidates.push({echoId: child.key, echo: e.echo, timestamp: e.timestamp, chatId: e.chatId});
+  });
+  return candidates.slice(-ECHO_CANDIDATES);
+};
+
 // background work for checking echo similarities
 exports.matchEchoes = onTaskDispatched({
   retryConfig: {
@@ -153,36 +204,7 @@ exports.matchEchoes = onTaskDispatched({
   const {userId, echoId, echo, rematchId} = req.data;
 
   try {
-    const snapshot = await db.ref("echoes").once("value");
-
-    if (!snapshot.exists()) {
-      await markEchoCompleted(userId, echoId, []);
-      await settleRematchSafely(userId, rematchId, true);
-      return;
-    }
-
-    const candidates = [];
-
-    snapshot.forEach((userSnapshot) => {
-      const candidateUserId = userSnapshot.key;
-      if (candidateUserId === userId) {
-        return;
-      }
-
-      userSnapshot.forEach((echoSnapshot) => {
-        const candidateEcho = echoSnapshot.val();
-        if (!candidateEcho || !candidateEcho.echo) {
-          return;
-        }
-
-        candidates.push({
-          echoId: echoSnapshot.key,
-          echo: candidateEcho.echo,
-          timestamp: candidateEcho.timestamp,
-          chatId: candidateEcho.chatId,
-        });
-      });
-    });
+    const candidates = await loadEchoCandidates(userId);
 
     if (candidates.length === 0) {
       await markEchoCompleted(userId, echoId, []);
@@ -202,17 +224,7 @@ exports.matchEchoes = onTaskDispatched({
 
     const top10 = filteredMatches.slice(0, 10);
 
-    await db.ref(
-        `echoMatches/${userId}/${echoId}`,
-    ).set({
-      status: "completed",
-      completedAt: Date.now(),
-      matches: top10,
-    });
-
-    await db.ref(
-        `echoes/${userId}/${echoId}/status`,
-    ).set("completed");
+    await markEchoCompleted(userId, echoId, top10);
 
     // Paid/free rematch went through: the charge stays
     await settleRematchSafely(userId, rematchId, true);
@@ -231,17 +243,12 @@ exports.matchEchoes = onTaskDispatched({
     }
   } catch (error) {
     console.error(`Echo matching failed: ${echoId}`, error);
-    await db.ref(
-        `echoMatches/${userId}/${echoId}`,
-    ).update({
-      status: "failed",
-      error: "Echo matching failed",
-      updatedAt: Date.now(),
+    await db.ref().update({
+      [`echoMatches/${userId}/${echoId}/status`]: "failed",
+      [`echoMatches/${userId}/${echoId}/error`]: "Echo matching failed",
+      [`echoMatches/${userId}/${echoId}/updatedAt`]: Date.now(),
+      [`echoes/${userId}/${echoId}/status`]: "failed",
     });
-
-    await db.ref(
-        `echoes/${userId}/${echoId}/status`,
-    ).set("failed");
 
     // Matching failed: give the coins (or the free rematch) back
     await settleRematchSafely(userId, rematchId, false);

@@ -1,7 +1,7 @@
 import ChatsContext from "./chatsContext";
 import axios from "axios";
 import { db } from "../../internalDatabase/db"
-import { generateUsername } from "unique-username-generator";
+import { randomUsername } from "../../utils/randomUsername";
 import { useState, useRef, useCallback } from "react";
 import { encryptMessage } from "../../crypto/encryptMessage";
 import { decryptFile, decryptMessageOrPlaceholder } from "../../crypto/decryptMessage";
@@ -112,7 +112,7 @@ const ChatsState = (props) => {
             const chatUser = await db.chatUser.get(chatId);
 
             if (!chatUser) {
-                const username = generateUsername();
+                const username = await randomUsername();
                 const data = {
                     chatId,
                     username,
@@ -579,7 +579,7 @@ const ChatsState = (props) => {
             if (userData)
                 return userData;
 
-            const username = generateUsername();
+            const username = await randomUsername();
             const data = (await axios.post(`${API}/chats/get-publicKey`, bodyData)).data
             const publicKey = data.publicKey;
 

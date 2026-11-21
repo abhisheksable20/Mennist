@@ -215,8 +215,20 @@ const notify = async (data) => {
 // Wallet
 // ---------------------------------------------------------------------
 
+// Wallets known to exist on this instance. A wallet is only removed with the
+// whole account, so once seen it never needs the check again.
+const knownWallets = new Set();
+const KNOWN_WALLETS_MAX = 20000;
+const rememberWallet = (uid) => {
+  if (knownWallets.size >= KNOWN_WALLETS_MAX) knownWallets.clear();
+  knownWallets.add(uid);
+};
+
 // Create the wallet (with the welcome bonus) if the user doesn't have one yet.
 const ensureWallet = async (uid) => {
+  if (knownWallets.has(uid)) {
+    return {created: false};
+  }
   const now = Date.now();
   const out = await walletTx(uid, (current) => {
     if (current) {
@@ -228,7 +240,20 @@ const ensureWallet = async (uid) => {
   if (out.created) {
     await addLedger(uid, [{type: "welcome", amount: cfg.WELCOME_BONUS, balance: "bonus"}]);
   }
+  rememberWallet(uid);
   return out;
+};
+
+// One read of the wallet; creates it first only when it doesn't exist yet
+const readWallet = async (uid) => {
+  let val = (await db.ref(`coins/${uid}`).get()).val();
+  if (!val) {
+    await ensureWallet(uid);
+    val = (await db.ref(`coins/${uid}`).get()).val();
+  } else {
+    rememberWallet(uid);
+  }
+  return normalize(val);
 };
 
 const streakView = (wallet, now) => {
@@ -257,9 +282,7 @@ const streakView = (wallet, now) => {
 };
 
 const getWallet = async (uid) => {
-  await ensureWallet(uid);
-  const snap = await db.ref(`coins/${uid}`).get();
-  const w = normalize(snap.val());
+  const w = await readWallet(uid);
   const now = Date.now();
   const daily = freshDaily(w, dayKey(now));
 
@@ -421,8 +444,13 @@ const getUnlocks = async (uid) => {
 
 // The whole catalogue, marked with what this user owns
 const getShop = async (uid) => {
-  const snap = await db.ref(`coins/${uid}`).get();
-  const w = normalize(snap.val());
+  const [w, mythicSnap] = await Promise.all([
+    readWallet(uid),
+    db.ref("coinStats/mythicSold").get().catch((statErr) => {
+      console.error("Mythic stat read failed:", statErr);
+      return null;
+    }),
+  ]);
 
   const items = Object.keys(cfg.SHOP_ITEMS).map((id) => {
     const item = cfg.SHOP_ITEMS[id];
@@ -436,12 +464,7 @@ const getShop = async (uid) => {
   });
 
   const missing = VIBE_ITEMS.filter((id) => !w.unlocks[id]).length;
-  let mythicSold = 0;
-  try {
-    mythicSold = (await db.ref("coinStats/mythicSold").get()).val() || 0;
-  } catch (statErr) {
-    console.error("Mythic stat read failed:", statErr);
-  }
+  const mythicSold = (mythicSnap && mythicSnap.val()) || 0;
 
   return {
     items,

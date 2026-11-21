@@ -9,28 +9,74 @@ const taskQueue = getFunctions().taskQueue("deleteUserData");
 const db = admin.database();
 
 
+/*
+  Every API call checks the session. Valid sessions are remembered in memory
+  for a short time, so most requests skip the database read. A session that
+  was signed out elsewhere (recovery, account deletion on another instance)
+  stops working within SESSION_CACHE_MS at most.
+*/
+const SESSION_CACHE_MS = 30 * 1000;
+const SESSION_CACHE_MAX = 5000;
+const sessionCache = new Map(); // sessionId -> {uid, chatId, expiresAt, until}
+const chatIds = new Map(); // uid -> signed chatId (jwt.sign of a string is deterministic)
+
+const chatIdFor = (uid) => {
+  let id = chatIds.get(uid);
+  if (!id) {
+    if (chatIds.size >= SESSION_CACHE_MAX) chatIds.clear();
+    id = jwt.sign(uid, process.env.JWT_SECRET_KEY);
+    chatIds.set(uid, id);
+  }
+  return id;
+};
+
+const forgetSession = (sessionId) => sessionCache.delete(sessionId);
+
+// Forget every cached session of a user on this instance (recovery, deletion)
+const forgetUserSessions = (uid) => {
+  sessionCache.forEach((entry, id) => {
+    if (entry.uid === uid) sessionCache.delete(id);
+  });
+};
+
 // Check wheather the user has sessionId or not
 const isLoggedIn = async (req, res, next) => {
   const sessionId = req.cookies.__session;
-  if (!sessionId) {
+  if (!sessionId || typeof sessionId !== "string" || sessionId.length > 128) {
     return res.status(401).send({error: `Session expired`});
   }
 
-  const snap = await db.ref(`sessions/${sessionId}`).once("value");
-  const data = snap.val();
+  const now = Date.now();
+  const cached = sessionCache.get(sessionId);
+  if (cached && cached.until > now && now <= cached.expiresAt) {
+    req.user = {uid: cached.uid, chatId: cached.chatId};
+    return next();
+  }
+
+  let data;
+  try {
+    data = (await db.ref(`sessions/${sessionId}`).get()).val();
+  } catch (sessionErr) {
+    console.error("Session read failed:", sessionErr);
+    return res.status(503).send({error: "Please try again."});
+  }
 
   if (!data) {
+    forgetSession(sessionId);
     res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
 
-  if (Date.now() > data.expiresAt) {
+  if (now > data.expiresAt) {
+    forgetSession(sessionId);
     await deleteUserData(data.userId, sessionId);
     res.clearCookie("__session");
     return res.status(401).send({error: "Session expired"});
   }
 
-  const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
+  const chatId = chatIdFor(data.userId);
+  if (sessionCache.size >= SESSION_CACHE_MAX) sessionCache.clear();
+  sessionCache.set(sessionId, {uid: data.userId, chatId, expiresAt: data.expiresAt, until: now + SESSION_CACHE_MS});
 
   req.user = {uid: data.userId, chatId};
   next();
@@ -77,7 +123,7 @@ const authUser = async (req, res, next) => {
     return res.status(401).send({error: "Session expired"});
   }
 
-  const chatId = jwt.sign(data.userId, process.env.JWT_SECRET_KEY);
+  const chatId = chatIdFor(data.userId);
   req.user = {
     uid: data.userId,
     isNew: false,
@@ -166,11 +212,11 @@ const startLoginInner = async (req, res, next, publicKey, deviceFingerprint) => 
   req.user = {
     uid: userId,
     isNew: true,
-    chatId: jwt.sign(userId, process.env.JWT_SECRET_KEY),
+    chatId: chatIdFor(userId),
   };
   return next();
 };
 
-module.exports = {authUser, isLoggedIn, issueSession};
+module.exports = {authUser, isLoggedIn, issueSession, chatIdFor, forgetSession, forgetUserSessions};
 
 

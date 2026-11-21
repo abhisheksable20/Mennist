@@ -69,11 +69,14 @@ router.post("/get-publicKey", isLoggedIn, chatReadLimiter, async (req, res) => {
   }
 
   try {
-    const snapshot = await db.ref(`users/${receiverUserId}/userDetail`).once("value");
+    // Only the two fields needed, not the whole profile
+    const [keySnap, flagSnap] = await Promise.all([
+      db.ref(`users/${receiverUserId}/userDetail/publicKey`).get(),
+      db.ref(`users/${receiverUserId}/userDetail/chatFlag`).get(),
+    ]);
 
-    if (snapshot.exists()) {
-      const userDetail = snapshot.val();
-      return res.status(200).json({publicKey: userDetail.publicKey, chatFlag: userDetail.chatFlag});
+    if (keySnap.exists()) {
+      return res.status(200).json({publicKey: keySnap.val(), chatFlag: flagSnap.val()});
     }
 
     return res.status(401).send({error: "Public key not found."});
@@ -89,15 +92,7 @@ const isUserChatAvail = async (receiverUserId) => {
   }
 
   try {
-    const snapshot = await db.ref(`users/${receiverUserId}/userDetail`).once("value");
-    if (snapshot.exists()) {
-      const snapshotVal = snapshot.val();
-      if (snapshotVal.chatFlag) {
-        return snapshotVal.chatFlag;
-      }
-    }
-
-    return false;
+    return (await db.ref(`users/${receiverUserId}/userDetail/chatFlag`).get()).val() === true;
   } catch (flagFetchErr) {
     console.log("Flag Fetching Error: ", flagFetchErr);
     return false;
@@ -127,15 +122,22 @@ router.post("/send-chat", isLoggedIn, chatSendLimiter, validate(chatBlobValidati
     return;
   }
 
-  const senderChatId = jwt.sign(senderUserId, process.env.JWT_SECRET_KEY);
+  const senderChatId = req.user.chatId;
   const timestamp = Date.now();
-
-  const chatBlob = {encryptedMsg, timestamp, nounce, type: "plain/text"};
-  const chatMetaData = {senderChatId, senderPublicKey, encryptedMsg, timestamp, nounce, type: "plain/text"};
+  const base = `chats/${recieverUserId}/${senderUserId}`;
+  const messageId = db.ref(`${base}/messages`).push().key;
 
   try {
-    await db.ref(`chats/${recieverUserId}/${senderUserId}/messages`).push(chatBlob);
-    await db.ref(`chats/${recieverUserId}/${senderUserId}`).update(chatMetaData);
+    // The message and the chat-list preview, in one write
+    await db.ref().update({
+      [`${base}/messages/${messageId}`]: {encryptedMsg, timestamp, nounce, type: "plain/text"},
+      [`${base}/senderChatId`]: senderChatId,
+      [`${base}/senderPublicKey`]: senderPublicKey,
+      [`${base}/encryptedMsg`]: encryptedMsg,
+      [`${base}/timestamp`]: timestamp,
+      [`${base}/nounce`]: nounce,
+      [`${base}/type`]: "plain/text",
+    });
 
     await notificationQueue.enqueue({
       eventId: `message_${senderUserId}_${recieverUserId}`,
@@ -220,7 +222,7 @@ router.post("/attachment/complete", isLoggedIn, attachmentLimiter, validate(atta
       return res.status(422).send({error: "File size mismatch"});
     }
 
-    const senderChatId = jwt.sign(senderId, process.env.JWT_SECRET_KEY);
+    const senderChatId = req.user.chatId;
     const timestamp = Date.now();
     const base = `chats/${pending.receiverId}/${senderId}`;
 

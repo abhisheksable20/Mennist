@@ -8,7 +8,7 @@ import ConversationItem from './ConversationItem';
 import ChatFeatureAlert from "./ChatFeatureAlert";
 import RecieverChatFlagAlert from "./RecieverChatFlagAlert";
 import { db } from '../internalDatabase/db';
-import { generateUsername } from "unique-username-generator";
+import { randomUsername } from "../utils/randomUsername";
 import { loadAvatar } from "./Avatar/avatarService";
 import axios from "axios";
 import ChatLoading from './ChatLoading';
@@ -89,7 +89,7 @@ function ConversationPage(props) {
       if (userData)
         return userData;
 
-      const username = generateUsername();
+      const username = await randomUsername();
       const data = (await axios.post(`${process.env.REACT_APP_API_URL}/chats/get-publicKey`, bodyData, { signal })).data
       const publicKey = data.publicKey;
       const chatFlag = data.chatFlag;

@@ -20,6 +20,7 @@ const ai = new GoogleGenAI({
 const db = admin.database();
 
 const retrieveLimit = 10;
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 // Get all the database posts
 router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
@@ -39,7 +40,7 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
 router.get("/posts/:postId", publicReadLimiter, async (req, res) => {
   try {
     const postId = req.params.postId;
-    if (!postId) {
+    if (!SAFE_ID.test(postId || "")) {
       res.status(400).send({
         error: "Something went wrong!",
       });
@@ -143,11 +144,12 @@ router.post("/posts", isLoggedIn, postLimiter, dailyAiLimiter, validate(postVali
       chatId: req.user.chatId,
     };
 
-    const dbRef = db.ref("posts").push();
-    await dbRef.set(postData);
-
-    // Setting user post data
-    await db.ref(`users/${userUniqueId}/posts/${dbRef.key}`).set({title, content, timestamp, isAdult: aiData.nsfw});
+    // The post and its copy on the user's profile, in one write
+    const postId = db.ref("posts").push().key;
+    await db.ref().update({
+      [`posts/${postId}`]: postData,
+      [`users/${userUniqueId}/posts/${postId}`]: {title, content, timestamp, isAdult: aiData.nsfw},
+    });
 
     // Streak + Sakesnake Coins. A coin error must never fail the post itself.
     let coins = null;
@@ -253,29 +255,30 @@ router.put("/vibes/:postId", isLoggedIn, vibeLimiter, async (req, res) => {
   const user = req.user.uid;
   const postId = req.params.postId;
 
-  if (!postId || !/^[A-Za-z0-9_-]{1,64}$/.test(postId)) {
+  if (!SAFE_ID.test(postId || "")) {
     return res.status(400).send({error: "Failed to process your request!"});
   }
 
   try {
     // The notification goes to the post's real owner, read from the post itself
-    const ownerChatId = (await db.ref(`posts/${postId}/chatId`).get()).val();
+    const [ownerSnap, userSnapshot] = await Promise.all([
+      db.ref(`posts/${postId}/chatId`).get(),
+      db.ref(`vibes/${postId}/userId/${user}`).get(),
+    ]);
+    const ownerChatId = ownerSnap.val();
     if (!ownerChatId) {
       return res.status(404).send({error: "Post not found."});
     }
-    const reveiverUserId = jwt.verify(ownerChatId, process.env.JWT_SECRET_KEY);
-
-    const userRef = db.ref(`vibes/${postId}/userId/${user}`);
-    const userSnapshot = await userRef.once("value");
-
     if (userSnapshot.exists()) {
       return res.status(403).send({error: "You already matched the vibe"});
     }
+    const reveiverUserId = jwt.verify(ownerChatId, process.env.JWT_SECRET_KEY);
 
-    // Marking as vibes
-    await userRef.set(true);
-    const countRef = db.ref(`vibes/${postId}/count`);
-    await countRef.transaction((current) => (current || 0) + 1);
+    // Mark the vibe and count it in one write (the server adds 1, no transaction needed)
+    await db.ref().update({
+      [`vibes/${postId}/userId/${user}`]: true,
+      [`vibes/${postId}/count`]: admin.database.ServerValue.increment(1),
+    });
 
     // eventId, userId, actorId, type, postId, echoId, chatId, vibe
     const notificationData = {
@@ -319,7 +322,7 @@ router.get("/vibeCheck/:postId", isLoggedIn, globalLimiter, async (req, res) => 
   const userId = req.user.uid;
   const postId = req.params.postId;
 
-  if (!postId) {
+  if (!SAFE_ID.test(postId || "")) {
     return res.status(400).send({error: "Failed to process your request!"});
   }
 
@@ -369,7 +372,7 @@ router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), as
 // Get vibes count
 router.get("/vibes/:postId", publicReadLimiter, async (req, res) => {
   const postId = req.params.postId;
-  if (!postId) {
+  if (!SAFE_ID.test(postId || "")) {
     return res.status(400).send({error: "No data found"});
   }
 

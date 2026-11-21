@@ -16,8 +16,7 @@
 const express = require("express");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
-const {isLoggedIn, issueSession} = require("../middleware/authenticUser");
+const {isLoggedIn, issueSession, chatIdFor, forgetUserSessions} = require("../middleware/authenticUser");
 const {sensitiveLimiter, globalLimiter, recoveryLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
 const {keyHash, decodePublicKey, resolveAccount} = require("../auth/keyLogin");
 const {grantRecoveryReward} = require("../coins/coinService");
@@ -210,6 +209,7 @@ router.post("/recover", recoveryLimiter, async (req, res) => {
     updates[`users/${userId}/recovery`] = null;
 
     await db.ref().update(updates);
+    forgetUserSessions(userId);
 
     // Old key is already consumed, so issue a fresh one
     const newRecoveryCode = await saveNewRecoveryCode(userId);
@@ -217,7 +217,7 @@ router.post("/recover", recoveryLimiter, async (req, res) => {
 
     return res.status(200).send({
       success: true,
-      chatId: jwt.sign(userId, process.env.JWT_SECRET_KEY),
+      chatId: chatIdFor(userId),
       recoveryCode: newRecoveryCode, // show once, user must save it
     });
   } catch (err) {
