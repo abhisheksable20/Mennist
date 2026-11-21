@@ -70,7 +70,18 @@ function ConversationPage(props) {
   const [userAvatar, setUserAvatar] = useState(null);
   const [attachmentDownloadStatus, setAttachmentDownloadStatus] = useState({});
   const [downloadProgress, setDownloadProgress] = useState({});
-  const [attachmentError, setAttachmentError] = useState("");
+  // Small notice above the input for file problems: { text, tone: "error" | "info" }
+  const [attachmentNotice, setAttachmentNotice] = useState(null);
+  const setAttachmentError = useCallback((text, tone = "error") => {
+    setAttachmentNotice(text ? { text, tone, id: Date.now() } : null);
+  }, []);
+
+  // Fades out by itself
+  useEffect(() => {
+    if (!attachmentNotice) return undefined;
+    const timer = setTimeout(() => setAttachmentNotice(null), 6000);
+    return () => clearTimeout(timer);
+  }, [attachmentNotice]);
   const [isChecking, setIsChecking] = useState(false);
 
   // If this is true sender can send messages and attachments
@@ -345,7 +356,7 @@ function ConversationPage(props) {
       if (error.name === "GoneError") {
         // Not a failure to retry: the file isn't on the server any more
         setStatus(messageId, null);
-        setAttachmentError(error.message);
+        setAttachmentError("This file was already downloaded or has expired.", "info");
         return;
       }
 
@@ -476,15 +487,23 @@ function ConversationPage(props) {
           fileDownloadFlag={fileDownloadFlag}
           onClose={handleFilePreviewClose} />
 
-        {attachmentError && (
-          <div className="alert alert-danger alert-dismissible fade show mx-3 mb-2" role="alert">
-            {attachmentError}
-            <button type="button" className="btn-close" aria-label="Close" onClick={() => setAttachmentError("")}></button>
-          </div>
-        )}
-
         {/* Input component to take msg from the user */}
         <div className={`chat-input-wrapper ${!chatFlag ? "d-none" : ""}`}>
+          {attachmentNotice && (
+            <div key={attachmentNotice.id} className={`chat-notice is-${attachmentNotice.tone}`} role={attachmentNotice.tone === "error" ? "alert" : "status"}>
+              <span className="chat-notice-icon" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  {attachmentNotice.tone === "error"
+                    ? <><path d="M12 8v5" /><path d="M12 16.5h.01" /><circle cx="12" cy="12" r="9" /></>
+                    : <><path d="M12 11v5" /><path d="M12 7.5h.01" /><circle cx="12" cy="12" r="9" /></>}
+                </svg>
+              </span>
+              <span className="chat-notice-text">{attachmentNotice.text}</span>
+              <button type="button" className="chat-notice-close" aria-label="Dismiss" onClick={() => setAttachmentNotice(null)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            </div>
+          )}
           {isNewChat && chatRules && isReceiverAvail && (
             <div className={`chat-start-note ${startBlocked ? "is-blocked" : ""}`} role="status">
               {chatRules.freeLeft > 0 ? (
