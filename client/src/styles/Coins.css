@@ -916,3 +916,78 @@
 .rematch-confirm p { margin: 0; }
 .rematch-confirm-points { margin: 0; padding-left: 18px; color: var(--coin-fg-2); font-size: 14px; display: grid; gap: 6px; }
 .rematch-confirm .coin-btn-block { display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+
+/* ---------- Desktop navbar: one height, one shape for every control ---------- */
+@media (min-width: 577px) {
+    .navbar .navbar-actions { gap: 10px; }
+
+    /* Streak + coins read as one group, set apart by a thin divider */
+    .navbar .nav-coins {
+        gap: 8px;
+        padding-right: 12px;
+        margin-right: 2px;
+        border-right: 1px solid var(--coin-border);
+    }
+    .navbar .nav-coin-chip {
+        height: 40px;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 12px;
+        background: var(--coin-surface);
+        border-color: var(--coin-border);
+        gap: 8px;
+    }
+    .navbar .nav-coin-chip:hover { border-color: var(--coin-hover); background: var(--coin-raised); }
+    .navbar .nav-coin-chip .coin-num { font-size: 13px; line-height: 1; padding-top: 1px; }
+
+    .navbar .notification-bell {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border-color: var(--coin-border);
+    }
+
+    .navbar .navbar-more-content { gap: 10px; }
+
+    .navbar .navbar-new-post {
+        height: 40px;
+        min-height: 40px;
+        padding: 0 16px !important;
+        border-radius: 12px !important;
+        font-family: var(--font-head);
+        font-size: 14px !important;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    /* "Chat" label and switch sit inside one bordered control */
+    .navbar .desktop-chat-flag > div {
+        height: 40px;
+        box-sizing: border-box;
+        padding: 0 12px 0 14px;
+        gap: 10px !important;
+        border-radius: 12px;
+        background: var(--coin-surface);
+        border: 1px solid var(--coin-border);
+    }
+    .navbar .desktop-chat-flag .post-title {
+        margin: 0 !important;
+        font-family: var(--font-head);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--coin-fg);
+    }
+    .navbar .desktop-chat-flag .large-switch {
+        display: flex;
+        align-items: center;
+        min-height: 0;
+        padding-left: 2.5em;
+    }
+    .navbar .desktop-chat-flag .large-switch .form-check-input {
+        transform: none;
+        width: 2.4em;
+        height: 1.3em;
+        margin-top: 0;
+    }
+}
