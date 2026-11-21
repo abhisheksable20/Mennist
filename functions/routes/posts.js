@@ -6,7 +6,7 @@ const {isLoggedIn} = require("../middleware/authenticUser");
 const {publicReadLimiter, globalLimiter, postLimiter, dailyAiLimiter, vibeLimiter, reportLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
 const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
-const {postFetching} = require("../dataProcessing/postsProcessing");
+const {postFetching, parseEndAt} = require("../dataProcessing/postsProcessing");
 const {recordDailyPost, ownsUnlock} = require("../coins/coinService");
 const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
@@ -21,10 +21,13 @@ const db = admin.database();
 
 const retrieveLimit = 10;
 const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+// The categories Gemini can give a post (stored in lowercase)
+const CATEGORIES = new Set(["love", "friendship", "family", "education", "career", "finance", "mental health",
+  "technology", "gaming", "entertainment", "politics", "health", "confession", "motivation", "other"]);
 
 // Get all the database posts
 router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
-  const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
+  const endAt = parseEndAt(req.query.endAt);
   try {
     const ref = db.ref("posts");
     const data = await postFetching(ref, endAt, retrieveLimit);
@@ -73,8 +76,8 @@ router.get("/posts/:postId", publicReadLimiter, async (req, res) => {
 // Get specific category posts from database
 router.get("/suggestPost/:category", isLoggedIn, globalLimiter, async (req, res) => {
   try {
-    const postCategory = req.params.category.toLowerCase();
-    if (!postCategory) {
+    const postCategory = String(req.params.category || "").toLowerCase();
+    if (!CATEGORIES.has(postCategory)) {
       return res.status(400).send({
         error: "Category not found.",
       });

@@ -23,8 +23,26 @@ const buildApp = () => {
   const {ValidationError} = require("express-validation");
   const {ipLimiter} = require("./middleware/rateLimiter");
 
+  // Express 4 doesn't catch errors from async handlers: a route that throws
+  // would hang until the function times out. Pass them to the error handler.
+  const Layer = require("express/lib/router/layer");
+  if (!Layer.prototype.__asyncSafe) {
+    const handle = Layer.prototype.handle_request;
+    Layer.prototype.handle_request = function(req, res, next) {
+      if (this.handle.length > 3) return handle.call(this, req, res, next);
+      try {
+        const out = this.handle(req, res, next);
+        if (out && typeof out.catch === "function") out.catch(next);
+      } catch (err) {
+        next(err);
+      }
+    };
+    Layer.prototype.__asyncSafe = true;
+  }
+
   app = express();
   app.disable("x-powered-by");
+  app.disable("etag"); // API answers are per-user and change often
 
   // Per-environment config comes from functions/.env.<projectId>
   // (.env.drumkit-5b886 for dev, .env.mennist-4dda7 for prod).
@@ -76,8 +94,14 @@ const buildApp = () => {
   app.use(cors(corsOptions));
   app.options("*", cors(corsOptions));
 
-  // 3. Parsers
-  app.use(express.json());
+  // API responses carry personal data: never cache them anywhere
+  app.use((req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
+
+  // 3. Parsers (bodies are small JSON; files go straight to Storage)
+  app.use(express.json({limit: "100kb"}));
   app.use(cookieParser());
 
   // 4. App-wide IP rate limit.
@@ -108,6 +132,14 @@ const buildApp = () => {
     if (err instanceof ValidationError) {
       return res.status(err.statusCode).json(err.details);
     }
+    if (err && (err.type === "entity.parse.failed" || err.type === "entity.too.large")) {
+      return res.status(err.status || 400).json({message: "Invalid request body"});
+    }
+    if (err && err.message === "Not allowed by CORS") {
+      return res.status(403).end();
+    }
+    console.error("Unhandled API error:", req.method, req.path, err);
+    if (res.headersSent) return next(err);
     return res.status(500).json({
       message: "Internal server error",
     });

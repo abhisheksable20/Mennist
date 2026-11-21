@@ -16,7 +16,7 @@ export const KEY_LENGTH = 24;
 
 // Whatever the user typed or pasted -> "K7F2-9QXM-4T" (uppercase, dashes every 4)
 export const formatKeyInput = (value) => {
-  const chars = (String(value).toUpperCase().match(KEY_CHARS) || []).join("").slice(0, KEY_LENGTH);
+  const chars = (String(value ?? "").toUpperCase().match(KEY_CHARS) || []).join("").slice(0, KEY_LENGTH);
   return (chars.match(/.{1,4}/g) || []).join("-");
 };
 
@@ -24,7 +24,7 @@ export const keyCharCount = (formatted) => formatted.replace(/-/g, "").length;
 
 // Find a recovery key inside any text (a downloaded file, a pasted note)
 export const findKeyInText = (text) => {
-  const match = String(text).toUpperCase().match(/[A-Z2-9]{4}(?:[-\s]?[A-Z2-9]{4}){5}/);
+  const match = String(text ?? "").toUpperCase().match(/[A-Z2-9]{4}(?:[-\s]?[A-Z2-9]{4}){5}/);
   if (!match) return null;
   const formatted = formatKeyInput(match[0]);
   return keyCharCount(formatted) === KEY_LENGTH ? formatted : null;

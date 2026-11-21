@@ -2,7 +2,7 @@ const express = require("express");
 const admin = require("firebase-admin");
 const {authUser, isLoggedIn, issueSession, chatIdFor, forgetSession} = require("../middleware/authenticUser");
 const {verifyChallenge} = require("../auth/keyLogin");
-const {postFetching: fetchPosts} = require("../dataProcessing/postsProcessing");
+const {postFetching: fetchPosts, parseEndAt} = require("../dataProcessing/postsProcessing");
 const {signupLimiter, loginLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
 const {DEFAULT_AVATAR, validateAvatar, avatarTier} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
@@ -194,7 +194,7 @@ router.post("/chatFlag", isLoggedIn, globalLimiter, async (req, res) => {
 // Fetch user specific posts
 router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
-  const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
+  const endAt = parseEndAt(req.query.endAt);
 
   try {
     const ref = db.ref(`/users/${userId}/posts`);

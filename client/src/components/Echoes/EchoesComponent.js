@@ -1,5 +1,5 @@
 import EchoPostItem from "./EchoPostItem"
-import { useEffect, useState, useContext } from 'react'
+import { useEffect, useContext } from 'react'
 import EchoContext from "../../context/posts/echoContext";
 import useInfiniteScroll from "react-infinite-scroll-hook";
 import { useNavigate } from 'react-router-dom';

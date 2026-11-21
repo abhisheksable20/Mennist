@@ -1,3 +1,12 @@
+// "Load older" cursor from ?endAt=. Missing or not a number: start from now.
+// A number is kept in range: negative means "nothing older" (returns no items),
+// so a client that runs past the end never starts the feed over.
+const parseEndAt = (value) => {
+  const n = Number(value);
+  if (value === undefined || value === "" || !Number.isFinite(n)) return Date.now();
+  return Math.min(Math.max(n, 0), Date.now() + 60000);
+};
+
 // Fetch the global and user posts according to the ref
 const postFetching = async (ref, endAt, limitToLast) => {
   const snapshot = await ref
@@ -73,4 +82,4 @@ const userEchoesFetching = async (ref, endAt, limitToLast) => {
   return echoData;
 };
 
-module.exports = {postFetching, userEchoesFetching};
+module.exports = {postFetching, userEchoesFetching, parseEndAt};

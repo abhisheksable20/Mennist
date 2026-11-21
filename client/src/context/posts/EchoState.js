@@ -24,10 +24,12 @@ const EchoState = (props) => {
 
         try {
             const data = (await axios.get(`${process.env.REACT_APP_API_URL}/echoes?endAt=${lastTimestampRef.current - 1}`, { signal: controller.signal })).data;
-            setEchoes((prev) => [...prev, ...data.echoesData]);
-            lastTimestampRef.current = data.lastTimestamp;
+            // A bad or empty answer ends the list instead of crashing the page
+            const items = Array.isArray(data?.echoesData) ? data.echoesData : [];
+            setEchoes((prev) => [...prev, ...items]);
+            lastTimestampRef.current = Number.isFinite(data?.lastTimestamp) ? data.lastTimestamp : -1;
             // No new posts to fetch stop here
-            if (data.echoesData.length < PAGE_SIZE) {
+            if (items.length < PAGE_SIZE) {
                 setHasNext(false);
             }
         }

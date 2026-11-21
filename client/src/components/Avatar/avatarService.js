@@ -1,30 +1,6 @@
-import { AVATAR_OPTIONS, DEFAULT_AVATAR, HAIR_COLORS } from "./avatarOptions";
+import { DEFAULT_AVATAR } from "./avatarOptions";
 import axios from "axios";
 import { db } from "../../internalDatabase/db";
-
-const allowedIds = Object.fromEntries(
-  Object.entries(AVATAR_OPTIONS).map(([category, options]) => [
-    category,
-    new Set(options.map((option) => option.id)),
-  ])
-);
-
-function normalizeAvatar(value) {
-  const input = value && typeof value === "object" ? value : {};
-  const result = { ...DEFAULT_AVATAR };
-
-  Object.keys(allowedIds).forEach((category) => {
-    if (typeof input[category] === "string" && allowedIds[category].has(input[category])) {
-      result[category] = input[category];
-    }
-  });
-
-  if (HAIR_COLORS.some((item) => item.color === input.hairColor)) {
-    result.hairColor = input.hairColor;
-  }
-  result.version = 1;
-  return result;
-}
 
 // Avatars seen recently, so opening the same chat or post again doesn't re-fetch.
 // Holds the promise, so two components asking at once share one request.

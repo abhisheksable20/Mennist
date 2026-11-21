@@ -2,12 +2,13 @@ import './App.css';
 import './styles/Coins.css';
 import Navbar from './components/Navbar';
 import PostState from './context/posts/PostState';
-import { Routes, Route, Outlet } from "react-router-dom";
+import { Routes, Route, Outlet, useLocation } from "react-router-dom";
 import ToastComponent from './components/ToastComponent';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import ChatsState from './context/chats/ChatsState';
 import EchoState from './context/posts/EchoState';
 import LazyLoader from './components/utils/LazyLoader';
+import ErrorBoundary from './components/utils/ErrorBoundary';
 import CoinsState from './context/coins/CoinsState';
 import StreakRewardModal from './components/Coins/StreakRewardModal';
 import IncomingCoinsAlert from './components/Coins/IncomingCoinsAlert';
@@ -31,15 +32,20 @@ const WalletPage = lazy(() => import('./components/Coins/WalletPage'));
 const ShopPage = lazy(() => import('./components/Coins/ShopPage'));
 
 function Layout(props) {
+  const location = useLocation();
+  // A crash inside a page keeps the navbar, so people can still leave the page
   return (
     <>
       <Navbar alert={props.alert} />
-      <Outlet />
+      <ErrorBoundary resetKey={location.pathname}>
+        <Outlet />
+      </ErrorBoundary>
     </>
   );
 }
 
 function App() {
+  const location = useLocation();
   const [alerts, setAlerts] = useState([]);
   const toastRef = useRef(null);
 
@@ -76,6 +82,7 @@ function App() {
               })
             }
           </div>
+          <ErrorBoundary resetKey={location.pathname}>
           <Suspense fallback={<LazyLoader />}>
             <Routes>
               {/* This is landing page */}
@@ -99,6 +106,7 @@ function App() {
               </Route>
             </Routes>
           </Suspense>
+          </ErrorBoundary>
           <StreakRewardModal />
           <IncomingCoinsAlert alert={showAlert} />
         </ChatsState>

@@ -1,4 +1,5 @@
 module.exports = {
+  ignorePatterns: ["test/**", "garbageDump.js"],
   env: {
     es6: true,
     node: true,

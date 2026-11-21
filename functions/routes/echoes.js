@@ -6,7 +6,7 @@ const {validate} = require("express-validation");
 const {echoValidation} = require("../validators/postValidator");
 const {globalLimiter, postLimiter, dailyAiLimiter} = require("../middleware/rateLimiter");
 const {getFunctions} = require("firebase-admin/functions");
-const {userEchoesFetching} = require("../dataProcessing/postsProcessing");
+const {userEchoesFetching, parseEndAt} = require("../dataProcessing/postsProcessing");
 const {startEchoRematch, CoinError} = require("../coins/coinService");
 
 const echoMatchingQueue = getFunctions().taskQueue("matchEchoes");
@@ -18,7 +18,7 @@ const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 // Fetch only user echoes from the database
 router.get("/", isLoggedIn, globalLimiter, async (req, res) => {
-  const endAt = req.query.endAt ? Number(req.query.endAt) : Date.now();
+  const endAt = parseEndAt(req.query.endAt);
   const userId = req.user.uid;
   try {
     const ref = db.ref(`echoes/${userId}`);
