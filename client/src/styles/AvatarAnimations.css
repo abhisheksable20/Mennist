@@ -1,0 +1,43 @@
+/* Premium avatar animations. Imported by Avatar.js so they work on every page that draws an avatar. */
+.mennist-avatar * { transform-box: fill-box; transform-origin: center; }
+@keyframes mav-flick { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+@keyframes mav-flick2 { 0%,100% { transform: translateY(-1px); opacity: .9; } 50% { transform: translateY(0); opacity: 1; } }
+@keyframes mav-twinkle { 0%,100% { opacity: .15; } 50% { opacity: 1; } }
+@keyframes mav-pulse { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes mav-glow { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+@keyframes mav-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+@keyframes mav-fall { from { transform: translateY(-34px); } to { transform: translateY(34px); } }
+@keyframes mav-scan { 0% { transform: translateX(0); } 50% { transform: translateX(14px); } 100% { transform: translateX(0); } }
+@keyframes mav-blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes mav-ghost { 0%,100% { opacity: .9; transform: translateY(0); } 50% { opacity: .45; transform: translateY(-1px); } }
+@keyframes mav-gR { 0%,86%,100% { transform: translate(0,0); opacity: 0; } 88% { transform: translate(-2px,0); opacity: .8; } 92% { transform: translate(1px,1px); opacity: .8; } 95% { transform: translate(-1px,0); opacity: 0; } }
+@keyframes mav-gC { 0%,86%,100% { transform: translate(0,0); opacity: 0; } 88% { transform: translate(2px,0); opacity: .8; } 92% { transform: translate(-1px,-1px); opacity: .8; } 95% { transform: translate(1px,0); opacity: 0; } }
+@keyframes mav-gMain { 0%,86%,100% { transform: translate(0,0); } 89% { transform: translate(1px,0); } 93% { transform: translate(-1px,0); } }
+@keyframes mav-band { 0%,86%,100% { opacity: 0; } 88%,93% { opacity: .9; } }
+@keyframes mav-wave { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1px); } }
+@keyframes mav-tongue { 0%,70%,100% { opacity: 0; } 75%,90% { opacity: 1; } }
+@keyframes mav-holo { 0% { stop-color: #4DB4FF; } 33% { stop-color: #FF4DD8; } 66% { stop-color: #7CFF9B; } 100% { stop-color: #4DB4FF; } }
+@keyframes mav-holo2 { 0% { stop-color: #FF4DD8; } 33% { stop-color: #7CFF9B; } 66% { stop-color: #4DB4FF; } 100% { stop-color: #FF4DD8; } }
+@keyframes mav-eyeshift { 0%,80%,100% { fill: #22D3EE; } 85% { fill: #FF2E88; } 90% { fill: #FAFAFA; } }
+.mav-flick { animation: mav-flick .5s steps(1) infinite; }
+.mav-flick2 { animation: mav-flick2 .5s steps(1) infinite; }
+.mav-twinkle { animation: mav-twinkle 2.4s ease-in-out infinite; }
+.mav-pulse { animation: mav-pulse 3s ease-in-out infinite; }
+.mav-glow { animation: mav-glow 1.8s ease-in-out infinite; }
+.mav-bob { animation: mav-bob 1.6s steps(2) infinite; }
+.mav-fall { animation: mav-fall 3.2s steps(32) infinite; }
+.mav-scan { animation: mav-scan 2.2s steps(14) infinite; }
+.mav-blink { animation: mav-blink 4s steps(1) infinite; }
+.mav-ghost { animation: mav-ghost 4s ease-in-out infinite; }
+.mav-gR { animation: mav-gR 3.5s steps(1) infinite; }
+.mav-gC { animation: mav-gC 3.5s steps(1) infinite; }
+.mav-gMain { animation: mav-gMain 3.5s steps(1) infinite; }
+.mav-band { animation: mav-band 3.5s steps(1) infinite; }
+.mav-wave { animation: mav-wave 1.2s steps(2) infinite; }
+.mav-tongue { animation: mav-tongue 2.4s steps(1) infinite; }
+.mav-holo { animation: mav-holo 4s linear infinite; }
+.mav-holo2 { animation: mav-holo2 4s linear infinite; }
+.mav-eyeshift { animation: mav-eyeshift 3s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+    .mennist-avatar * { animation: none !important; }
+}

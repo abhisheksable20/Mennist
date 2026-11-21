@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { AVATAR_OPTIONS, DEFAULT_AVATAR } from "./avatarOptions";
 import { mythicLook } from "./mythic";
+import "../../styles/AvatarAnimations.css";
 
 /*
   Pixel avatar on a 32x32 grid.
