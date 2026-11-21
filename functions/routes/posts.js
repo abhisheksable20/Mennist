@@ -252,14 +252,18 @@ ${content}
 router.put("/vibes/:postId", isLoggedIn, vibeLimiter, async (req, res) => {
   const user = req.user.uid;
   const postId = req.params.postId;
-  const {chatId} = req.body;
 
-  if (!postId || !chatId) {
+  if (!postId || !/^[A-Za-z0-9_-]{1,64}$/.test(postId)) {
     return res.status(400).send({error: "Failed to process your request!"});
   }
 
   try {
-    const reveiverUserId = jwt.verify(chatId, process.env.JWT_SECRET_KEY);
+    // The notification goes to the post's real owner, read from the post itself
+    const ownerChatId = (await db.ref(`posts/${postId}/chatId`).get()).val();
+    if (!ownerChatId) {
+      return res.status(404).send({error: "Post not found."});
+    }
+    const reveiverUserId = jwt.verify(ownerChatId, process.env.JWT_SECRET_KEY);
 
     const userRef = db.ref(`vibes/${postId}/userId/${user}`);
     const userSnapshot = await userRef.once("value");
@@ -340,7 +344,12 @@ router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), as
   }
 
   try {
-    const recieverUserId = jwt.verify(postOwnerChatId, process.env.JWT_SECRET_KEY);
+    // Report the post's real owner, read from the post (not from the request)
+    const ownerChatId = (await db.ref(`posts/${postId}/chatId`).get()).val();
+    if (!ownerChatId) {
+      return res.status(404).send({error: "Post not found."});
+    }
+    const recieverUserId = jwt.verify(ownerChatId, process.env.JWT_SECRET_KEY);
 
     const reportData = {
       reason: reason,

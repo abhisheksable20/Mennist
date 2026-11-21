@@ -215,11 +215,17 @@ router.delete("/posts/:postId", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;
   const postId = req.params.postId;
 
-  if (!postId) {
+  if (!postId || !/^[A-Za-z0-9_-]{1,64}$/.test(postId)) {
     return res.status(400).send({error: "Failed to delete your post!"});
   }
 
   try {
+    // Only the person who wrote the post may delete it
+    const owned = await db.ref(`userPosts/${userId}/${postId}`).get();
+    if (!owned.exists()) {
+      return res.status(404).send({error: "Post not found."});
+    }
+
     const updates = {};
     updates[`posts/${postId}`] = null;
     updates[`userPosts/${userId}/${postId}`] = null;

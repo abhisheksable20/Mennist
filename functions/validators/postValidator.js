@@ -13,9 +13,12 @@ const echoValidation = {
   }),
 };
 
+// Database keys only: letters, digits, - and _ (no "/" to reach other paths)
+const POST_ID = Joi.string().pattern(/^[A-Za-z0-9_-]{1,64}$/).required();
+
 const reportValidation = {
   body: Joi.object({
-    postId: Joi.string().required(),
+    postId: POST_ID,
     postOwnerChatId: Joi.string().required(),
     reason: Joi.string().min(3).max(500).required(),
   }),
@@ -23,7 +26,7 @@ const reportValidation = {
 
 const vibeCheckValidation = {
   body: Joi.object({
-    postId: Joi.string().required(),
+    postId: POST_ID,
     chatId: Joi.string().required(),
     postVibe: Joi.string().valid("funny", "relatable", "emotional", "wholesome", "sad", "toxic", "racist").required(),
   }),
