@@ -118,7 +118,7 @@ function LandingPage(props) {
     let fingerPrint = localStorage.getItem('deviceFingerprint');
 
     if (!fingerPrint) {
-      const fp = await FingerprintJS.load();
+      const fp = await FingerprintJS.load({ monitoring: false }); // no usage ping to the library maker
       const result = await fp.get();
       fingerPrint = result.visitorId;
 

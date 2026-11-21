@@ -12,7 +12,7 @@ import "../../styles/Recovery.css";
 
 const getFingerprint = async () => {
   try {
-    const fp = await FingerprintJS.load();
+    const fp = await FingerprintJS.load({ monitoring: false }); // no usage ping to the library maker
     const id = (await fp.get()).visitorId;
     localStorage.setItem("deviceFingerprint", id);
     return id;
