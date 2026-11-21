@@ -45,8 +45,8 @@ module.exports = {
   // category "avatar": unlocks one premium avatar item forever.
   //                    slot/value say where it goes on the avatar.
   SHOP_ITEMS: {
-    streak_freeze: {category: "boost", price: 30, name: "Streak freeze", max: 2,
-      description: "Saves your streak if you miss a day."},
+    streak_freeze: {category: "boost", price: 30, name: "Ritzz freeze", max: 2,
+      description: "Saves your Ritzz if you miss a day."},
 
     vibe_funny: {category: "vibe", price: 15, name: "Funny", vibe: "funny"},
     vibe_relatable: {category: "vibe", price: 15, name: "Relatable", vibe: "relatable"},

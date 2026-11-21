@@ -215,7 +215,7 @@ function PremiumPicker({ avatar, ownedItems, onWear }) {
   if (ownedItems.length === 0) {
     return (
       <div className="premium-empty">
-        <p>You don't own any premium items yet. Earn Sakesnake Coins with your daily streak and unlock auras, frames, glowing eyes and full sets.</p>
+        <p>You don't own any premium items yet. Earn Sakesnake Coins with your daily Ritzz and unlock auras, frames, glowing eyes and full sets.</p>
         <Link to="/coins/shop" className="mennist-avatar-save premium-shop-link">Visit the shop</Link>
       </div>
     );

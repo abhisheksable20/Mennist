@@ -13,8 +13,8 @@ export default function NavCoins() {
   const waiting = wallet.transfers.incoming.length;
   return (
     <div className="nav-coins">
-      <Link to="/coins" className="nav-coin-chip" title={streak ? `${streak}-day streak` : "Start a streak by posting today"}
-        aria-label={`Streak: ${streak} days`}>
+      <Link to="/coins" className="nav-coin-chip" title={streak ? `${streak}-day Ritzz` : "Start your Ritzz by posting today"}
+        aria-label={`Ritzz: ${streak} days`}>
         <StreakFlame size={14} dim={!wallet.streak.postedToday} />
         <span className="coin-num">{streak}</span>
       </Link>

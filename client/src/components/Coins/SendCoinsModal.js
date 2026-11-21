@@ -78,7 +78,7 @@ export default function SendCoinsModal({ chatId, name, avatar, onClose, alert })
 
         {!canSend ? (
           <p className="coin-note">
-            Sending coins unlocks after a 7-day streak and when your account is at least 7 days old. Keep posting daily to get there.
+            Sending coins unlocks after a 7-day Ritzz and when your account is at least 7 days old. Keep posting daily to get there.
           </p>
         ) : (
           <>

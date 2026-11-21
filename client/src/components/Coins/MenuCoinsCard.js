@@ -16,7 +16,7 @@ export default function MenuCoinsCard() {
       <span className="menu-coins-text">
         <strong>Sakesnake Coins</strong>
         <span className="menu-coins-stats">
-          <span><StreakFlame size={12} dim={!wallet.streak.postedToday} /> {wallet.streak.current}-day streak</span>
+          <span><StreakFlame size={12} dim={!wallet.streak.postedToday} /> {wallet.streak.current}-day Ritzz</span>
           <span><CoinIcon size={12} /> <span className="coin-num">{wallet.balance.toLocaleString()}</span></span>
         </span>
         {waiting > 0 && <span className="menu-coins-waiting">{waiting === 1 ? "1 transfer waiting for you" : `${waiting} transfers waiting for you`}</span>}

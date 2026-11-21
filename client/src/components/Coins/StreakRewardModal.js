@@ -28,17 +28,17 @@ export default function StreakRewardModal() {
   const next = wallet && wallet.streak && wallet.streak.next;
 
   return (
-    <CoinModal title={reward.milestone ? `${streak}-day streak!` : `Day ${streak}`} onClose={closeReward} hideTitle>
+    <CoinModal title={reward.milestone ? `${streak}-day Ritzz!` : `Day ${streak}`} onClose={closeReward} hideTitle>
       <div className="streak-reward">
         <StreakFlame big size={96} />
         <div className="streak-reward-title">
-          <span className="pixel-heading">{reward.milestone ? `${streak}-day streak!` : `Day ${streak}`}</span>
+          <span className="pixel-heading">{reward.milestone ? `${streak}-day Ritzz!` : `Day ${streak}`}</span>
           <span className="coin-muted">
-            {streak === 1 ? "You started a new streak. Post tomorrow to keep it going." : `You posted ${streak} days in a row.`}
+            {streak === 1 ? "You started your Ritzz. Post tomorrow to keep it going." : `You posted ${streak} days in a row.`}
           </span>
         </div>
 
-        <ol className="streak-days" aria-label="Your streak">
+        <ol className="streak-days" aria-label="Your Ritzz">
           {days.map((d) => (
             <li key={d.number} className={d.isToday ? "is-today" : ""}>
               <span className="streak-day-box">{d.number}</span>
@@ -49,14 +49,14 @@ export default function StreakRewardModal() {
 
         {reward.freezesUsed > 0 && (
           <p className="coin-note coin-note-ice">
-            {reward.freezesUsed === 1 ? "A streak freeze saved the day you missed." : `${reward.freezesUsed} streak freezes saved the days you missed.`}
+            {reward.freezesUsed === 1 ? "A Ritzz freeze saved the day you missed." : `${reward.freezesUsed} Ritzz freezes saved the days you missed.`}
           </p>
         )}
 
         <div className="coin-summary">
           <div className="coin-summary-row"><span>Daily post</span><span>+{reward.dailyReward}</span></div>
           {reward.milestone > 0 && (
-            <div className="coin-summary-row"><span>{streak}-day streak bonus</span><span>+{reward.milestone}</span></div>
+            <div className="coin-summary-row"><span>{streak}-day Ritzz bonus</span><span>+{reward.milestone}</span></div>
           )}
           <div className="coin-summary-divider" />
           <div className="coin-summary-row is-total">

@@ -18,7 +18,7 @@ export default function RematchConfirmModal({ info, balance, busy, onConfirm, on
 
         {short > 0 ? (
           <>
-            <p className="coin-note">You need {short} more coins. Post daily to keep your streak and earn them.</p>
+            <p className="coin-note">You need {short} more coins. Post daily to keep your Ritzz and earn them.</p>
             <Link to="/coins" className="coin-btn coin-btn-primary coin-btn-block" onClick={onClose}>Open wallet</Link>
           </>
         ) : (

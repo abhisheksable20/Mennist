@@ -127,9 +127,9 @@ export default function ItemPreviewModal({ item, myAvatar, setMyAvatar, onClose,
             </div>
             {error && <p className="coin-error" role="alert">{error}</p>}
             {needsStreak ? (
-              <p className="coin-note">Reach a {item.requiresStreak}-day streak to unlock this. Your longest so far is {longestStreak}.</p>
+              <p className="coin-note">Reach a {item.requiresStreak}-day Ritzz to unlock this. Your longest so far is {longestStreak}.</p>
             ) : short > 0 ? (
-              <p className="coin-note">You need {short} more coins. Keep your streak going to earn them.</p>
+              <p className="coin-note">You need {short} more coins. Keep your Ritzz going to earn them.</p>
             ) : null}
             <button type="button" className="coin-btn coin-btn-primary coin-btn-block"
               disabled={busy || short > 0 || needsStreak} onClick={buy}>

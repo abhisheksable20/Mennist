@@ -14,8 +14,8 @@ const describe = (e) => {
   switch (e.type) {
     case "welcome": return "Welcome bonus";
     case "daily_post": return `Daily post · day ${e.streak}`;
-    case "streak_milestone": return `${e.streak}-day streak bonus`;
-    case "streak_freeze_used": return e.count > 1 ? `${e.count} streak freezes used` : "Streak freeze used";
+    case "streak_milestone": return `${e.streak}-day Ritzz bonus`;
+    case "streak_freeze_used": return e.count > 1 ? `${e.count} Ritzz freezes used` : "Ritzz freeze used";
     case "spend": return `Bought ${e.itemName || (e.item || "an item").replace(/^(avatar_|vibe_)/, "").replace(/_/g, " ")}`;
     case "transfer_out": return "Sent coins";
     case "transfer_in": return "Received coins";
@@ -149,7 +149,7 @@ function WalletPage(props) {
           <div className="wallet-streak-head">
             <StreakFlame size={32} dim={!s.postedToday} />
             <div className="wallet-streak-text">
-              <h2 id="streak-title">{s.current}-day streak</h2>
+              <h2 id="streak-title">{s.current}-day Ritzz</h2>
               <span className="coin-muted coin-small">Longest: {s.longest} days</span>
             </div>
             <span className="freeze-chip">
@@ -167,12 +167,12 @@ function WalletPage(props) {
           </ol>
           <p className="coin-muted coin-small">
             {s.postedToday
-              ? "Posted today. Your streak is safe until midnight tomorrow."
-              : s.current > 0 ? "Post today to keep your streak." : "Post today to start a streak."}
+              ? "Posted today. Your Ritzz is safe until midnight tomorrow."
+              : s.current > 0 ? "Post today to keep your Ritzz." : "Post today to start your Ritzz."}
             {" "}<b className="text-gold">+{s.next.reward} coins</b> at {s.next.day} days.
           </p>
           {s.freezes < 2 && (
-            <Link to="/coins/shop#boosts" className="coin-btn coin-btn-link coin-btn-left">Get a streak freeze</Link>
+            <Link to="/coins/shop#boosts" className="coin-btn coin-btn-link coin-btn-left">Get a Ritzz freeze</Link>
           )}
         </section>
       </div>
@@ -232,7 +232,7 @@ function WalletPage(props) {
           <h2 id="limits-title" className="coin-section-title">Sending coins</h2>
           <div className="coin-card coin-limits">
             {!t.canSend && (
-              <p className="coin-note">Reach a 7-day streak to unlock sending coins.</p>
+              <p className="coin-note">Reach a 7-day Ritzz to unlock sending coins.</p>
             )}
             <div className="coin-meter">
               <div className="coin-meter-label"><span>Sent today</span><span>{t.sentToday} / {t.sendLimit}</span></div>

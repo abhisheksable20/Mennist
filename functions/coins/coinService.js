@@ -339,7 +339,7 @@ const getHistory = async (uid, endAt, endKey, limit = 10) => {
 const recordDailyPost = async (uid, content) => {
   const length = (content || "").trim().length;
   if (length < cfg.STREAK_MIN_CONTENT_LENGTH) {
-    return {counted: false, reason: `Posts need at least ${cfg.STREAK_MIN_CONTENT_LENGTH} characters to count for your streak.`};
+    return {counted: false, reason: `Posts need at least ${cfg.STREAK_MIN_CONTENT_LENGTH} characters to count for your Ritzz.`};
   }
 
   const now = Date.now();
@@ -492,7 +492,7 @@ const spend = async (uid, itemId) => {
       throw new CoinError(409, "ALREADY_OWNED", "You already own this item.");
     }
     if (item.requiresStreak && pre.streak.longest < item.requiresStreak) {
-      throw new CoinError(403, "STREAK_REQUIRED", `Reach a ${item.requiresStreak}-day streak to unlock this.`);
+      throw new CoinError(403, "STREAK_REQUIRED", `Reach a ${item.requiresStreak}-day Ritzz to unlock this.`);
     }
     if (pre.bonus + pre.earned < item.price) {
       throw new CoinError(402, "INSUFFICIENT_COINS", `You need ${item.price - pre.bonus - pre.earned} more coins.`);
@@ -524,7 +524,7 @@ const spend = async (uid, itemId) => {
         return {error: new CoinError(409, "MAX_REACHED", `You can hold at most ${item.max}.`)};
       }
       if (item.requiresStreak && w.streak.longest < item.requiresStreak) {
-        return {error: new CoinError(403, "STREAK_REQUIRED", `Reach a ${item.requiresStreak}-day streak to unlock this.`)};
+        return {error: new CoinError(403, "STREAK_REQUIRED", `Reach a ${item.requiresStreak}-day Ritzz to unlock this.`)};
       }
 
       const total = w.bonus + w.earned;
@@ -632,7 +632,7 @@ const createTransfer = async (fromUid, toChatId, amount) => {
     const w = normalize(current);
 
     if (w.streak.longest < cfg.TRANSFER_MIN_LONGEST_STREAK) {
-      return {error: new CoinError(403, "STREAK_REQUIRED", `Complete a ${cfg.TRANSFER_MIN_LONGEST_STREAK}-day streak to unlock transfers.`)};
+      return {error: new CoinError(403, "STREAK_REQUIRED", `Complete a ${cfg.TRANSFER_MIN_LONGEST_STREAK}-day Ritzz to unlock transfers.`)};
     }
     if (Object.keys(w.outgoing).length >= cfg.TRANSFER_MAX_PENDING) {
       return {error: new CoinError(429, "TOO_MANY_PENDING", `You can have at most ${cfg.TRANSFER_MAX_PENDING} pending transfers.`)};

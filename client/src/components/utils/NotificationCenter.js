@@ -203,10 +203,10 @@ function NotificationCenter() {
                 : "Someone sent you Sakesnake Coins.",
         },
         streakReminder: {
-            title: 'Keep your streak alive',
+            title: 'Keep your Ritzz alive',
             iconNode: <StreakFlame size={20} />,
             color: 'orange',
-            message: (n) => n.message || "Post today to keep your streak!",
+            message: (n) => n.message || "Post today to keep your Ritzz!",
         },
         echoMatch: {
             title: 'Echo match',

@@ -139,7 +139,7 @@ export default function RecoverPage(props) {
             {wallet && (
               <div className="recovery-restored-chips">
                 <span className="is-coins">{wallet.balance} coins</span>
-                <span className="is-streak">{wallet.streak.current} day streak</span>
+                <span className="is-streak">{wallet.streak.current}-day Ritzz</span>
               </div>
             )}
             <p>Your Veil, premium items, posts, echoes and chats.</p>

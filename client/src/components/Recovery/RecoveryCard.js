@@ -76,7 +76,7 @@ export default function RecoveryCard() {
             <p>You made a recovery key but didn't confirm you saved it. Make a new one and finish the check, so you can really get back in.</p>
           ) : (
             <>
-              <p>Your account lives only in this browser. If you clear it or switch devices, your coins, streak and Veil are gone. A recovery key brings them back.</p>
+              <p>Your account lives only in this browser. If you clear it or switch devices, your coins, Ritzz and Veil are gone. A recovery key brings them back.</p>
               <ul>
                 <li>No email or phone. You stay anonymous.</li>
                 <li>Takes about a minute.</li>

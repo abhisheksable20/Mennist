@@ -306,10 +306,10 @@ exports.processNotification = onTaskDispatched({
         "Someone sent you Sakesnake Coins.",
     },
     streakReminder: {
-      title: "Keep your streak alive",
+      title: "Keep your Ritzz alive",
       message: streak ?
-        `Your ${streak}-day streak ends at midnight. Post today to keep it!` :
-        "Post today to keep your streak!",
+        `Your ${streak}-day Ritzz ends at midnight. Post today to keep it!` :
+        "Post today to keep your Ritzz!",
     },
   };
 

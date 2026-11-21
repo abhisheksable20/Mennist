@@ -13,7 +13,7 @@ import "../../styles/Coins.css";
 const TABS = [
   { id: "avatars", label: "Avatars" },
   { id: "vibes", label: "Vibe Check" },
-  { id: "boosts", label: "Streak freeze" },
+  { id: "boosts", label: "Ritzz freeze" },
 ];
 const TIERS = ["all", "rare", "epic", "legendary", "mythic"];
 
@@ -203,19 +203,19 @@ function ShopPage(props) {
       )}
 
       {tab === "boosts" && freeze && (
-        <section className="shop-section" aria-label="Streak freeze">
+        <section className="shop-section" aria-label="Ritzz freeze">
           <div className="coin-card freeze-card">
             <span className="freeze-icon" aria-hidden="true">
               <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2v20M4 7l16 10M20 7 4 17" /></svg>
             </span>
             <div className="freeze-text">
-              <h2 className="pixel-heading">Streak freeze</h2>
-              <p className="coin-muted">If you miss a day, a freeze is used automatically and your streak keeps going. You can hold {freeze.max}.</p>
+              <h2 className="pixel-heading">Ritzz freeze</h2>
+              <p className="coin-muted">If you miss a day, a freeze is used automatically and your Ritzz keeps going. You can hold {freeze.max}.</p>
               <p className="coin-small">You have <b>{freeze.owned}</b> of {freeze.max}.</p>
             </div>
             <button type="button" className="coin-btn coin-btn-primary"
               disabled={busy === "streak_freeze" || freeze.owned >= freeze.max || balance < freeze.price}
-              onClick={() => buySimple("streak_freeze", "Streak freeze")}>
+              onClick={() => buySimple("streak_freeze", "Ritzz freeze")}>
               {freeze.owned >= freeze.max ? "Full" : <>Buy for <CoinIcon size={14} className="coin-icon-on-green" /> {freeze.price}</>}
             </button>
           </div>
@@ -250,13 +250,13 @@ function MythicCard({ item, shop, myAvatar, onOpen }) {
           {item.owned ? `Your Mythic #${String(shop.mythic.edition || 0).padStart(3, "0")}` : "Mythic · one of one"}
         </span>
         <span className="coin-small">
-          {item.owned ? "Made only for you. Tap to wear it." : "A look made only for you. Unlocks at a 30-day streak."}
+          {item.owned ? "Made only for you. Tap to wear it." : "A look made only for you. Unlocks at a 30-day Ritzz."}
         </span>
         {!item.owned && (
           <>
             <span className="coin-meter-track is-mythic"><span style={{ width: `${progress * 100}%` }} /></span>
             <span className="coin-muted coin-small">
-              Longest streak {shop.longestStreak} / {item.requiresStreak} days · <CoinIcon size={12} /> {item.price} ·{" "}
+              Longest Ritzz {shop.longestStreak} / {item.requiresStreak} days · <CoinIcon size={12} /> {item.price} ·{" "}
               {soldOut ? "Sold out" : `${shop.mythic.limit - shop.mythic.sold} of ${shop.mythic.limit} left`}
             </span>
           </>
