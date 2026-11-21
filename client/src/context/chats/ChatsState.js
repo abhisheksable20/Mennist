@@ -263,10 +263,27 @@ const ChatsState = (props) => {
 
         const keys = await db.keys.get("user-keypair");
 
-        const { data: att } = await axios.get(`${API}/chats/user-chat/attachment`, {
-            params: { chatId: chat.chatId, messageId: chat.firebaseId },
-            withCredentials: true
-        });
+        let att;
+        try {
+            ({ data: att } = await axios.get(`${API}/chats/user-chat/attachment`, {
+                params: { chatId: chat.chatId, messageId: chat.firebaseId },
+                withCredentials: true
+            }));
+        }
+        catch (fetchErr) {
+            // Already downloaded (and deleted) or expired: stop offering the download
+            if (fetchErr.response?.status === 404) {
+                const gonePatch = { gone: true };
+                if (chat.id !== undefined) await db.chats.update(chat.id, gonePatch);
+                setUserMessages(prev =>
+                    prev.map(message => message.firebaseId === chat.firebaseId ? { ...message, ...gonePatch } : message)
+                );
+                const goneErr = new Error("This file is no longer available.");
+                goneErr.name = "GoneError";
+                throw goneErr;
+            }
+            throw fetchErr;
+        }
 
         // The sender is the untrusted party: re-validate everything they supplied
         const metaError = validateIncomingMeta(att.name, att.type, att.size);
@@ -328,9 +345,11 @@ const ChatsState = (props) => {
 
         const keepLocal = !!blob && att.size <= BIG_FILE;   // small: keep a copy in Dexie
         const savedToDisk = !!fileHandle;                   // big + picker: it's on disk now
+        // Anything not kept in IndexedDB has been written to disk or handed to the
+        // browser's download, and the server copy is deleted below: mark it saved
         const patch = keepLocal
             ? { imageBlob: blob, downloaded: true }
-            : { downloaded: true, ...(savedToDisk ? { savedToDisk: true } : {}) };
+            : { downloaded: true, savedToDisk: true };
 
         // 1) local save first
         if (chat.id !== undefined)

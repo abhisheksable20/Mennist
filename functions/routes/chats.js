@@ -439,7 +439,20 @@ router.get("/user-chat/attachment", isLoggedIn, chatReadLimiter, async (req, res
 
     // New style: file is in Cloud Storage
     if (attachment.storage) {
-      const [downloadUrl] = await getBucket().file(objectPath(userId, otherUserId, attachmentId)).getSignedUrl({
+      const file = getBucket().file(objectPath(userId, otherUserId, attachmentId));
+      // File already removed from Storage: clean up the message and say it's gone,
+      // instead of handing out a link that fails halfway through the download
+      const [fileExists] = await file.exists();
+      if (!fileExists) {
+        await db.ref().update({
+          [`${conversationPath}/messages/${messageId}`]: null,
+          [`${conversationPath}/attachments/${attachmentId}`]: null,
+          [`attachmentIndex/${attachmentId}`]: null,
+        });
+        return res.status(404).send({error: "This file is no longer available.", code: "ATTACHMENT_GONE"});
+      }
+
+      const [downloadUrl] = await file.getSignedUrl({
         version: "v4",
         action: "read",
         expires: Date.now() + 2 * 60 * 60 * 1000, // a 1 GB download can take a while

@@ -342,6 +342,13 @@ function ConversationPage(props) {
         return;
       }
 
+      if (error.name === "GoneError") {
+        // Not a failure to retry: the file isn't on the server any more
+        setStatus(messageId, null);
+        setAttachmentError(error.message);
+        return;
+      }
+
       console.error("Unable to download attachment:", error);
       setStatus(messageId, "failed");
       setAttachmentError(error.message || "Couldn't download the file.");

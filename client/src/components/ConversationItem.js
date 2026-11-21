@@ -30,7 +30,9 @@ const CheckIcon = () => (
 );
 
 function ConversationItem(props) {
-  const { fromMe, plainMsg, timestamp, type, imageBlob, status, progress, fileSize, savedToDisk } = props.chat;
+  const { fromMe, plainMsg, timestamp, type, imageBlob, status, progress, fileSize, downloaded, gone } = props.chat;
+  // Downloaded without a local copy = it went to the device (older records lack savedToDisk)
+  const savedToDisk = props.chat.savedToDisk || (!fromMe && downloaded && !imageBlob);
   const { fileDownload, downloadStatus, downloadProgress } = props;
 
   const isAttachment = isAttachmentType(type);
@@ -41,7 +43,7 @@ function ConversationItem(props) {
   // Can the user get the file right now?
   // - a local copy exists (small file / own upload), or
   // - it is an incoming file that is still on the server
-  const canDownload = !!imageBlob || (!fromMe && !savedToDisk);
+  const canDownload = !!imageBlob || (!fromMe && !savedToDisk && !gone);
 
   const imageUrl = useMemo(() => {
     if (!showImage)
@@ -69,6 +71,7 @@ function ConversationItem(props) {
       downloadStatus === "failed" ? "Download failed. Tap to retry" :
         isUploading && progress != null ? `Uploading ${progress}%` :
           savedToDisk ? "Saved to your device" :
+            gone && !imageBlob ? "No longer available" :
             fileSize ? formatFileSize(fileSize) : "";
 
   return (
