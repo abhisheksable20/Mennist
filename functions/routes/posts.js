@@ -361,7 +361,21 @@ router.post("/report", isLoggedIn, reportLimiter, validate(reportValidation), as
       kind = "echoes";
       recieverUserId = echoOwnerSnap.val();
     } else {
-      return res.status(404).send({error: "Post not found."});
+      // Echo matched before echoFeed existed: the form sends the echo owner's
+      // chatId. Trust it only if that user really has an echo with this id.
+      let claimed = null;
+      try {
+        claimed = jwt.verify(postOwnerChatId, process.env.JWT_SECRET_KEY);
+      } catch (tokenErr) {
+        claimed = null;
+      }
+      const echoExists = typeof claimed === "string" && claimed &&
+        (await db.ref(`echoes/${claimed}/${postId}/timestamp`).get()).exists();
+      if (!echoExists) {
+        return res.status(404).send({error: "Post not found."});
+      }
+      kind = "echoes";
+      recieverUserId = claimed;
     }
 
     const reportData = {
