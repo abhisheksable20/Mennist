@@ -171,6 +171,9 @@ function WalletPage(props) {
               : s.current > 0 ? "Post today to keep your Ritzz." : "Post today to start your Ritzz."}
             {" "}<b className="text-gold">+{s.next.reward} coins</b> at {s.next.day} days.
           </p>
+          {s.current > 0 && (
+            <Link to="/ritzz/share" className="coin-btn coin-btn-primary">Share my Ritzz</Link>
+          )}
           {s.freezes < 2 && (
             <Link to="/coins/shop#boosts" className="coin-btn coin-btn-link coin-btn-left">Get a Ritzz freeze</Link>
           )}

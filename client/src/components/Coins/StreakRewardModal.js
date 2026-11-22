@@ -73,7 +73,10 @@ export default function StreakRewardModal() {
           </p>
         )}
 
-        <button type="button" className="coin-btn coin-btn-primary coin-btn-block" onClick={closeReward}>Nice!</button>
+        <button type="button" className="coin-btn coin-btn-primary coin-btn-block" onClick={() => { closeReward(); navigate("/ritzz/share"); }}>
+          Share my Ritzz
+        </button>
+        <button type="button" className="coin-btn coin-btn-ghost coin-btn-block" onClick={closeReward}>Nice!</button>
         <button type="button" className="coin-btn coin-btn-link" onClick={() => { closeReward(); navigate("/coins/shop"); }}>
           Spend coins in the shop
         </button>

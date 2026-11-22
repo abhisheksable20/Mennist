@@ -30,6 +30,7 @@ const PageNotFound = lazy(() => import('./components/utils/PageNotFound'));
 const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
 const WalletPage = lazy(() => import('./components/Coins/WalletPage'));
 const ShopPage = lazy(() => import('./components/Coins/ShopPage'));
+const ShareRitzzPage = lazy(() => import('./components/Coins/ShareRitzzPage'));
 
 function Layout(props) {
   const location = useLocation();
@@ -103,6 +104,7 @@ function App() {
                 <Route path='/veil' element={<VeilProfile alert={showAlert} />} />
                 <Route path='/coins' element={<WalletPage alert={showAlert} />} />
                 <Route path='/coins/shop' element={<ShopPage alert={showAlert} />} />
+                <Route path='/ritzz/share' element={<ShareRitzzPage alert={showAlert} />} />
               </Route>
             </Routes>
           </Suspense>

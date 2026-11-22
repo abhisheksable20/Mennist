@@ -991,3 +991,16 @@
         margin-top: 0;
     }
 }
+
+/* ---------- Share your Ritzz ---------- */
+.ritzz-share { max-width: 480px; align-items: center; }
+.ritzz-share .coin-page-header { align-self: stretch; }
+.ritzz-share-card {
+    display: block;
+    height: auto;
+    border-radius: 14px;
+    border: 1px solid var(--coin-border);
+    background: var(--coin-bg);
+}
+.ritzz-share-note { margin: 0; text-align: center; }
+.ritzz-share-actions { align-self: stretch; display: flex; flex-direction: column; gap: 10px; }
