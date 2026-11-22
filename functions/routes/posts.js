@@ -6,7 +6,7 @@ const {isLoggedIn} = require("../middleware/authenticUser");
 const {publicReadLimiter, globalLimiter, postLimiter, dailyAiLimiter, vibeLimiter, reportLimiter} = require("../middleware/rateLimiter");
 const {validate} = require("express-validation");
 const {postValidation, reportValidation, vibeCheckValidation} = require("../validators/postValidator");
-const {postFetching, parseEndAt} = require("../dataProcessing/postsProcessing");
+const {postFetching, parseEndAt, toCardPost} = require("../dataProcessing/postsProcessing");
 const {recordDailyPost, ownsUnlock} = require("../coins/coinService");
 const {GoogleGenAI} = require("@google/genai");
 const {getFunctions} = require("firebase-admin/functions");
@@ -97,19 +97,7 @@ router.get("/suggestPost/:category", isLoggedIn, globalLimiter, async (req, res)
     const data = [];
 
     snapshot.forEach((child) => {
-      const post = child.val();
-      delete post.postActions;
-      delete post.category;
-      delete post.vibeCheck;
-
-      data.push({
-        id: child.key,
-        ...post,
-        content:
-          post.content && post.content.length > 100 ?
-            post.content.substring(0, 100) + "..." :
-            post.content,
-      });
+      data.push(toCardPost(child.key, child.val()));
     });
 
     return res.status(200).send(data);

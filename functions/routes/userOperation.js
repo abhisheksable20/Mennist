@@ -2,7 +2,7 @@ const express = require("express");
 const admin = require("firebase-admin");
 const {authUser, isLoggedIn, issueSession, chatIdFor, forgetSession} = require("../middleware/authenticUser");
 const {verifyChallenge} = require("../auth/keyLogin");
-const {postFetching: fetchPosts, parseEndAt} = require("../dataProcessing/postsProcessing");
+const {postFetching: fetchPosts, parseEndAt, toCardPost} = require("../dataProcessing/postsProcessing");
 const {signupLimiter, loginLimiter, globalLimiter, sensitiveLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
 const {DEFAULT_AVATAR, validateAvatar, avatarTier} = require("../validators/avatarValidator");
 const jwt = require("jsonwebtoken");
@@ -199,6 +199,10 @@ router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
   try {
     const ref = db.ref(`/users/${userId}/posts`);
     const data = await fetchPosts(ref, endAt, retrieveLimit);
+
+    // The profile copies hold no stats: read each live post (one page, in parallel)
+    const live = await Promise.all(data.postsData.map((post) => db.ref(`posts/${post.id}`).get()));
+    data.postsData = live.map((snap, i) => snap.exists() ? toCardPost(snap.key, snap.val()) : data.postsData[i]);
 
     return res.status(200).send(data);
   } catch (userPostError) {

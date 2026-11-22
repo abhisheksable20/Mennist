@@ -1,47 +1,71 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { convertTimestampToReadable } from '../dataProcessing/dataProcessing';
 
-function PostItem(props) {
-  const navigate = useNavigate();
+// Keys match the lowercase categories the server stores
+const CATEGORY_COLORS = {
+  love: "#E87991",
+  friendship: "#E5A04B",
+  family: "#C49A6C",
+  education: "#60A5FA",
+  career: "#818CF8",
+  finance: "#34B88A",
+  "mental health": "#A78BFA",
+  technology: "#38BDF8",
+  gaming: "#A3A3E8",
+  entertainment: "#D68BC5",
+  politics: "#94A3B8",
+  health: "#4DB6AC",
+  confession: "#D97777",
+  motivation: "#D4AD55",
+  other: "#A1A1AA",
+};
 
-  const { id,
-    title,
-    content,
-    timestamp,
-    isAdult = false } = props.post || {};
+const compact = new Intl.NumberFormat("en", { notation: "compact" });
+
+const Stat = ({ label, value, path }) => (
+  <span className="post-stat" aria-label={`${value} ${label}`}>
+    <svg viewBox="0 0 24 24" aria-hidden="true">{path}</svg>
+    {compact.format(value)}
+  </span>
+);
+
+function PostItem({ post }) {
+  const navigate = useNavigate();
+  const { id, title, content, timestamp, isAdult = false, category, stats } = post || {};
+  const categoryName = category || "other";
+  const color = CATEGORY_COLORS[categoryName.toLowerCase()] || CATEGORY_COLORS.other;
 
   return (
     <div className="col-12 col-md-6 col-lg-4">
       <div
-        className={`card h-100 ${isAdult ? "adult-card" : ""}`}
+        className={`card post-card h-100 ${isAdult ? "adult-card" : ""}`}
         onClick={() => navigate(`/post/${id}`)}>
-        {isAdult && (
-          <span className="badge text-bg-danger">
-            18+
-          </span>
-        )}
+        {isAdult && <span className="badge text-bg-danger">18+</span>}
 
-        <div className="card-body d-flex flex-column">
-          {/* Green dash */}
-          <div className="card-accent mt-2" />
-
-          {/* Title & Content */}
-          <h5 className="card-title mt-1">{title}</h5>
-          <p className="card-text">{content}</p>
-
-          {/* Footer */}
-          <div className='d-flex justify-content-between mt-auto'>
-            {/* Display date when the post was uploaded */}
-            <p className="card-text my-1"><small className="text-body-secondary">{convertTimestampToReadable(timestamp)}</small></p>
-            {/* Read more link with icon animation */}
-            <Link className="icon-link icon-link-hover" to={`/post/${id}`}>
-              Read More
-              <svg xmlns="http://www.w3.org/2000/svg" className="bi" viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
-              </svg>
-            </Link>
+        <div className="card-body d-flex flex-column gap-2">
+          <div className="d-flex justify-content-between align-items-center">
+            <span className="post-category" style={{ color }}>{categoryName}</span>
+            <small className="post-meta">{convertTimestampToReadable(timestamp)}</small>
           </div>
 
+          <h5 className="card-title mb-0">
+            <Link to={`/post/${id}`}>{title}</Link>
+          </h5>
+          <p className="card-text post-excerpt mb-0">{content}</p>
+
+          {stats && (
+            <div className="post-footer mt-auto">
+              <small className="post-meta">
+                {stats.topVibe ? `Mostly ${stats.topVibe}` : "No vibe checks yet"}
+              </small>
+              <div className="d-flex gap-3 ms-auto">
+                <Stat label="views" value={stats.views}
+                  path={<><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></>} />
+                <Stat label="chats" value={stats.chats}
+                  path={<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 20l1.1-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
