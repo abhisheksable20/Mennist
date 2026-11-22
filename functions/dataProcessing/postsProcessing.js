@@ -9,35 +9,29 @@ const parseEndAt = (value) => {
 
 // Shape a post for a feed card: only the fields a card shows, so private
 // fields (author ids, chat ids) never leave the server. Stats come from the
-// post node itself, so the client needs no extra request per card. A profile
-// copy (users/{uid}/posts) has no category or counters, so it gets no stats.
+// post node itself, so the client needs no extra request per card.
 const toCardPost = (id, post) => {
   const {title, content, timestamp, isAdult, category, vibeCheck, postActions} = post;
-  const card = {
+
+  let topVibe = null;
+  for (const vibe in vibeCheck) {
+    if (!topVibe || vibeCheck[vibe] > vibeCheck[topVibe]) topVibe = vibe;
+  }
+
+  const actions = postActions || {};
+  return {
     id,
     title,
     timestamp,
     isAdult,
+    category,
     content: content && content.length > 100 ? content.substring(0, 100) + "..." : content,
-  };
-
-  if (category) {
-    let topVibe = null;
-    for (const vibe in vibeCheck) {
-      if (!topVibe || vibeCheck[vibe] > vibeCheck[topVibe]) topVibe = vibe;
-    }
-
-    const actions = postActions || {};
-    card.category = category;
-    card.stats = {
+    stats: {
       topVibe,
       views: actions.postViews || 0,
       chats: actions.postChats || 0,
-      saves: actions.postSaved || 0,
-    };
-  }
-
-  return card;
+    },
+  };
 };
 
 // Fetch the global and user posts according to the ref

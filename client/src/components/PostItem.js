@@ -32,7 +32,8 @@ const Stat = ({ label, value, path }) => (
 function PostItem({ post }) {
   const navigate = useNavigate();
   const { id, title, content, timestamp, isAdult = false, category, stats } = post || {};
-  const color = category && (CATEGORY_COLORS[category.toLowerCase()] || CATEGORY_COLORS.other);
+  const categoryName = category || "other";
+  const color = CATEGORY_COLORS[categoryName.toLowerCase()] || CATEGORY_COLORS.other;
 
   return (
     <div className="col-12 col-md-6 col-lg-4">
@@ -43,10 +44,8 @@ function PostItem({ post }) {
 
         <div className="card-body d-flex flex-column gap-2">
           <div className="d-flex justify-content-between align-items-center">
-            {category && (
-              <span className="post-category" style={{ color }}>{category}</span>
-            )}
-            <small className="post-meta ms-auto">{convertTimestampToReadable(timestamp)}</small>
+            <span className="post-category" style={{ color }}>{categoryName}</span>
+            <small className="post-meta">{convertTimestampToReadable(timestamp)}</small>
           </div>
 
           <h5 className="card-title mb-0">
@@ -64,8 +63,6 @@ function PostItem({ post }) {
                   path={<><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></>} />
                 <Stat label="chats" value={stats.chats}
                   path={<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 20l1.1-4.6A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z" />} />
-                <Stat label="saves" value={stats.saves}
-                  path={<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />} />
               </div>
             </div>
           )}
