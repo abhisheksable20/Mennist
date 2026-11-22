@@ -7,6 +7,39 @@ const parseEndAt = (value) => {
   return Math.min(Math.max(n, 0), Date.now() + 60000);
 };
 
+// Shape a post for a feed card: only the fields a card shows, so private
+// fields (author ids, chat ids) never leave the server. Stats come from the
+// post node itself, so the client needs no extra request per card. A profile
+// copy (users/{uid}/posts) has no category or counters, so it gets no stats.
+const toCardPost = (id, post) => {
+  const {title, content, timestamp, isAdult, category, vibeCheck, postActions} = post;
+  const card = {
+    id,
+    title,
+    timestamp,
+    isAdult,
+    content: content && content.length > 100 ? content.substring(0, 100) + "..." : content,
+  };
+
+  if (category) {
+    let topVibe = null;
+    for (const vibe in vibeCheck) {
+      if (!topVibe || vibeCheck[vibe] > vibeCheck[topVibe]) topVibe = vibe;
+    }
+
+    const actions = postActions || {};
+    card.category = category;
+    card.stats = {
+      topVibe,
+      views: actions.postViews || 0,
+      chats: actions.postChats || 0,
+      saves: actions.postSaved || 0,
+    };
+  }
+
+  return card;
+};
+
 // Fetch the global and user posts according to the ref
 const postFetching = async (ref, endAt, limitToLast) => {
   const snapshot = await ref
@@ -25,18 +58,7 @@ const postFetching = async (ref, endAt, limitToLast) => {
   }
 
   snapshot.forEach((child) => {
-    const post = child.val();
-    delete post.postActions;
-    delete post.category;
-
-    data.push({
-      id: child.key,
-      ...post,
-      content:
-        post.content && post.content.length > 100 ?
-          post.content.substring(0, 100) + "..." :
-          post.content,
-    });
+    data.push(toCardPost(child.key, child.val()));
   });
 
   const filteredData = data.reverse();
@@ -82,4 +104,4 @@ const userEchoesFetching = async (ref, endAt, limitToLast) => {
   return echoData;
 };
 
-module.exports = {postFetching, userEchoesFetching, parseEndAt};
+module.exports = {postFetching, userEchoesFetching, parseEndAt, toCardPost};
