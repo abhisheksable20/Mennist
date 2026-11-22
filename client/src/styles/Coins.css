@@ -426,6 +426,8 @@
 .wallet-streak-head { display: flex; align-items: center; gap: 12px; }
 .wallet-streak-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .wallet-streak-text h2 { margin: 0; font-family: var(--font-head); font-size: 20px; font-weight: 700; }
+.wallet-streak-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.wallet-streak-actions:empty { display: none; }
 
 .freeze-chip {
     display: inline-flex;

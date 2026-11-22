@@ -171,12 +171,17 @@ function WalletPage(props) {
               : s.current > 0 ? "Post today to keep your Ritzz." : "Post today to start your Ritzz."}
             {" "}<b className="text-gold">+{s.next.reward} coins</b> at {s.next.day} days.
           </p>
-          {s.current > 0 && (
-            <Link to="/ritzz/share" className="coin-btn coin-btn-primary">Share my Ritzz</Link>
-          )}
-          {s.freezes < 2 && (
-            <Link to="/coins/shop#boosts" className="coin-btn coin-btn-link coin-btn-left">Get a Ritzz freeze</Link>
-          )}
+          <div className="wallet-streak-actions">
+            {s.current > 0 && (
+              <Link to="/ritzz/share" className="coin-btn coin-btn-ghost">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12" /><path d="M7 8l5-5 5 5" /><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" /></svg>
+                Share my Ritzz
+              </Link>
+            )}
+            {s.freezes < 2 && (
+              <Link to="/coins/shop#boosts" className="coin-btn coin-btn-link">Get a Ritzz freeze</Link>
+            )}
+          </div>
         </section>
       </div>
 
