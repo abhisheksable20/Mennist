@@ -996,7 +996,7 @@
 
 /* ---------- Share your Ritzz ---------- */
 .ritzz-share { max-width: 480px; align-items: center; }
-.ritzz-share .coin-page-header { align-self: stretch; }
+.ritzz-share .coin-page-header { text-align: center; }
 .ritzz-share-card {
     display: block;
     height: auto;
