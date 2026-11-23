@@ -16,7 +16,13 @@ const TYPES = [
   },
   {
     id: 1, name: "Echo", desc: "Share a dream or thought. Find your twin.",
-    icon: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5.5" /><circle cx="12" cy="12" r="2" fill="currentColor" /></>,
+    // Mennist's Echo icon (assets/echo_svg.svg), drawn in currentColor so it follows the card state
+    icon: <>
+      <circle cx="12" cy="12" r="1.33" fill="currentColor" stroke="none" />
+      <path d="M15.834 11.972 14.561 9.111 11.984 7.981 9.472 9.082 8.166 11.882 9.372 14.858 11.983 16.021 14.596 14.858Z" />
+      <path d="M19.155 11.946 16.782 6.607 11.97 4.495 7.279 6.549 4.843 11.777 7.093 17.337 11.97 19.505 16.846 17.337Z" />
+      <path d="M22.402 11.921 18.953 4.16 11.957 1.093 5.139 4.077 1.597 11.675 4.868 19.756 11.957 22.909 19.041 19.756Z" />
+    </>,
   },
 ];
 
