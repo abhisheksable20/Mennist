@@ -1,0 +1,153 @@
+/* ---------- New post page (Vibe / Echo composer) ---------- */
+.composer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    color: #FAFAFA;
+    font-family: "Open Sans", sans-serif;
+}
+
+.composer-heading { display: flex; flex-direction: column; gap: 6px; }
+.composer-eyebrow { font-family: "Silkscreen", monospace; font-size: 12px; letter-spacing: 1px; color: #22C55E; }
+.composer-heading h1 { margin: 0; font-family: "Poppins", sans-serif; font-weight: 700; font-size: 32px; line-height: 1.15; }
+.composer-heading p { margin: 0; font-size: 15px; color: #A3A3A3; }
+
+/* Vibe / Echo choice */
+.composer-types { display: flex; flex-wrap: wrap; gap: 12px; }
+.composer-type {
+    flex: 1 1 240px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid #2E2E2E;
+    background: #171717;
+    color: #D4D4D4;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+}
+.composer-type:hover { border-color: #3A3A3A; }
+.composer-type[aria-pressed="true"] { background: #0F2418; border-color: #22C55E; }
+.composer-type:focus-visible { outline: 2px solid #FAFAFA; outline-offset: 2px; }
+.composer-type-icon {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #262626;
+}
+.composer-type[aria-pressed="true"] .composer-type-icon { background: #22C55E; color: #0D0D0D; }
+.composer-type-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.composer-type-text strong { font-family: "Poppins", sans-serif; font-weight: 600; font-size: 16px; color: #FAFAFA; }
+.composer-type-text span { font-size: 13px; line-height: 1.45; color: #A3A3A3; }
+
+/* Writing card */
+.composer-card { background: #171717; border: 1px solid #2E2E2E; border-radius: 16px; overflow: hidden; }
+.composer-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #2E2E2E;
+}
+.composer-who { display: flex; align-items: center; gap: 10px; }
+.composer-who svg, .composer-avatar-slot { width: 36px; height: 36px; border-radius: 10px; background: #262626; flex: none; }
+.composer-who div { display: flex; flex-direction: column; }
+.composer-who strong { font-size: 14px; }
+.composer-who span { font-size: 12px; color: #A3A3A3; }
+.composer-ritzz-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid #5A3418;
+    background: #1F1209;
+    color: #FF9A4D;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.composer-echo-note {
+    margin: 0;
+    padding: 12px 18px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #D4D4D4;
+    background: #12301D;
+    border-bottom: 1px solid #1E4A2E;
+}
+
+.composer-fields { padding: 18px 18px 6px; display: flex; flex-direction: column; gap: 14px; }
+.composer-field { display: flex; flex-direction: column; gap: 6px; }
+.composer-field label { font-size: 13px; font-weight: 600; color: #D4D4D4; }
+.composer-title, .composer-body {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0D0D0D;
+    border: 1px solid #2E2E2E;
+    border-radius: 10px;
+    color: #FAFAFA;
+    transition: border-color .15s;
+}
+.composer-title { height: 48px; padding: 0 14px; font-family: "Poppins", sans-serif; font-weight: 600; font-size: 17px; }
+.composer-body { min-height: 240px; padding: 14px; resize: none; overflow-y: hidden; font-family: "Open Sans", sans-serif; font-size: 16px; line-height: 1.6; }
+.composer-title::placeholder, .composer-body::placeholder { color: #8A8A8A; font-weight: 400; }
+.composer-title:focus, .composer-body:focus { outline: none; border-color: #22C55E; }
+
+.composer-foot {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 14px 18px;
+    border-top: 1px solid #2E2E2E;
+    background: #141414;
+}
+.composer-foot-text { flex: 999 1 260px; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.composer-ritzz { display: flex; align-items: center; gap: 6px; color: #FF9A4D; }
+.composer-ritzz.is-done { color: #22C55E; font-weight: 600; }
+.composer-status { color: #A3A3A3; }
+
+/* Grows to full width only when it wraps onto its own line (phones) */
+.composer-post {
+    flex: 1 0 auto;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 12px;
+    border: 1px solid #22C55E;
+    background: #22C55E;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(34, 197, 94, .25);
+    transition: background-color .15s;
+}
+.composer-post:hover:not(:disabled) { background: #16A34A; border-color: #16A34A; }
+.composer-post:focus-visible { outline: 2px solid #FAFAFA; outline-offset: 2px; }
+.composer-post:disabled { background: #262626; border-color: #333333; color: #8A8A8A; box-shadow: none; cursor: not-allowed; }
+
+.composer-rules { margin: 0; display: flex; gap: 8px; font-size: 13px; line-height: 1.5; color: #A3A3A3; }
+.composer-rules svg { flex: none; margin-top: 2px; }
+
+@media (max-width: 600px) {
+    .composer { padding-top: 28px; }
+    .composer-heading { align-items: center; text-align: center; }
+    .composer-heading h1 { font-size: 28px; }
+}
