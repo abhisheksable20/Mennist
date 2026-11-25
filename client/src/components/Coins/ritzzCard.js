@@ -100,7 +100,7 @@ function footer(ctx, w, h, pad, cta, invite) {
   ctx.roundRect(pad, y + 44, w - pad * 2, 52, 12);
   ctx.fill();
   font(ctx, "600 17px 'Poppins', sans-serif");
-  ctx.fillStyle = "#0D0D0D";
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillText(invite ? `mennist.com/i/${invite.code}` : "mennist.com", w / 2, y + 76);
   ctx.textAlign = "left";
 }
