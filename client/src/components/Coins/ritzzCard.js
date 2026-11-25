@@ -99,9 +99,9 @@ function footer(ctx, w, h, pad, cta, invite) {
   ctx.beginPath();
   ctx.roundRect(pad, y + 44, w - pad * 2, 52, 12);
   ctx.fill();
-  font(ctx, `17px ${PIXEL}`);
+  font(ctx, "600 17px 'Poppins', sans-serif");
   ctx.fillStyle = "#0D0D0D";
-  ctx.fillText(invite ? `mennist.com/i/${invite.code}` : "mennist.com", w / 2, y + 70 + 17 * CAP / 2);
+  ctx.fillText(invite ? `mennist.com/i/${invite.code}` : "mennist.com", w / 2, y + 76);
   ctx.textAlign = "left";
 }
 
@@ -125,7 +125,7 @@ export async function loadAvatarImage(svgEl, px) {
 }
 
 export const loadCardFonts = () => Promise.all([
-  `700 40px ${PIXEL}`, `40px ${PIXEL}`, "700 17px 'Open Sans'", "14px 'Open Sans'",
+  `700 40px ${PIXEL}`, `40px ${PIXEL}`, "700 17px 'Open Sans'", "14px 'Open Sans'", "600 17px 'Poppins'",
 ].map((f) => document.fonts.load(f))).catch(() => {});
 
 // Draws at 2x (1080 px wide) so the PNG is sharp on Stories and Status
