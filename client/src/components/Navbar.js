@@ -6,12 +6,15 @@ import MenuCoinsCard from './Coins/MenuCoinsCard';
 import CoinsContext from '../context/coins/CoinsContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
+import { db } from '../internalDatabase/db';
 
 function Navbar(props) {
     const navigate = useNavigate();
     const location = useLocation();
 
     const [moreOpen, setMoreOpen] = useState(false);
+    // Visitors without an account in this browser get no post or notification buttons
+    const [hasAccount, setHasAccount] = useState(false);
     const coins = useContext(CoinsContext);
     const coinsWaiting = coins && coins.wallet ? coins.wallet.transfers.incoming.length : 0;
 
@@ -19,6 +22,7 @@ function Navbar(props) {
 
     useEffect(() => {
         setMoreOpen(false);
+        db.keys.get("user-keypair").then((k) => setHasAccount(!!k?.chatId)).catch(() => {});
     }, [location.pathname]);
 
     const isSubmitPage = location.pathname === '/submit-secret';
@@ -42,7 +46,7 @@ function Navbar(props) {
                     <span className="beta-badge">BETA</span>
                 </span>
 
-                {!isMinimalPage && (
+                {!isMinimalPage && hasAccount && (
                     <div className="navbar-actions">
 
                         <NavCoins />
