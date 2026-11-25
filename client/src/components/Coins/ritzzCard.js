@@ -78,8 +78,9 @@ function progress(ctx, days, x, y, w) {
   ctx.fillText(next ? `${days} / ${next.days} days to ${next.label}` : "Top status reached", x, y + 30);
 }
 
-function footer(ctx, w, h, pad, cta) {
-  const y = h - pad - 48;
+// Heading and line centred over a full-width green button with the user's invite link
+function footer(ctx, w, h, pad, cta, invite) {
+  const y = h - pad - 108;
   ctx.strokeStyle = "#2E2E2E";
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -87,20 +88,21 @@ function footer(ctx, w, h, pad, cta) {
   ctx.lineTo(w - pad, y - 20);
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.textAlign = "center";
   font(ctx, "700 17px 'Open Sans', sans-serif");
   ctx.fillStyle = "#FAFAFA";
-  ctx.fillText(cta, pad, y + 20);
+  ctx.fillText(cta, w / 2, y + 6);
   font(ctx, "14px 'Open Sans', sans-serif");
   ctx.fillStyle = "#A3A3A3";
-  ctx.fillText("Be real. Stay anonymous.", pad, y + 42);
-  font(ctx, `15px ${PIXEL}`);
-  const bw = ctx.measureText("mennist.com").width + 28;
+  ctx.fillText(invite ? `Join with my link and get +${invite.bonus} coins.` : "Be real. Stay anonymous.", w / 2, y + 28);
   ctx.fillStyle = "#22C55E";
   ctx.beginPath();
-  ctx.roundRect(w - pad - bw, y + 4, bw, 44, 10);
+  ctx.roundRect(pad, y + 44, w - pad * 2, 52, 12);
   ctx.fill();
+  font(ctx, `17px ${PIXEL}`);
   ctx.fillStyle = "#0D0D0D";
-  ctx.fillText("mennist.com", w - pad - bw + 14, y + 26 + 15 * CAP / 2);
+  ctx.fillText(invite ? `mennist.com/i/${invite.code}` : "mennist.com", w / 2, y + 70 + 17 * CAP / 2);
+  ctx.textAlign = "left";
 }
 
 function drawAvatar(ctx, img, x, y, size) {
@@ -127,7 +129,8 @@ export const loadCardFonts = () => Promise.all([
 ].map((f) => document.fonts.load(f))).catch(() => {});
 
 // Draws at 2x (1080 px wide) so the PNG is sharp on Stories and Status
-export function drawRitzzCard(canvas, { days, format, avatar }) {
+// invite: { code, bonus } puts the user's invite link on the card
+export function drawRitzzCard(canvas, { days, format, avatar, invite }) {
   const [w, h] = CARD_SIZES[format];
   canvas.width = w * 2;
   canvas.height = h * 2;
@@ -176,5 +179,5 @@ export function drawRitzzCard(canvas, { days, format, avatar }) {
     progress(ctx, days, x, 292, w - pad - x);
   }
 
-  footer(ctx, w, h, pad, days >= 30 ? `Can you beat ${days}?` : "Start your own Ritzz");
+  footer(ctx, w, h, pad, days >= 30 ? `Can you beat ${days}?` : "Start your own Ritzz", invite);
 }

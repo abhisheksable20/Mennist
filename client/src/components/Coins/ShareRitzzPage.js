@@ -4,6 +4,7 @@ import CoinsContext from "../../context/coins/CoinsContext";
 import Avatar from "../Avatar/Avatar";
 import useMyAvatar from "./useMyAvatar";
 import { drawRitzzCard, loadAvatarImage, loadCardFonts, CARD_SIZES } from "./ritzzCard";
+import { fetchInvites } from "./coinApi";
 import "../../styles/Coins.css";
 
 const canShareFiles = () => {
@@ -20,6 +21,8 @@ export default function ShareRitzzPage(props) {
   const [avatar] = useMyAvatar();
   const [format, setFormat] = useState("story");
   const [busy, setBusy] = useState(false);
+  // undefined while loading, null if it couldn't load (the card then links to mennist.com)
+  const [invite, setInvite] = useState();
   const canvasRef = useRef(null);
   const avatarRef = useRef(null);
   const days = wallet ? wallet.streak.current : 0;
@@ -27,19 +30,20 @@ export default function ShareRitzzPage(props) {
   useEffect(() => {
     document.title = "Mennist | Share your Ritzz";
     refreshWallet();
+    fetchInvites().then((i) => setInvite({ code: i.code, bonus: i.friendBonus }), () => setInvite(null));
   }, [refreshWallet]);
 
   // Redraw when the format, Ritzz or avatar changes; ignore a draw that a newer one replaced
   useEffect(() => {
-    if (!days || !avatar) return;
+    if (!days || !avatar || invite === undefined) return;
     let current = true;
     (async () => {
       const px = format === "story" ? 440 : 120;
       const [img] = await Promise.all([loadAvatarImage(avatarRef.current?.querySelector("svg"), px), loadCardFonts()]);
-      if (current && canvasRef.current) drawRitzzCard(canvasRef.current, { days, format, avatar: img });
+      if (current && canvasRef.current) drawRitzzCard(canvasRef.current, { days, format, avatar: img, invite });
     })();
     return () => { current = false; };
-  }, [days, format, avatar]);
+  }, [days, format, avatar, invite]);
 
   const toFile = () => new Promise((resolve, reject) => canvasRef.current.toBlob((blob) => (
     blob ? resolve(new File([blob], `mennist-ritzz-${days}.png`, { type: "image/png" })) : reject(new Error("No image"))
@@ -56,7 +60,7 @@ export default function ShareRitzzPage(props) {
     }
   };
 
-  const share = (file) => navigator.share({ files: [file], text: `My ${days}-day Ritzz on Mennist. Be real. Stay anonymous. https://mennist.com` });
+  const share = (file) => navigator.share({ files: [file], text: `My ${days}-day Ritzz on Mennist. Be real. Stay anonymous. https://mennist.com${invite ? `/i/${invite.code}` : ""}` });
 
   const save = (file) => {
     const url = URL.createObjectURL(file);
