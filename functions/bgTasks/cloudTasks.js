@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const {settleRematch} = require("../coins/coinService");
 const {keyHash} = require("../auth/keyLogin");
+const cfg = require("../config/coins");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -38,11 +39,12 @@ async (request) => {
   const {userId, sessionId} = request.data;
 
   try {
-    const [userPostsSnapshot, keySnapshot, recoverySnapshot, echoesSnapshot] = await Promise.all([
+    const [userPostsSnapshot, keySnapshot, recoverySnapshot, echoesSnapshot, inviteCodeSnapshot] = await Promise.all([
       db.ref(`users/${userId}/posts`).get(),
       db.ref(`users/${userId}/userDetail/publicKey`).get(),
       db.ref(`users/${userId}/recovery/hash`).get(),
       db.ref(`echoes/${userId}`).get(),
+      db.ref(`invites/${userId}/code`).get(),
     ]);
 
     const updates = {
@@ -56,7 +58,13 @@ async (request) => {
       [`coinLedger/${userId}`]: null,
       [`coinChat/${userId}`]: null,
       [`chatOpen/${userId}`]: null,
+      [`invites/${userId}`]: null,
     };
+
+    // Their invite link stops working
+    if (inviteCodeSnapshot.exists()) {
+      updates[`inviteCodes/${inviteCodeSnapshot.val()}`] = null;
+    }
 
     // The public key -> account entry, so the key can't point at a deleted account
     if (keySnapshot.exists()) {
@@ -281,7 +289,7 @@ exports.processNotification = onTaskDispatched({
   }
 
   // System notifications have no actor
-  const systemTypes = ["echoMatch", "streakReminder"];
+  const systemTypes = ["echoMatch", "streakReminder", "inviteReward"];
   if (!systemTypes.includes(type) && (!actorId || userId === actorId)) {
     return;
   }
@@ -314,6 +322,10 @@ exports.processNotification = onTaskDispatched({
       message: amount ?
         `Someone sent you ${amount} Sakesnake Coins. Accept or decline within 48 hours.` :
         "Someone sent you Sakesnake Coins.",
+    },
+    inviteReward: {
+      title: "Your invite paid off",
+      message: `A friend you invited kept a ${cfg.INVITE_REWARD_STREAK}-day Ritzz. You got ${amount || cfg.INVITE_REWARD} coins.`,
     },
     streakReminder: {
       title: "Keep your Ritzz alive",

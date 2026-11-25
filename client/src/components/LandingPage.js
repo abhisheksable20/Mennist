@@ -1,18 +1,15 @@
 import '../styles/LandingPage.css'
 import '../styles/Recovery.css'
 import creatAccSVG from "../assets/right_arrow_svg.svg"
-import { useNavigate, Link } from 'react-router-dom'
-import axios from 'axios'
-import { useState, useEffect } from 'react'
-import { generateKeyPair, answerLoginChallenge } from '../crypto/keyManager'
+import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import { db } from '../internalDatabase/db'
-import FingerprintJS from '@fingerprintjs/fingerprintjs';
 import { deleteUserInternalData } from '../internalDatabase/UserData'
 import { fetchKeyStatus } from './Recovery/recoveryApi'
+import useSetupUser from './useSetupUser'
 
 function LandingPage(props) {
-  const [btnDisabled, setBtnDisabled] = useState(false);
-  const navigate = useNavigate();
+  const { setupUser, busy: btnDisabled } = useSetupUser(props.alert);
 
   useEffect(() => {
     document.title = "Mennist - Anonymous Chats & Posts";
@@ -37,96 +34,6 @@ function LandingPage(props) {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Setup the user
-  const setupUser = async () => {
-    setBtnDisabled(true);
-    props.alert("Preparing your safe space...", "primary");
-    try {
-      const keys = await generateKeys();
-      const deviceFingerprint = await getOrCreateFingerprint();
-      localStorage.setItem("chatEnableStatus", "true");
-
-      const publicKey = keys.publicKey
-
-      const postData = {
-        publicKey,
-        deviceFingerprint
-      }
-
-      let data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, postData, { withCredentials: true })).data;
-
-      // Existing account: prove this browser holds its private key
-      if (data.challenge) {
-        const answer = await answerLoginChallenge(keys.privateKey, data.challenge);
-        data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/login`,
-          { challengeId: data.challenge.id, answer }, { withCredentials: true })).data;
-      }
-      await db.keys.put({
-        id: "user-keypair",
-        privateKey: keys.privateKey,
-        publicKey: keys.publicKey,
-        chatId: data.chatId
-      });
-
-      // Delete all the data in index db
-      if (data.isNew) {
-        deleteUserInternalData(false)
-      }
-
-      props.alert("You're now anonymous.", "success");
-      setTimeout(() => {
-        navigate("/veil");
-      }, 1000);
-    }
-    catch (setupErr) {
-      if (setupErr.response && setupErr.response.status === 401) {
-        props.alert("Please try again.", "alert");
-        return;
-      }
-      if (setupErr.response && setupErr.response.status === 403 && setupErr.response.data?.code === "KEY_REPLACED") {
-        // Moved to another device: drop this browser's old copy
-        await deleteUserInternalData(true).catch(() => {});
-        props.alert("Your account was moved to another device. Its data on this browser was removed. Tap Get Started for a new account, or use your recovery key.", "alert");
-        return;
-      }
-      console.log("Error: ", setupErr)
-      props.alert("Internal server error", "alert");
-    }
-    finally {
-      setBtnDisabled(false);
-    }
-  }
-
-  // Generating Private Key and Public Key
-  const generateKeys = async () => {
-    try {
-      const keys = await db.keys.get("user-keypair");
-      if (keys)
-        return keys
-
-      const userKeys = await generateKeyPair();
-      return userKeys;
-    }
-    catch (error) {
-      throw error;
-    }
-  }
-
-  // Generating device fingerprint
-  const getOrCreateFingerprint = async () => {
-    let fingerPrint = localStorage.getItem('deviceFingerprint');
-
-    if (!fingerPrint) {
-      const fp = await FingerprintJS.load({ monitoring: false }); // no usage ping to the library maker
-      const result = await fp.get();
-      fingerPrint = result.visitorId;
-
-      localStorage.setItem('deviceFingerprint', fingerPrint);
-    }
-
-    return fingerPrint;
-  }
 
   return (
     <div className='landing-page d-flex justify-content-center'>

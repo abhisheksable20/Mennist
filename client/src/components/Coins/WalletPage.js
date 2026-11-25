@@ -6,6 +6,7 @@ import StreakFlame from "./StreakFlame";
 import TransferRequest from "./TransferRequest";
 import { answerTransfer, coinError, fetchHistory, setAllowTransfers } from "./coinApi";
 import "../../styles/Coins.css";
+import "../../styles/Invite.css";
 
 const DAY_LETTERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -20,6 +21,8 @@ const describe = (e) => {
     case "transfer_out": return "Sent coins";
     case "transfer_in": return "Received coins";
     case "recovery_reward": return "Set up account recovery";
+    case "invite_bonus": return "Joined with an invite";
+    case "invite_reward": return "Friend you invited kept their Ritzz";
     case "chat_start": return "Started a new chat";
     case "chat_start_refund": return "No reply in 48h · refunded";
     case "echo_rematch": return "Echo rematch";
@@ -130,7 +133,7 @@ function WalletPage(props) {
           </div>
           <div className="wallet-balance-split">
             <span><b>{wallet.earned}</b> earned · can send</span>
-            <span><b>{wallet.bonus}</b> welcome bonus · spend only</span>
+            <span><b>{wallet.bonus}</b> bonus · spend only</span>
           </div>
           <div className="wallet-actions">
             <Link to="/my-chats" className="coin-btn coin-btn-primary" title="Open a chat and use Send coins">
@@ -184,6 +187,14 @@ function WalletPage(props) {
           </div>
         </section>
       </div>
+
+      <section className="coin-card wallet-invite" aria-labelledby="invite-title">
+        <div>
+          <h2 id="invite-title">Invite friends</h2>
+          <p className="coin-muted coin-small">Earn coins for every friend who joins and keeps a Ritzz.</p>
+        </div>
+        <Link to="/coins/invite" className="coin-btn coin-btn-ghost">Get your invite link</Link>
+      </section>
 
       {(t.incoming.length > 0 || t.outgoing.length > 0) && (
         <section className="coin-section" aria-labelledby="pending-title">

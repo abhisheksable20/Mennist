@@ -42,3 +42,8 @@ export const fetchChatInfo = async (chatId) => {
 // Rematch an echo (free a few times a day, then costs coins)
 export const rematchEcho = async (echoId) =>
   (await axios.post(`${process.env.REACT_APP_API_URL}/echoes/rematch/${encodeURIComponent(echoId)}`)).data;
+
+// Your invite code, invited friends and this month's rewards
+export const fetchInvites = async (signal) => (await axios.get(`${API()}/invite`, { signal })).data.invite;
+export const fetchInviteOffer = async (code) => (await axios.get(`${API()}/invite/offer/${encodeURIComponent(code)}`)).data.offer;
+export const markInviteRewardSeen = async () => (await axios.post(`${API()}/invite/seen`)).data;

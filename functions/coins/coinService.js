@@ -10,12 +10,16 @@
 //   chatOpen/{uid}/{otherUid}   true once the two have a conversation (free forever);
 //                               a startId while a paid start waits for uid's reply
 //   pendingChatStarts/{id}      paid chat starts waiting for a reply ({from, to, at, ...})
+//   inviteCodes/{code}          uid of the code's owner
+//   invites/{uid}               the user's invite code, earned total and invited friends
+//                               (friends/{key}: joinedAt, days, rewardedAt; never the friend's id)
 //
 // Every balance change runs inside a Realtime Database transaction on
 // coins/{uid}, so two requests at the same moment can't spend the same coins.
 // =====================================================================
 
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const cfg = require("../config/coins");
@@ -310,6 +314,7 @@ const getWallet = async (uid) => {
     inventory: w.inventory,
     unlocks: Object.keys(w.unlocks),
     mythicEdition: w.mythicEdition || null,
+    inviteReward: w.inviteUnseen || 0,
     chats: {
       freeLeft: Math.max(0, cfg.CHAT_START_FREE_PER_DAY - daily.chats),
       freePerDay: cfg.CHAT_START_FREE_PER_DAY,
@@ -394,13 +399,23 @@ const recordDailyPost = async (uid, content) => {
     s.longest = Math.max(s.longest, s.current);
     s.lastDay = today;
 
+    // Joined with an invite: show the inviter this Ritzz, and reward them once it's long enough
+    let invite = null;
+    if (w.invitedBy && !w.invitedBy.done) {
+      invite = {uid: w.invitedBy.uid, key: w.invitedBy.key, days: s.current};
+      if (s.current >= cfg.INVITE_REWARD_STREAK) {
+        w.invitedBy.done = true;
+        invite.reward = true;
+      }
+    }
+
     const milestone = milestoneReward(s.current);
     const reward = cfg.DAILY_POST_REWARD + milestone;
     w.earned += reward;
 
     return {
       value: w,
-      out: {counted: true, created, streak: s.current, longest: s.longest, dailyReward: cfg.DAILY_POST_REWARD, milestone, freezesUsed},
+      out: {counted: true, created, streak: s.current, longest: s.longest, dailyReward: cfg.DAILY_POST_REWARD, milestone, freezesUsed, invite},
     };
   });
 
@@ -418,8 +433,16 @@ const recordDailyPost = async (uid, content) => {
     }
     await addLedger(uid, entries);
   }
+  if (out.invite) {
+    try {
+      await trackInvite(out.invite);
+    } catch (inviteErr) {
+      console.error("Invite update failed:", inviteErr);
+    }
+  }
 
   delete out.created;
+  delete out.invite;
   return out;
 };
 
@@ -1428,6 +1451,165 @@ const grantRecoveryReward = async (uid) => {
   return out;
 };
 
+// ---------------------------------------------------------------------
+// Invites
+//
+// A friend who joins with someone's code gets INVITE_FRIEND_BONUS bonus coins.
+// The inviter gets INVITE_REWARD bonus coins once the friend's Ritzz reaches
+// INVITE_REWARD_STREAK days, at most INVITE_MONTHLY_LIMIT times a month.
+// Neither side ever learns the other's account.
+// ---------------------------------------------------------------------
+
+const INVITE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const INVITE_CODE = /^[A-Z2-9]{6}$/;
+
+const randomInviteCode = () => Array.from({length: 6},
+    () => INVITE_CODE_CHARS[crypto.randomInt(INVITE_CODE_CHARS.length)]).join("");
+
+// The user's code, made on first use
+const getInviteCode = async (uid) => {
+  const existing = (await db.ref(`invites/${uid}/code`).get()).val();
+  if (existing) {
+    return existing;
+  }
+  for (let i = 0; i < 5; i++) {
+    const code = randomInviteCode();
+    const claim = await db.ref(`inviteCodes/${code}`).transaction((owner) => (owner ? undefined : uid));
+    if (claim.committed) {
+      await db.ref(`invites/${uid}/code`).set(code);
+      return code;
+    }
+  }
+  throw new CoinError(503, "INVITE_CODE_BUSY", "Please try again.");
+};
+
+const inviteMonth = (now) => dayKey(now).slice(0, 7);
+
+// What the invite page shows
+const getInvites = async (uid) => {
+  const now = Date.now();
+  const [code, earnedSnap, friendsSnap, w] = await Promise.all([
+    getInviteCode(uid),
+    db.ref(`invites/${uid}/earned`).get(),
+    db.ref(`invites/${uid}/friends`).orderByChild("joinedAt").limitToLast(50).get(),
+    readWallet(uid),
+  ]);
+
+  const friends = [];
+  friendsSnap.forEach((child) => {
+    const f = child.val();
+    friends.push({
+      id: child.key,
+      joinedAt: f.joinedAt,
+      days: f.days || 0,
+      rewarded: f.reward || 0,
+      capped: f.capped === true,
+    });
+  });
+
+  const used = w.inviteRewards && w.inviteRewards.month === inviteMonth(now) ? w.inviteRewards.count : 0;
+  return {
+    code,
+    earned: earnedSnap.val() || 0,
+    friends: friends.reverse(),
+    rewardsUsed: used,
+    monthlyLimit: cfg.INVITE_MONTHLY_LIMIT,
+    welcomeBonus: cfg.WELCOME_BONUS,
+    friendBonus: cfg.INVITE_FRIEND_BONUS,
+    reward: cfg.INVITE_REWARD,
+    rewardStreak: cfg.INVITE_REWARD_STREAK,
+  };
+};
+
+// For the page an invite link opens (no login): is the code real, and what a new user gets
+const getInviteOffer = async (rawCode) => {
+  const code = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : "";
+  const valid = INVITE_CODE.test(code) && (await db.ref(`inviteCodes/${code}`).get()).exists();
+  return {valid, welcomeBonus: cfg.WELCOME_BONUS, friendBonus: valid ? cfg.INVITE_FRIEND_BONUS : 0};
+};
+
+/*
+  Called once when a new account is made with an invite code.
+  Skipped for an unknown code, your own code, or the inviter's own device.
+*/
+const acceptInvite = async (uid, rawCode, deviceFingerprint) => {
+  const code = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : "";
+  if (!INVITE_CODE.test(code)) {
+    return {applied: false};
+  }
+  const inviter = (await db.ref(`inviteCodes/${code}`).get()).val();
+  if (!inviter || inviter === uid) {
+    return {applied: false};
+  }
+  if (deviceFingerprint) {
+    const inviterDevice = (await db.ref(`users/${inviter}/userDetail/deviceFingerprint`).get()).val();
+    if (inviterDevice === deviceFingerprint) {
+      return {applied: false};
+    }
+  }
+
+  await ensureWallet(uid);
+  const key = db.ref(`invites/${inviter}/friends`).push().key;
+  const out = await walletTx(uid, (current) => {
+    const w = normalize(current);
+    if (w.invitedBy) {
+      return {value: w, out: {applied: false}};
+    }
+    w.invitedBy = {uid: inviter, key};
+    w.bonus += cfg.INVITE_FRIEND_BONUS;
+    return {value: w, out: {applied: true, bonus: cfg.INVITE_FRIEND_BONUS}};
+  });
+
+  if (out.applied) {
+    await Promise.all([
+      db.ref(`invites/${inviter}/friends/${key}`).set({joinedAt: Date.now(), days: 0}),
+      addLedger(uid, [{type: "invite_bonus", amount: out.bonus, balance: "bonus"}]),
+    ]);
+  }
+  return out;
+};
+
+// An invited friend's Ritzz grew: update the inviter's list, and pay the reward once
+const trackInvite = async ({uid, key, days, reward}) => {
+  const friendRef = db.ref(`invites/${uid}/friends/${key}`);
+  if (!reward) {
+    await friendRef.update({days});
+    return;
+  }
+
+  await ensureWallet(uid);
+  const now = Date.now();
+  const month = inviteMonth(now);
+  const out = await walletTx(uid, (current) => {
+    const w = normalize(current);
+    const used = w.inviteRewards && w.inviteRewards.month === month ? w.inviteRewards.count : 0;
+    if (used >= cfg.INVITE_MONTHLY_LIMIT) {
+      return {value: w, out: {granted: 0}};
+    }
+    w.inviteRewards = {month, count: used + 1};
+    w.bonus += cfg.INVITE_REWARD;
+    w.inviteUnseen = (w.inviteUnseen || 0) + cfg.INVITE_REWARD;
+    return {value: w, out: {granted: cfg.INVITE_REWARD}};
+  });
+
+  if (!out.granted) {
+    await friendRef.update({days, capped: true});
+    return;
+  }
+  await Promise.all([
+    friendRef.update({days, reward: out.granted, rewardedAt: now}),
+    db.ref(`invites/${uid}/earned`).set(admin.database.ServerValue.increment(out.granted)),
+    addLedger(uid, [{type: "invite_reward", amount: out.granted, balance: "bonus"}]),
+    notify({eventId: `inviteReward_${key}`, userId: uid, type: "inviteReward", amount: out.granted}),
+  ]);
+};
+
+// The reward popup was shown
+const clearInviteReward = async (uid) => {
+  await db.ref(`coins/${uid}/inviteUnseen`).remove();
+  return {cleared: true};
+};
+
 module.exports = {
   CoinError,
   dayKey,
@@ -1457,4 +1639,8 @@ module.exports = {
   isChatOpen,
   expireChatStarts,
   grantRecoveryReward,
+  getInvites,
+  getInviteOffer,
+  acceptInvite,
+  clearInviteReward,
 };

@@ -1,7 +1,7 @@
 const express = require("express");
 const {validate} = require("express-validation");
 const {isLoggedIn} = require("../middleware/authenticUser");
-const {globalLimiter, coinLimiter} = require("../middleware/rateLimiter");
+const {globalLimiter, coinLimiter, publicReadLimiter} = require("../middleware/rateLimiter");
 const {transferValidation, spendValidation, settingsValidation, unblockValidation} = require("../validators/coinValidator");
 const coins = require("../coins/coinService");
 
@@ -93,6 +93,21 @@ router.post("/settings", isLoggedIn, globalLimiter, validate(settingsValidation)
 // Unblock a sender that was blocked from a transfer
 router.post("/unblock", isLoggedIn, globalLimiter, validate(unblockValidation), handle(async (req) => {
   return coins.unblockSender(req.user.uid, req.body.chatId);
+}));
+
+// Your invite code, invited friends and rewards left this month
+router.get("/invite", isLoggedIn, globalLimiter, handle(async (req) => {
+  return {invite: await coins.getInvites(req.user.uid)};
+}));
+
+// What an invite link gives a new user (no login needed: the visitor has no account yet)
+router.get("/invite/offer/:code", publicReadLimiter, handle(async (req) => {
+  return {offer: await coins.getInviteOffer(req.params.code)};
+}));
+
+// The invite reward popup was shown
+router.post("/invite/seen", isLoggedIn, globalLimiter, handle(async (req) => {
+  return coins.clearInviteReward(req.user.uid);
 }));
 
 module.exports = router;

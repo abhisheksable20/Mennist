@@ -29,6 +29,15 @@
         ]
       }
     },
+    "invites": {
+      "$uid": {
+        "friends": {
+          ".indexOn": [
+            "joinedAt"
+          ]
+        }
+      }
+    },
     "pendingTransfers": {
       ".indexOn": [
         ".value"

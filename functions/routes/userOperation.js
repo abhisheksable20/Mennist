@@ -8,7 +8,7 @@ const {DEFAULT_AVATAR, validateAvatar, avatarTier} = require("../validators/avat
 const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const crypto = require("crypto");
-const {ensureWallet, getUnlocks} = require("../coins/coinService");
+const {ensureWallet, getUnlocks, acceptInvite} = require("../coins/coinService");
 
 // Stable per-user seed for the Mythic avatar look (never reveals the user id)
 const mythicSeed = (userId) => crypto
@@ -42,6 +42,9 @@ router.post("/create-user", signupLimiter, authUser, async (req, res) => {
   if (req.user.isNew) {
     try {
       await ensureWallet(req.user.uid);
+      if (req.body.inviteCode) {
+        await acceptInvite(req.user.uid, req.body.inviteCode, req.body.deviceFingerprint);
+      }
     } catch (walletError) {
       // Not fatal: the wallet is also created on first use
       console.error("Wallet creation failed:", walletError);

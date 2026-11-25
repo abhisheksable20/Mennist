@@ -12,6 +12,7 @@ import ErrorBoundary from './components/utils/ErrorBoundary';
 import CoinsState from './context/coins/CoinsState';
 import StreakRewardModal from './components/Coins/StreakRewardModal';
 import IncomingCoinsAlert from './components/Coins/IncomingCoinsAlert';
+import InviteRewardModal from './components/Coins/InviteRewardModal';
 
 
 // Pages that lazy loaded
@@ -31,6 +32,8 @@ const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
 const WalletPage = lazy(() => import('./components/Coins/WalletPage'));
 const ShopPage = lazy(() => import('./components/Coins/ShopPage'));
 const ShareRitzzPage = lazy(() => import('./components/Coins/ShareRitzzPage'));
+const InvitePage = lazy(() => import('./components/Coins/InvitePage'));
+const InviteWelcomePage = lazy(() => import('./components/Coins/InviteWelcomePage'));
 
 function Layout(props) {
   const location = useLocation();
@@ -105,11 +108,14 @@ function App() {
                 <Route path='/coins' element={<WalletPage alert={showAlert} />} />
                 <Route path='/coins/shop' element={<ShopPage alert={showAlert} />} />
                 <Route path='/ritzz/share' element={<ShareRitzzPage alert={showAlert} />} />
+                <Route path='/coins/invite' element={<InvitePage alert={showAlert} />} />
+                <Route path='/i/:code' element={<InviteWelcomePage alert={showAlert} />} />
               </Route>
             </Routes>
           </Suspense>
           </ErrorBoundary>
           <StreakRewardModal />
+          <InviteRewardModal />
           <IncomingCoinsAlert alert={showAlert} />
         </ChatsState>
       </EchoState>

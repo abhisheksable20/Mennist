@@ -39,6 +39,16 @@ module.exports = {
   // Most streak freezes a user can hold at once.
   MAX_STREAK_FREEZES: 2,
 
+  // ---------------- Invites ----------------
+  // Extra bonus coins for someone who joins with an invite link.
+  INVITE_FRIEND_BONUS: 20,
+  // Bonus coins for the inviter once that friend's Ritzz reaches INVITE_REWARD_STREAK days.
+  // Bonus coins can be spent but never transferred, so farmed invites can't be moved.
+  INVITE_REWARD: 30,
+  INVITE_REWARD_STREAK: 3,
+  // Most invite rewards one user can get in a calendar month.
+  INVITE_MONTHLY_LIMIT: 10,
+
   // ---------------- Shop ----------------
   // category "boost":  consumable, stored as a count (max = most you can hold)
   // category "vibe":   unlocks one Vibe Check option forever

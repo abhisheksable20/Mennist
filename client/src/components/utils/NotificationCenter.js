@@ -205,6 +205,12 @@ function NotificationCenter() {
                 ? <>Someone sent you <strong>{n.amount} Sakesnake Coins</strong>.</>
                 : "Someone sent you Sakesnake Coins.",
         },
+        inviteReward: {
+            title: 'Your invite paid off',
+            iconNode: <CoinIcon size={22} />,
+            color: 'gold',
+            message: (n) => n.message || "A friend you invited kept their Ritzz going.",
+        },
         streakReminder: {
             title: 'Keep your Ritzz alive',
             iconNode: <StreakFlame size={20} />,
@@ -257,6 +263,10 @@ function NotificationCenter() {
                 case "coinTransfer":
                 case "streakReminder":
                     navigate("/coins");
+                    break;
+
+                case "inviteReward":
+                    navigate("/coins/invite");
                     break;
 
                 default:
