@@ -142,5 +142,6 @@
     .invite-welcome-actions .coin-btn-block { width: 100%; }
 
     .invite-reward-actions { grid-template-columns: minmax(0, 1fr); }
+    .wallet-invite .coin-btn { width: 100%; }
     .invite-reward-actions .coin-btn-primary { order: -1; }
 }
