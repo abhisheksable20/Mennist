@@ -1463,6 +1463,11 @@ const grantRecoveryReward = async (uid) => {
 const INVITE_CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const INVITE_CODE = /^[A-Z2-9]{6}$/;
 
+const cleanInviteCode = (raw) => {
+  const code = typeof raw === "string" ? raw.trim().toUpperCase() : "";
+  return INVITE_CODE.test(code) ? code : null;
+};
+
 const randomInviteCode = () => Array.from({length: 6},
     () => INVITE_CODE_CHARS[crypto.randomInt(INVITE_CODE_CHARS.length)]).join("");
 
@@ -1523,8 +1528,8 @@ const getInvites = async (uid) => {
 
 // For the page an invite link opens (no login): is the code real, and what a new user gets
 const getInviteOffer = async (rawCode) => {
-  const code = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : "";
-  const valid = INVITE_CODE.test(code) && (await db.ref(`inviteCodes/${code}`).get()).exists();
+  const code = cleanInviteCode(rawCode);
+  const valid = !!code && (await db.ref(`inviteCodes/${code}`).get()).exists();
   return {valid, welcomeBonus: cfg.WELCOME_BONUS, friendBonus: valid ? cfg.INVITE_FRIEND_BONUS : 0};
 };
 
@@ -1533,8 +1538,8 @@ const getInviteOffer = async (rawCode) => {
   Skipped for an unknown code, your own code, or the inviter's own device.
 */
 const acceptInvite = async (uid, rawCode, deviceFingerprint) => {
-  const code = typeof rawCode === "string" ? rawCode.trim().toUpperCase() : "";
-  if (!INVITE_CODE.test(code)) {
+  const code = cleanInviteCode(rawCode);
+  if (!code) {
     return {applied: false};
   }
   const inviter = (await db.ref(`inviteCodes/${code}`).get()).val();

@@ -9,10 +9,6 @@ import { deleteUserInternalData } from '../internalDatabase/UserData'
 // Invite code from an /i/:code link, sent once when the account is made
 export const INVITE_KEY = "inviteCode";
 
-const readInviteCode = () => {
-  try { return localStorage.getItem(INVITE_KEY) || undefined; } catch { return undefined; }
-};
-
 // Generating Private Key and Public Key
 const generateKeys = async () => {
   const keys = await db.keys.get("user-keypair");
@@ -51,7 +47,7 @@ export default function useSetupUser(alert) {
       const postData = {
         publicKey: keys.publicKey,
         deviceFingerprint,
-        inviteCode: readInviteCode(),
+        inviteCode: localStorage.getItem(INVITE_KEY) || undefined,
       }
 
       let data = (await axios.post(`${process.env.REACT_APP_API_URL}/user/create-user`, postData, { withCredentials: true })).data;

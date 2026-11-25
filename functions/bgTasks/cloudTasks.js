@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 const {getFunctions} = require("firebase-admin/functions");
 const {settleRematch} = require("../coins/coinService");
 const {keyHash} = require("../auth/keyLogin");
-const cfg = require("../config/coins");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -325,7 +324,7 @@ exports.processNotification = onTaskDispatched({
     },
     inviteReward: {
       title: "Your invite paid off",
-      message: `A friend you invited kept a ${cfg.INVITE_REWARD_STREAK}-day Ritzz. You got ${amount || cfg.INVITE_REWARD} coins.`,
+      message: `A friend you invited kept their Ritzz going. You got ${amount} coins.`,
     },
     streakReminder: {
       title: "Keep your Ritzz alive",

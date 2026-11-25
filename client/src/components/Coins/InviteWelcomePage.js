@@ -21,36 +21,36 @@ export default function InviteWelcomePage(props) {
       if (!current) return;
       setOffer(o);
       // Kept until the account is made, even if they look around first
-      try {
-        if (o.valid) localStorage.setItem(INVITE_KEY, code.toUpperCase());
-      } catch { /* private mode: the code is still used if they join now */ }
-    }).catch(() => current && setOffer({ valid: false, welcomeBonus: 50, friendBonus: 0 }));
+      if (o.valid) localStorage.setItem(INVITE_KEY, code.toUpperCase());
+    }).catch(() => current && setOffer({ valid: false }));
     return () => { current = false; };
   }, [code]);
 
   // Already on Mennist: invites are for new people
   if (wallet) return <Navigate to="/" replace />;
 
-  const total = offer ? offer.welcomeBonus + offer.friendBonus : null;
+  const invited = !offer || offer.valid;
 
   return (
     <div className="coin-page invite-welcome">
       <section className="invite-welcome-hero">
-        <h1>{offer && !offer.valid ? "Welcome to Mennist" : "You're invited"}</h1>
+        <h1>{invited ? "You're invited" : "Welcome to Mennist"}</h1>
         <p>
-          {offer && !offer.valid ? "" : "A friend wants you on Mennist. "}
+          {invited && "A friend wants you on Mennist. "}
           Say what you really think, anonymously. No name, email or phone number needed.
         </p>
       </section>
 
       <aside className="invite-gift">
-        <div className="invite-gift-coins">
-          <span className="invite-gift-label">
-            <strong>Coins waiting for you</strong>
-            <span>{offer && offer.friendBonus ? `${offer.welcomeBonus} welcome + ${offer.friendBonus} from your friend` : "Your welcome bonus"}</span>
-          </span>
-          <span className="invite-gift-amount"><CoinIcon size={26} />{total ?? "··"}</span>
-        </div>
+        {offer && offer.welcomeBonus && (
+          <div className="invite-gift-coins">
+            <span className="invite-gift-label">
+              <strong>Coins waiting for you</strong>
+              <span>{offer.friendBonus ? `${offer.welcomeBonus} welcome + ${offer.friendBonus} from your friend` : "Your welcome bonus"}</span>
+            </span>
+            <span className="invite-gift-amount"><CoinIcon size={26} />{offer.welcomeBonus + offer.friendBonus}</span>
+          </div>
+        )}
         <dl className="invite-features">
           <div><dt>Vibes</dt><dd>Post a thought or secret. People send vibes back.</dd></div>
           <div><dt>Echoes</dt><dd>Find people who dream and think like you.</dd></div>
