@@ -985,16 +985,14 @@ const sendStreakReminders = async () => {
 
   const snap = await db.ref("coins").orderByChild("streak/lastDay").equalTo(yesterday).get();
   const jobs = [];
+  // Everyone who posted yesterday, a 1-day Ritzz too, loses it at midnight without a post today
   snap.forEach((child) => {
-    const streak = (child.val().streak || {}).current || 0;
-    if (streak >= 2) {
-      jobs.push(notify({
-        eventId: `streakReminder_${today}`,
-        userId: child.key,
-        type: "streakReminder",
-        streak,
-      }));
-    }
+    jobs.push(notify({
+      eventId: `streakReminder_${today}`,
+      userId: child.key,
+      type: "streakReminder",
+      streak: child.val().streak.current,
+    }));
   });
   await Promise.all(jobs);
   return jobs.length;
