@@ -117,7 +117,7 @@ function WalletPage(props) {
 
   return (
     <div className="coin-page">
-      <header className="coin-page-header">
+      <header className="coin-page-header wallet-header">
         <div>
           <p className="coin-eyebrow">Sakesnake Coins</p>
           <h1 className="coin-page-title">Your wallet</h1>
