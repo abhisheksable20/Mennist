@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext, useRef } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import "../styles/ChatPage.css"
 import ChatItem from './ChatItem'
 import ChatsContext from '../context/chats/chatsContext'
@@ -54,6 +54,10 @@ function ChatsPage(props) {
 
       <div className='container my-5'>
         <PostHeaders splText={"PRIVATE CHATS"} heading={"Your Conversations"} subHeading={"Every secret has a conversation."} />
+        <Link to="/blocked-users" className="blocked-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></svg>
+          Blocked users
+        </Link>
 
         {/* Display my all chats */}
         <div className='list-group mt-4'>

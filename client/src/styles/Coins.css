@@ -709,7 +709,7 @@
 .cut-steps li.is-current { color: var(--coin-fg); font-weight: 600; }
 .cut-steps li.is-current .cut-steps-bar { background: var(--coin-gold); }
 
-.conversation-send-coins { margin-left: auto; align-self: center; }
+.conversation-actions { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 8px; }
 
 /* ---------- Vibe unlock ---------- */
 .vibe-unlock { display: flex; flex-direction: column; gap: 14px; }
@@ -760,8 +760,8 @@
     .shop-mythic { flex-direction: column; align-items: flex-start; }
     .wallet-balance-amount .pixel-number { font-size: 42px; }
     .nav-coin-chip { padding: 0 8px; min-height: 32px; }
-    .conversation-send-coins span { display: none; }
-    .conversation-send-coins { width: 44px; padding: 0; }
+    /* Phones: "Send coins" moves into the ⋯ menu */
+    .conversation-send-coins { display: none; }
 }
 
 /* ---------- Coins received: navbar dot and corner card ---------- */

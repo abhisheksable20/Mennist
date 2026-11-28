@@ -23,6 +23,7 @@ const LandingPage = lazy(() => import('./components/LandingPage'));
 const RecoverPage = lazy(() => import('./components/Recovery/RecoverPage'));
 const ChatsPage = lazy(() => import('./components/ChatsPage'));
 const ConversationPage = lazy(() => import('./components/ConversationPage'));
+const BlockedUsersPage = lazy(() => import('./components/BlockedUsersPage'));
 const TermsAndConditions = lazy(() => import('./components/TermsAndConditions'));
 const EchoesComponent = lazy(() => import('./components/Echoes/EchoesComponent'));
 const EchoContent = lazy(() => import('./components/Echoes/EchoContent'));
@@ -102,6 +103,7 @@ function App() {
                 <Route path='/post/:id' element={<PostContent alert={showAlert} />} />
                 <Route path='/my-chats' element={<ChatsPage alert={showAlert} />} />
                 <Route path='/user-chat/:chatId' element={<ConversationPage alert={showAlert} />} />
+                <Route path='/blocked-users' element={<BlockedUsersPage alert={showAlert} />} />
                 <Route path='/echoes' element={<EchoesComponent alert={showAlert} />} />
                 <Route path='/echoes/:id' element={<EchoContent alert={showAlert} />} />
                 <Route path='/veil' element={<VeilProfile alert={showAlert} />} />

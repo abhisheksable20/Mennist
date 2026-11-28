@@ -47,6 +47,9 @@ const passChatGate = async (res, senderId, receiverId) => {
   }
 };
 
+// blocks/{blocker}/{blocked} = when they were blocked
+const blockRef = (blockerId, blockedId) => db.ref(`blocks/${blockerId}/${blockedId}`);
+
 const isAttachmentMessage = (m) => !!m && (!!m.attachmentId || !!m.encryptedFile);
 
 // Get Post Owner PublicKey
@@ -67,14 +70,21 @@ router.post("/get-publicKey", isLoggedIn, chatReadLimiter, async (req, res) => {
   }
 
   try {
-    // Only the two fields needed, not the whole profile
-    const [keySnap, flagSnap] = await Promise.all([
+    // Only the fields needed, not the whole profile
+    const [keySnap, flagSnap, iBlockedSnap, theyBlockedSnap] = await Promise.all([
       db.ref(`users/${receiverUserId}/userDetail/publicKey`).get(),
       db.ref(`users/${receiverUserId}/userDetail/chatFlag`).get(),
+      blockRef(userUniqueId, receiverUserId).get(),
+      blockRef(receiverUserId, userUniqueId).get(),
     ]);
 
     if (keySnap.exists()) {
-      return res.status(200).json({publicKey: keySnap.val(), chatFlag: flagSnap.val()});
+      // Someone who blocked you just looks unavailable, the same as chat turned off
+      return res.status(200).json({
+        publicKey: keySnap.val(),
+        chatFlag: theyBlockedSnap.exists() ? false : flagSnap.val(),
+        blocked: iBlockedSnap.exists(),
+      });
     }
 
     return res.status(401).send({error: "Public key not found."});
@@ -83,14 +93,19 @@ router.post("/get-publicKey", isLoggedIn, chatReadLimiter, async (req, res) => {
   }
 });
 
-// Check whether the receiver is available for chat or not
-const isUserChatAvail = async (receiverUserId) => {
+// The receiver has chat turned on and neither person has blocked the other
+const canMessage = async (senderUserId, receiverUserId) => {
   if (!receiverUserId) {
     return false;
   }
 
   try {
-    return (await db.ref(`users/${receiverUserId}/userDetail/chatFlag`).get()).val() === true;
+    const [flagSnap, sentBlock, receivedBlock] = await Promise.all([
+      db.ref(`users/${receiverUserId}/userDetail/chatFlag`).get(),
+      blockRef(senderUserId, receiverUserId).get(),
+      blockRef(receiverUserId, senderUserId).get(),
+    ]);
+    return flagSnap.val() === true && !sentBlock.exists() && !receivedBlock.exists();
   } catch (flagFetchErr) {
     console.log("Flag Fetching Error: ", flagFetchErr);
     return false;
@@ -111,8 +126,7 @@ router.post("/send-chat", isLoggedIn, chatSendLimiter, validate(chatBlobValidati
     return res.status(406).send({error: "Cannot chat with yourself"});
   }
 
-  const isReceiverChatAvail = await isUserChatAvail(recieverUserId);
-  if (!isReceiverChatAvail) {
+  if (!(await canMessage(senderUserId, recieverUserId))) {
     return res.status(403).send({error: "Reciever chat is disabled!"});
   }
 
@@ -165,7 +179,7 @@ router.post("/attachment/init", isLoggedIn, attachmentLimiter, validate(attachme
     if (!receiverId) return res.status(404).send({error: "User not found!"});
     if (receiverId === senderId) return res.status(406).send({error: "Cannot chat with yourself"});
 
-    if (!(await isUserChatAvail(receiverId))) {
+    if (!(await canMessage(senderId, receiverId))) {
       return res.status(403).send({error: "Reciever chat is disabled!"});
     }
 
@@ -500,6 +514,64 @@ router.get("/my-chats", isLoggedIn, chatReadLimiter, async (req, res) => {
     return res.status(200).send(chatsData);
   } catch (error) {
     return res.status(500).send({error: "Internal Server Error!", success: false});
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  Blocking: a blocked person can't message, send files or coins       */
+/* ------------------------------------------------------------------ */
+
+// The other person in the chat, or null after sending the error
+const otherPerson = (req, res) => {
+  const otherUserId = verifyChatId(req.body.chatId);
+  if (!otherUserId) {
+    res.status(400).send({error: "Cannot process your request!"});
+    return null;
+  }
+  if (otherUserId === req.user.uid) {
+    res.status(406).send({error: "You can't block yourself."});
+    return null;
+  }
+  return otherUserId;
+};
+
+router.post("/block", isLoggedIn, chatReadLimiter, async (req, res) => {
+  const otherUserId = otherPerson(req, res);
+  if (!otherUserId) return;
+
+  try {
+    await blockRef(req.user.uid, otherUserId).set(Date.now());
+    return res.status(200).send({blocked: true});
+  } catch (blockErr) {
+    console.log("blockError:", blockErr);
+    return res.status(500).send({error: "Something went wrong!"});
+  }
+});
+
+router.delete("/block", isLoggedIn, chatReadLimiter, async (req, res) => {
+  const otherUserId = otherPerson(req, res);
+  if (!otherUserId) return;
+
+  try {
+    await blockRef(req.user.uid, otherUserId).remove();
+    return res.status(200).send({blocked: false});
+  } catch (unblockErr) {
+    console.log("unblockError:", unblockErr);
+    return res.status(500).send({error: "Something went wrong!"});
+  }
+});
+
+// People this user blocked, newest first
+router.get("/blocked", isLoggedIn, chatReadLimiter, async (req, res) => {
+  try {
+    const blocked = (await db.ref(`blocks/${req.user.uid}`).get()).val() || {};
+    const list = Object.entries(blocked)
+        .sort((a, b) => b[1] - a[1])
+        .map(([uid, at]) => ({chatId: jwt.sign(uid, process.env.JWT_SECRET_KEY), at}));
+    return res.status(200).send(list);
+  } catch (listErr) {
+    console.log("blockedListError:", listErr);
+    return res.status(500).send({error: "Something went wrong!"});
   }
 });
 

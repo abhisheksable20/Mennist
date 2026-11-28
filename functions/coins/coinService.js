@@ -623,16 +623,19 @@ const checkReceiver = async (fromUid, toChatId) => {
     throw new CoinError(400, "SELF_TRANSFER", "You can't send coins to yourself.");
   }
 
-  const [userSnap, blockedSnap, allowSnap] = await Promise.all([
+  const [userSnap, blockedSnap, allowSnap, sentBlock, receivedBlock] = await Promise.all([
     db.ref(`users/${toUid}/userDetail/createdAt`).get(),
     db.ref(`coins/${toUid}/blocked/${fromUid}`).get(),
     db.ref(`coins/${toUid}/settings/allowTransfers`).get(),
+    // Blocked in chat, either way round
+    db.ref(`blocks/${fromUid}/${toUid}`).get(),
+    db.ref(`blocks/${toUid}/${fromUid}`).get(),
   ]);
 
   if (!userSnap.exists()) {
     throw new CoinError(404, "USER_NOT_FOUND", "User not found.");
   }
-  if (blockedSnap.val() === true || allowSnap.val() === false) {
+  if (blockedSnap.val() === true || allowSnap.val() === false || sentBlock.exists() || receivedBlock.exists()) {
     throw new CoinError(403, "TRANSFERS_DISABLED", "This user is not accepting coins.");
   }
   return toUid;

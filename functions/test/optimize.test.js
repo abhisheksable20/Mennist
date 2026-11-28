@@ -13,6 +13,7 @@ const assert = require("assert"); const db = admin.database(); console.error = (
 const fns = require(require.resolve("firebase-admin/functions", {paths: [ROOT]}));
 const queued = [];
 fns.getFunctions = () => ({taskQueue: (name) => ({enqueue: async (d) => queued.push({name, d})})});
+const coins = require(ROOT + "/coins/coinService");
 (async () => {
   await db.ref().set(null);
   const app = express(); app.set("trust proxy", true); app.use(express.json()); app.use(cookieParser());
@@ -55,11 +56,32 @@ fns.getFunctions = () => ({taskQueue: (name) => ({enqueue: async (d) => queued.p
   assert.strictEqual(r.body.messages.length, 1); assert.strictEqual(r.body.chatId, chat("A"));
   r = await call("GET", "/chats/my-chats", null, "B"); assert.strictEqual(r.body.length, 1);
   r = await call("POST", "/chats/get-publicKey", {chatId: chat("B")}, "A");
-  assert.deepStrictEqual(r.body, {publicKey: "pkB", chatFlag: true});
+  assert.deepStrictEqual(r.body, {publicKey: "pkB", chatFlag: true, blocked: false});
   await db.ref("users/C/userDetail/chatFlag").set(false);
   r = await call("POST", "/chats/send-chat", {chatId: chat("C"), encryptedMsg: "ZW5j", senderPublicKey: "pkA", nounce: "bm9u"}, "A");
   assert.strictEqual(r.status, 403);
   console.log("ok chat send + chat off");
+
+  // Blocking: B blocks A. Neither can message or send coins; A only sees "unavailable"
+  r = await call("POST", "/chats/block", {chatId: chat("B")}, "B"); assert.strictEqual(r.status, 406, "can't block yourself");
+  r = await call("POST", "/chats/block", {chatId: "not-a-token"}, "B"); assert.strictEqual(r.status, 400);
+  r = await call("POST", "/chats/block", {chatId: chat("A")}, "B"); assert.strictEqual(r.status, 200);
+  const msg = {encryptedMsg: "ZW5j", senderPublicKey: "pkA", nounce: "bm9u"};
+  r = await call("POST", "/chats/send-chat", {chatId: chat("B"), ...msg}, "A"); assert.strictEqual(r.status, 403, "blocked sender");
+  r = await call("POST", "/chats/send-chat", {chatId: chat("A"), ...msg}, "B"); assert.strictEqual(r.status, 403, "blocker can't send either");
+  r = await call("POST", "/chats/get-publicKey", {chatId: chat("B")}, "A");
+  assert.deepStrictEqual(r.body, {publicKey: "pkB", chatFlag: false, blocked: false});
+  r = await call("POST", "/chats/get-publicKey", {chatId: chat("A")}, "B");
+  assert.deepStrictEqual(r.body, {publicKey: "pkA", chatFlag: true, blocked: true});
+  await assert.rejects(coins.previewTransfer("A", chat("B"), 20), /not accepting coins/);
+  await assert.rejects(coins.previewTransfer("B", chat("A"), 20), /not accepting coins/);
+  r = await call("GET", "/chats/blocked", null, "B");
+  assert.strictEqual(r.body.length, 1); assert.strictEqual(r.body[0].chatId, chat("A")); assert.ok(r.body[0].at > 0);
+  r = await call("GET", "/chats/blocked", null, "A"); assert.deepStrictEqual(r.body, []);
+  r = await call("DELETE", "/chats/block", {chatId: chat("A")}, "B"); assert.strictEqual(r.status, 200);
+  r = await call("POST", "/chats/send-chat", {chatId: chat("B"), ...msg}, "A"); assert.strictEqual(r.status, 200, "unblocked");
+  r = await call("GET", "/chats/blocked", null, "B"); assert.deepStrictEqual(r.body, []);
+  console.log("ok block + unblock");
 
   // Vibes: counted with a server increment, once per user
   await db.ref("posts/p1").set({chatId: chat("A"), timestamp: 5, content: "hi"});

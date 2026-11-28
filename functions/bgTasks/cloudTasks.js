@@ -58,6 +58,7 @@ async (request) => {
       [`coinChat/${userId}`]: null,
       [`chatOpen/${userId}`]: null,
       [`invites/${userId}`]: null,
+      [`blocks/${userId}`]: null,
     };
 
     // Their invite link stops working

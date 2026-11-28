@@ -24,6 +24,10 @@ import CoinIcon from "./Coins/CoinIcon";
 import CoinChatEvent from "./Coins/CoinChatEvent";
 import CoinsContext from "../context/coins/CoinsContext";
 import { fetchChatInfo } from "./Coins/coinApi";
+import ChatOptionsMenu from "./ChatOptionsMenu";
+import BlockUserModal from "./BlockUserModal";
+import DeleteChatComponent from "./DeleteChatComponent";
+import { blockUser, unblockUser } from "../utils/blockUser";
 
 // When each chat partner's public key was last checked (this tab only)
 const keyCheckedAt = new Map();
@@ -32,6 +36,10 @@ const KEY_CHECK_EVERY_MS = 10 * 60 * 1000;
 function ConversationPage(props) {
   const { chatId } = useParams();
   const [showSendCoins, setShowSendCoins] = useState(false);
+  const [showBlock, setShowBlock] = useState(false);
+  // You blocked this person: no input, only Unblock / Delete
+  const [blocked, setBlocked] = useState(false);
+  const deleteBtnRef = useRef(null);
   const showAlert = props.alert || (() => {});
   // Coins sent and received with this person, shown in the chat timeline
   const coinsCtx = useContext(CoinsContext);
@@ -47,7 +55,11 @@ function ConversationPage(props) {
       setCoinEvents([]);
     }
   }, [chatId]);
-  useEffect(() => setChatOpen(null), [chatId]);
+  useEffect(() => {
+    setChatOpen(null);
+    setBlocked(false);
+    setIsReceiverAvail(true);
+  }, [chatId]);
   const walletStamp = coinsCtx && coinsCtx.wallet
     ? `${coinsCtx.wallet.balance}-${coinsCtx.wallet.transfers.incoming.length}-${coinsCtx.wallet.transfers.outgoing.length}`
     : "";
@@ -60,7 +72,7 @@ function ConversationPage(props) {
     if (coinsCtx) coinsCtx.refreshWallet();
   };
   const { inputMessage, setInputMessage, chatIdRef,
-    userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag, downloadAttachment } = useContext(ChatsContext);
+    userChatServer, sendChat, userMessages, loading, sendAttachment, chatFlag, downloadAttachment, deleteUserChats } = useContext(ChatsContext);
   const userData = useRef(null);
   const fileDownloadFlag = useRef(false);
   const previewBtnRef = useRef(null);
@@ -111,7 +123,8 @@ function ConversationPage(props) {
         username,
         publicKey,
         lastMsg: null,
-        timestamp: null
+        timestamp: null,
+        blocked: !!data.blocked
       }
 
       await db.chatUser.add(chatMetaData);
@@ -136,9 +149,22 @@ function ConversationPage(props) {
       const data = (await axios.post(`${process.env.REACT_APP_API_URL}/chats/get-publicKey`, { chatId: forChatId }, { signal })).data;
       if (chatIdRef.current !== forChatId) return;
       setIsReceiverAvail(!!data.chatFlag);
-      if (data.publicKey && userData.current && data.publicKey !== userData.current.recieverPublicKey) {
-        userData.current.recieverPublicKey = data.publicKey;
-        await db.chatUser.update(forChatId, { publicKey: data.publicKey });
+      setBlocked(!!data.blocked);
+
+      // Save only what changed (blocked/unblocked on another device, new key)
+      const known = userData.current;
+      if (!known) return;
+      const changes = {};
+      if (data.publicKey && data.publicKey !== known.recieverPublicKey) {
+        known.recieverPublicKey = data.publicKey;
+        changes.publicKey = data.publicKey;
+      }
+      if (!!data.blocked !== known.blocked) {
+        known.blocked = !!data.blocked;
+        changes.blocked = known.blocked;
+      }
+      if (Object.keys(changes).length > 0) {
+        await db.chatUser.update(forChatId, changes);
       }
     } catch (keyErr) {
       keyCheckedAt.delete(forChatId);
@@ -171,8 +197,10 @@ function ConversationPage(props) {
 
         userData.current = {
           username: user.username,
-          recieverPublicKey: user.publicKey
+          recieverPublicKey: user.publicKey,
+          blocked: !!user.blocked
         };
+        setBlocked(!!user.blocked);
 
         document.title = user.username;
 
@@ -380,6 +408,52 @@ function ConversationPage(props) {
     if (coinsCtx) coinsCtx.refreshWallet();
   };
 
+  // Confirmed in BlockUserModal. A failed block throws, so the modal shows the error.
+  const handleBlock = async (alsoDelete) => {
+    await blockUser(chatId);
+    if (userData.current) userData.current.blocked = true;
+    setBlocked(true);
+    setShowBlock(false);
+
+    if (!alsoDelete) {
+      showAlert(`You blocked ${username}.`, "success");
+      return;
+    }
+
+    try {
+      await deleteUserChats(chatId);
+      // Keep the name for the blocked list. No timestamp, so it stays out of the chat list.
+      await db.chatUser.put({
+        chatId, username, publicKey: userData.current?.recieverPublicKey,
+        lastMsg: null, timestamp: null, blocked: true
+      });
+      showAlert(`You blocked ${username} and deleted the chat.`, "success");
+      navigate("/my-chats");
+    }
+    catch (deleteErr) {
+      showAlert(`You blocked ${username}, but the chat couldn't be deleted.`, "alert");
+    }
+  }
+
+  const handleUnblock = async () => {
+    try {
+      await unblockUser(chatId);
+      if (userData.current) userData.current.blocked = false;
+      setBlocked(false);
+      showAlert(`You unblocked ${username}.`, "success");
+    }
+    catch (unblockErr) {
+      showAlert("Couldn't unblock. Please try again.", "alert");
+    }
+  }
+
+  const openDeleteChat = () => deleteBtnRef.current.click();
+
+  // DeleteChatComponent calls this after deleting; leave once its popup has finished closing
+  const afterChatDeleted = () => {
+    document.getElementById("exampleModal")?.addEventListener("hidden.bs.modal", () => navigate("/my-chats"), { once: true });
+  }
+
   // Send the message to the reciever side
   const sendMsg = async () => {
     setIsSendBtnDisabled(true);
@@ -420,7 +494,8 @@ function ConversationPage(props) {
       {loading ? <ChatLoading /> : ""}
       {!chatFlag && (<ChatFeatureAlert />)}
       {!isReceiverAvail && (<RecieverChatFlagAlert />)}
-      <div className='conversation-page'>
+      <DeleteChatComponent deleteBtnRef={deleteBtnRef} selectedChatId={chatId} setSelectedChatId={afterChatDeleted} />
+      <div className={`conversation-page ${blocked ? "is-blocked" : ""}`}>
         <div className='content-wrapper'>
           {/* Conversation Header */}
           <div className="conversation-header mb-4">
@@ -428,7 +503,9 @@ function ConversationPage(props) {
               <div className="mennist-avatar-preview">
                 {userAvatar ? <Avatar avatar={userAvatar} size={64} className="conversation-avatar" /> : ""}
               </div>
-              {userAvatar && <TierBadge tier={userAvatar.tier} edition={userAvatar.mythicEdition} className="conversation-tier-badge" />}
+              {blocked
+                ? <span className="tier-badge conversation-tier-badge blocked-badge">Blocked</span>
+                : userAvatar && <TierBadge tier={userAvatar.tier} edition={userAvatar.mythicEdition} className="conversation-tier-badge" />}
             </div>
             <div className="conversation-user-info">
               <h2 className="card-text mb-2">
@@ -438,11 +515,24 @@ function ConversationPage(props) {
                 Hope it's the opposite of your gender.
               </h6>
             </div>
-            <button type="button" className="coin-btn coin-btn-ghost conversation-send-coins" onClick={() => setShowSendCoins(true)}>
-              <CoinIcon size={16} />
-              <span>Send coins</span>
-            </button>
+            <div className="conversation-actions">
+              {!blocked && (
+                <button type="button" className="coin-btn coin-btn-ghost conversation-send-coins" onClick={() => setShowSendCoins(true)}>
+                  <CoinIcon size={16} />
+                  <span>Send coins</span>
+                </button>
+              )}
+              <ChatOptionsMenu
+                blocked={blocked}
+                onSendCoins={() => setShowSendCoins(true)}
+                onDelete={openDeleteChat}
+                onBlock={() => setShowBlock(true)}
+                onUnblock={handleUnblock} />
+            </div>
           </div>
+          {showBlock && (
+            <BlockUserModal name={username} onConfirm={handleBlock} onClose={() => setShowBlock(false)} />
+          )}
           {showSendCoins && (
             <SendCoinsModal
               chatId={chatId}
@@ -504,6 +594,15 @@ function ConversationPage(props) {
               </button>
             </div>
           )}
+          {blocked ? (
+            <div className="chat-blocked-bar">
+              <p>You blocked this person. You can't send or receive messages until you unblock them.</p>
+              <div className="chat-blocked-actions">
+                <button type="button" className="coin-btn coin-btn-ghost coin-btn-small" onClick={openDeleteChat}>Delete chat</button>
+                <button type="button" className="coin-btn coin-btn-primary coin-btn-small" onClick={handleUnblock}>Unblock</button>
+              </div>
+            </div>
+          ) : (<>
           {isNewChat && chatRules && isReceiverAvail && (
             <div className={`chat-start-note ${startBlocked ? "is-blocked" : ""}`} role="status">
               {chatRules.freeLeft > 0 ? (
@@ -526,7 +625,7 @@ function ConversationPage(props) {
             <button
               className="send-btn"
               style={{ backgroundColor: "#262626" }}
-              disabled={isChecking || startBlocked}
+              disabled={isChecking || startBlocked || !isReceiverAvail}
               onClick={() => {
                 document.getElementById("fileInput").click()
               }}>
@@ -543,15 +642,17 @@ function ConversationPage(props) {
               name='chatInput'
               value={inputMessage}
               rows={1}
-              placeholder="Type something..."
+              placeholder={isReceiverAvail ? "Type something..." : "You can't message this person"}
+              disabled={!isReceiverAvail}
               onChange={handleInputOnChange} />
 
-            <button className={`send-btn ${startBlocked ? "is-locked" : ""}`} onClick={sendMsg} disabled={isSendBtnDisabled || startBlocked}
+            <button className={`send-btn ${startBlocked ? "is-locked" : ""}`} onClick={sendMsg} disabled={isSendBtnDisabled || startBlocked || !isReceiverAvail}
               title={startBlocked ? "Not enough coins to start this chat" : undefined}>
               <img src={sendSVG} alt="submitButton" width="24px" height="24px" />
             </button>
 
           </div>
+          </>)}
           <small className="e2ee-notice">
             {isChecking ? "Checking file…" : "Messages are protected with end-to-end encryption."}
           </small>

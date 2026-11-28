@@ -76,7 +76,7 @@ function ConversationItem(props) {
 
   return (
     <div className={`d-flex flex-column align-items-${fromMe ? "end" : "start"} mb-4`}>
-      <div className="chat-bubble" title={isAttachment ? plainMsg : ""}>
+      <div className={`chat-bubble ${fromMe && !isAttachment ? "is-mine" : ""}`} title={isAttachment ? plainMsg : ""}>
         {isAttachment ? (
           showImage ? (
             <img className="chat-image" src={imageUrl} alt="attachment" onClick={handleDownloadBtn} />
