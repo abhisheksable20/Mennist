@@ -2,7 +2,6 @@ import { useMemo, useEffect } from 'react'
 import { convertTimestampToReadable, formatFileSize } from '../dataProcessing/dataProcessing';
 import { isAttachmentType, isImageType } from '../config/attachmentConfig';
 import sendingSVG from "../assets/sending_msg_svg.svg";
-import sentSVG from "../assets/sent_msg_svg.svg";
 import alertSVG from "../assets/alert_svg.svg";
 
 const Svg = ({ size = 22, sw = 2, children }) => (
@@ -25,6 +24,14 @@ const DownloadIcon = () => (
   </Svg>
 );
 
+// Sent ✓ / delivered ✓✓ (grey), read ✓✓ (green, via CSS)
+const Ticks = ({ double }) => (
+  <svg width={double ? 20 : 15} height="14" viewBox={double ? "0 0 24 16" : "0 0 18 16"} fill="none"
+    stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {double ? <><path d="M1.5 8.5l4 4L15 3" /><path d="M9.5 12.5L19 3" /></> : <path d="M2 8.5l4 4L15.5 3" />}
+  </svg>
+);
+
 const CheckIcon = () => (
   <Svg><path d="M20 6 9 17l-5-5" /></Svg>
 );
@@ -33,7 +40,12 @@ function ConversationItem(props) {
   const { fromMe, plainMsg, timestamp, type, imageBlob, status, progress, fileSize, downloaded, gone } = props.chat;
   // Downloaded without a local copy = it went to the device (older records lack savedToDisk)
   const savedToDisk = props.chat.savedToDisk || (!fromMe && downloaded && !imageBlob);
-  const { fileDownload, downloadStatus, downloadProgress } = props;
+  const { fileDownload, downloadStatus, downloadProgress, receipt } = props;
+
+  // A sent message is delivered / read once the receipt time reaches it (both are server times)
+  const tick = fromMe && (!status || status === "sent")
+    ? (receipt?.r >= timestamp ? "read" : receipt?.d >= timestamp ? "delivered" : "sent")
+    : null;
 
   const isAttachment = isAttachmentType(type);
 
@@ -122,11 +134,11 @@ function ConversationItem(props) {
           {convertTimestampToReadable(timestamp)}
         </small>
 
-        {fromMe && status && (
+        {fromMe && (tick || status) && (
           <>
             <span className="status-separator">•</span>
 
-            <div className="message-status" title={status}>
+            <div className={`message-status ${tick ? `is-${tick}` : ""}`} title={tick || status}>
               {status === "sending" && (
                 <>
                   <img src={sendingSVG} alt="Sending" className="sending-status-icon" />
@@ -134,9 +146,7 @@ function ConversationItem(props) {
                 </>
               )}
 
-              {status === "sent" && (
-                <img src={sentSVG} alt="Sent" className="message-status-icon" />
-              )}
+              {tick && <Ticks double={tick !== "sent"} />}
 
               {status === "failed" && (
                 <img src={alertSVG} alt="Failed" className="message-status-icon" />

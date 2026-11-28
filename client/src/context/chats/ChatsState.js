@@ -20,7 +20,16 @@ const ChatsState = (props) => {
     const [allMessages, setAllMessages] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // Read receipts on unless turned off (also stored on the server)
+    const [readReceipts, setReadReceipts] = useState(() => localStorage.getItem("readReceipts") !== "false");
+
     const chatIdRef = useRef(null);
+
+    const changeReadReceipts = async (on) => {
+        await axios.post(`${API}/user/readReceipts`, { readReceipts: on });
+        localStorage.setItem("readReceipts", String(on));
+        setReadReceipts(on);
+    }
 
     // Set chat flag
     const changeChatFlag = async (flag) => {
@@ -143,21 +152,23 @@ const ChatsState = (props) => {
 
     }
 
-    // Fetch Single user chats from the server database in firebase
-    const userChatServer = useCallback(async (signal) => {
+    // Fetch Single user chats from the server database in firebase.
+    // quiet: the live check while the chat is open (no loader, local list reloaded only for new messages).
+    // Returns the receipt { d, r }: up to when they got / read my messages.
+    const userChatServer = useCallback(async (signal, quiet = false) => {
         if (!chatIdRef.current)
             return;
 
         const chatId = chatIdRef.current;
-        setLoading(true);
+        if (!quiet) setLoading(true);
 
         try {
-            await userChatIndexDB(chatId);
+            if (!quiet) await userChatIndexDB(chatId);
 
             const rawData = (await axios.get(`${API}/chats/user-chat`, { params: { chatId }, signal })).data;
 
             if (!rawData || !rawData.messages || rawData.messages.length === 0)
-                return;
+                return rawData?.receipt;
 
             const keys = (await db.keys.get("user-keypair"));
 
@@ -226,6 +237,7 @@ const ChatsState = (props) => {
             }
 
             await userChatIndexDB(chatId);
+            return rawData.receipt;
         }
         catch (fetchError) {
             if (fetchError.code === "ERR_CANCELED") {
@@ -235,7 +247,7 @@ const ChatsState = (props) => {
             throw fetchError;
         }
         finally {
-            setLoading(false);
+            if (!quiet) setLoading(false);
         }
 
     }, []);
@@ -421,9 +433,10 @@ const ChatsState = (props) => {
                 nounce: encryptedData.nounce
             }
 
-            await axios.post(`${API}/chats/send-chat`, chatBody, { withCredentials: true });
+            const { data } = await axios.post(`${API}/chats/send-chat`, chatBody, { withCredentials: true });
 
-            const timestamp = Date.now();
+            // Server time, so the read ticks compare like with like
+            const timestamp = data.timestamp || Date.now();
 
             // Storing chat blob on client side in chats Table in dexie
             const indexDBData = {
@@ -518,9 +531,13 @@ const ChatsState = (props) => {
             }
 
             // 3) server verifies the stored size and publishes the message
-            await axios.post(`${API}/chats/attachment/complete`, { messageId: init.messageId }, { withCredentials: true });
+            const { data: done } = await axios.post(`${API}/chats/attachment/complete`, { messageId: init.messageId }, { withCredentials: true });
 
-            const patch = { plainMsg: fileName, status: "sent", firebaseId: init.messageId, attachmentId: init.messageId };
+            // Server time, so the read ticks compare like with like
+            const patch = {
+                plainMsg: fileName, status: "sent", firebaseId: init.messageId, attachmentId: init.messageId,
+                timestamp: done.timestamp || tempMessage.timestamp
+            };
             await db.chats.update(id, patch);
             patchMessage({ ...patch, progress: undefined });
 
@@ -528,7 +545,7 @@ const ChatsState = (props) => {
                 chatId,
                 plainMsg: fileName,
                 senderPublicKey: receiverPublicKey,
-                timestamp: tempMessage.timestamp,
+                timestamp: patch.timestamp,
                 type
             });
 
@@ -622,7 +639,7 @@ const ChatsState = (props) => {
         <ChatsContext.Provider value={{
             createNewUser, sendChat, fetchAllChats, chatIdRef, allMessages, inputMessage,
             setInputMessage, userChatServer, userMessages, loading, deleteUserChats, sendAttachment,
-            chatFlag, changeChatFlag, setChatFlag, downloadAttachment
+            chatFlag, changeChatFlag, setChatFlag, downloadAttachment, readReceipts, changeReadReceipts
         }}>
             {props.children}
         </ChatsContext.Provider>

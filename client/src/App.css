@@ -1065,3 +1065,19 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Navbar: the "Read receipts" label becomes ✓✓ where space is short */
+.receipts-icon {
+    display: none;
+}
+
+@media (max-width: 991px) {
+    .receipts-label {
+        display: none;
+    }
+
+    .receipts-icon {
+        display: inline-flex;
+        vertical-align: middle;
+    }
+}

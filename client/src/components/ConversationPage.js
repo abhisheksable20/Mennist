@@ -32,6 +32,8 @@ import { blockUser, unblockUser } from "../utils/blockUser";
 // When each chat partner's public key was last checked (this tab only)
 const keyCheckedAt = new Map();
 const KEY_CHECK_EVERY_MS = 10 * 60 * 1000;
+// While a chat is open and visible: new messages and ticks
+const LIVE_CHECK_MS = 15 * 1000;
 
 function ConversationPage(props) {
   const { chatId } = useParams();
@@ -39,6 +41,8 @@ function ConversationPage(props) {
   const [showBlock, setShowBlock] = useState(false);
   // You blocked this person: no input, only Unblock / Delete
   const [blocked, setBlocked] = useState(false);
+  // { d, r }: up to when they got / read my messages
+  const [receipt, setReceipt] = useState(null);
   const deleteBtnRef = useRef(null);
   const showAlert = props.alert || (() => {});
   // Coins sent and received with this person, shown in the chat timeline
@@ -59,6 +63,7 @@ function ConversationPage(props) {
     setChatOpen(null);
     setBlocked(false);
     setIsReceiverAvail(true);
+    setReceipt(null);
   }, [chatId]);
   const walletStamp = coinsCtx && coinsCtx.wallet
     ? `${coinsCtx.wallet.balance}-${coinsCtx.wallet.transfers.incoming.length}-${coinsCtx.wallet.transfers.outgoing.length}`
@@ -205,7 +210,7 @@ function ConversationPage(props) {
         document.title = user.username;
 
         setUsername(user.username);
-        userChatServer(controller.signal);
+        userChatServer(controller.signal).then((r) => r && setReceipt(r)).catch(() => {});
         getUserAvatar();
         refreshReceiverKey(chatId, controller.signal);
       }
@@ -226,6 +231,36 @@ function ConversationPage(props) {
     }
 
   }, [chatId, userChatServer, getUserData, refreshReceiverKey]);
+
+  // Live check: only while this chat is open, the tab is visible and the person isn't blocked
+  useEffect(() => {
+    if (!chatId || blocked) return undefined;
+
+    const controller = new AbortController();
+    let running = false;
+    const check = async () => {
+      if (running || document.hidden || chatIdRef.current !== chatId) return;
+      running = true;
+      try {
+        const r = await userChatServer(controller.signal, true);
+        if (r) setReceipt(r);
+      }
+      catch (liveErr) {
+        // Next check tries again
+      }
+      finally {
+        running = false;
+      }
+    };
+
+    const timer = setInterval(check, LIVE_CHECK_MS);
+    document.addEventListener("visibilitychange", check); // catch up when the tab comes back
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+      controller.abort();
+    };
+  }, [chatId, blocked, userChatServer, chatIdRef]);
 
   useEffect(() => {
     if (inputMessage.trim().length <= 0) {
@@ -563,6 +598,7 @@ function ConversationPage(props) {
                 return <ConversationItem
                   key={chat.id}
                   chat={chat}
+                  receipt={receipt}
                   fileDownload={fileDownload}
                   downloadStatus={attachmentDownloadStatus[key]}
                   downloadProgress={downloadProgress[key]} />

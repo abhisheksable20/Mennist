@@ -194,6 +194,22 @@ router.post("/chatFlag", isLoggedIn, globalLimiter, async (req, res) => {
   }
 });
 
+// Read receipts on or off (stored only when off)
+router.post("/readReceipts", isLoggedIn, globalLimiter, async (req, res) => {
+  const {readReceipts} = req.body;
+  if (typeof readReceipts !== "boolean") {
+    return res.status(400).json({message: "readReceipts must be a boolean."});
+  }
+
+  try {
+    await db.ref(`users/${req.user.uid}/userDetail/readReceiptsOff`).set(readReceipts ? null : true);
+    return res.status(200).send({readReceipts});
+  } catch (receiptsError) {
+    console.log("Read receipts error: ", receiptsError);
+    return res.status(500).send({error: "Internal server error!"});
+  }
+});
+
 // Fetch user specific posts
 router.get("/posts", isLoggedIn, globalLimiter, async (req, res) => {
   const userId = req.user.uid;

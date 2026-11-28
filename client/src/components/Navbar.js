@@ -1,5 +1,6 @@
 import SubmitButton from './SubmitButton'
 import ChatFlagButton from './ChatFlagButton';
+import ReadReceiptsButton from './ReadReceiptsButton';
 import NotificationCenter from './utils/NotificationCenter';
 import NavCoins from './Coins/NavCoins';
 import MenuCoinsCard from './Coins/MenuCoinsCard';
@@ -76,12 +77,17 @@ function Navbar(props) {
                                 <div className="mobile-chat-flag">
                                     <ChatFlagButton alert={props.alert} menu />
                                 </div>
+
+                                <div className="mobile-chat-flag">
+                                    <ReadReceiptsButton alert={props.alert} menu />
+                                </div>
                             </div>
                         </div>
 
                         {isChatPage && (
                             <div className="desktop-chat-flag">
                                 <ChatFlagButton alert={props.alert} />
+                                <ReadReceiptsButton alert={props.alert} />
                             </div>
                         )}
 

@@ -158,7 +158,7 @@ router.post("/send-chat", isLoggedIn, chatSendLimiter, validate(chatBlobValidati
       type: "message",
       chatId: senderChatId,
     });
-    return res.status(200).send({message: "Message send successfully"});
+    return res.status(200).send({message: "Message send successfully", timestamp});
   } catch (sendChatError) {
     console.log("sendChatError: ", sendChatError);
     res.status(500).send({error: "Something went wrong"});
@@ -267,7 +267,7 @@ router.post("/attachment/complete", isLoggedIn, attachmentLimiter, validate(atta
       chatId: senderChatId,
     });
 
-    return res.status(200).send({message: "Message send successfully"});
+    return res.status(200).send({message: "Message send successfully", timestamp});
   } catch (err) {
     console.log("attachmentCompleteError:", err);
     return res.status(500).send({error: "Something went wrong"});
@@ -393,13 +393,31 @@ router.get("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
   }
 
   try {
-    const snapshot = await db.ref(`chats/${senderUserId}/${recieverUserId}`).once("value");
-    if (!snapshot.exists()) return res.status(200).send([]);
+    const conversationPath = `chats/${senderUserId}/${recieverUserId}`;
+    const [snapshot, receiptSnap, receiptsOffSnap] = await Promise.all([
+      db.ref(conversationPath).once("value"),
+      db.ref(`receipts/${senderUserId}/${recieverUserId}`).get(), // how far they got through my messages
+      db.ref(`users/${senderUserId}/userDetail/readReceiptsOff`).get(),
+    ]);
 
-    const rawData = snapshot.val();
-    if (!rawData.messages) return res.status(200).send([]);
+    const rawData = snapshot.val() || {};
+    const receiptsOff = receiptsOffSnap.val() === true;
+    const seen = receiptSnap.val() || {};
+    // Read receipts work both ways: with them off you don't see theirs either
+    const receipt = {d: seen.d || 0, r: receiptsOff ? 0 : seen.r || 0};
 
-    const chatData = Object.entries(rawData.messages).map(([messageId, chat]) => ({
+    // Opening the chat delivers and reads everything in it. Written once per new message, not per fetch.
+    if (rawData.timestamp > (rawData.rAck || 0)) {
+      const updates = {
+        [`receipts/${recieverUserId}/${senderUserId}/d`]: rawData.timestamp,
+        [`${conversationPath}/dAck`]: rawData.timestamp,
+        [`${conversationPath}/rAck`]: rawData.timestamp,
+      };
+      if (!receiptsOff) updates[`receipts/${recieverUserId}/${senderUserId}/r`] = rawData.timestamp;
+      await db.ref().update(updates);
+    }
+
+    const chatData = Object.entries(rawData.messages || {}).map(([messageId, chat]) => ({
       id: messageId,
       timestamp: chat.timestamp,
       type: chat.type,
@@ -415,6 +433,7 @@ router.get("/user-chat", isLoggedIn, chatReadLimiter, async (req, res) => {
       chatId: rawData.senderChatId,
       senderPublicKey: rawData.senderPublicKey,
       messages: chatData,
+      receipt,
     });
   } catch (fetchError) {
     return res.status(500).send({error: "Internal Server Error!", success: false});
@@ -502,14 +521,25 @@ router.get("/my-chats", isLoggedIn, chatReadLimiter, async (req, res) => {
     const chatSnapshot = await db.ref(`chats/${userId}`).once("value");
     if (!chatSnapshot.exists()) return res.status(200).send([]);
 
-    const chatsData = Object.values(chatSnapshot.val()).map((chat) => ({
-      chatId: chat.senderChatId,
-      senderPublicKey: chat.senderPublicKey,
-      encryptedMsg: chat.encryptedMsg,
-      timestamp: chat.timestamp,
-      nounce: chat.nounce,
-      type: chat.type,
-    }));
+    const chatsData = [];
+    const delivered = {};
+    for (const [otherId, chat] of Object.entries(chatSnapshot.val())) {
+      if (!chat.senderChatId) continue;
+      // New messages reached this device: mark them delivered, once
+      if (chat.timestamp > (chat.dAck || 0)) {
+        delivered[`receipts/${otherId}/${userId}/d`] = chat.timestamp;
+        delivered[`chats/${userId}/${otherId}/dAck`] = chat.timestamp;
+      }
+      chatsData.push({
+        chatId: chat.senderChatId,
+        senderPublicKey: chat.senderPublicKey,
+        encryptedMsg: chat.encryptedMsg,
+        timestamp: chat.timestamp,
+        nounce: chat.nounce,
+        type: chat.type,
+      });
+    }
+    if (Object.keys(delivered).length > 0) await db.ref().update(delivered);
 
     return res.status(200).send(chatsData);
   } catch (error) {

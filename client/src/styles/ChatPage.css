@@ -815,3 +815,13 @@
     font-family: "Open Sans", sans-serif;
     color: #A3A3A3;
 }
+
+/* Message ticks: sent ✓ and delivered ✓✓ grey, read ✓✓ green */
+.message-status.is-sent,
+.message-status.is-delivered {
+    color: #A3A3A3;
+}
+
+.message-status.is-read {
+    color: #4ADE80;
+}

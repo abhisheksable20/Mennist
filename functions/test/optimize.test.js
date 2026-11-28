@@ -83,6 +83,31 @@ const coins = require(ROOT + "/coins/coinService");
   r = await call("GET", "/chats/blocked", null, "B"); assert.deepStrictEqual(r.body, []);
   console.log("ok block + unblock");
 
+  // Receipts: one record per chat, written once per new message
+  const chatQ = (u) => "/chats/user-chat?chatId=" + encodeURIComponent(chat(u));
+  await db.ref().update({"chats/A/B": null, "chats/B/A": null, "receipts": null});
+  r = await call("POST", "/chats/send-chat", {chatId: chat("B"), ...msg}, "A");
+  const sentAt = r.body.timestamp; assert.ok(sentAt > 0, "send returns server time");
+  r = await call("GET", chatQ("B"), null, "A"); assert.deepStrictEqual(r.body.receipt, {d: 0, r: 0}, "not delivered yet");
+  await call("GET", "/chats/my-chats", null, "B");
+  r = await call("GET", chatQ("B"), null, "A"); assert.deepStrictEqual(r.body.receipt, {d: sentAt, r: 0}, "delivered by chat list");
+  r = await call("GET", chatQ("A"), null, "B"); assert.strictEqual(r.body.messages.length, 1);
+  r = await call("GET", chatQ("B"), null, "A"); assert.deepStrictEqual(r.body.receipt, {d: sentAt, r: sentAt}, "read by opening");
+  await db.ref("receipts/A/B").set({d: 1, r: 1});
+  await call("GET", "/chats/my-chats", null, "B"); await call("GET", chatQ("A"), null, "B");
+  assert.deepStrictEqual((await db.ref("receipts/A/B").get()).val(), {d: 1, r: 1}, "no write without a new message");
+  // B turns read receipts off: A still sees delivered, never read; B can't see A's reads either
+  r = await call("POST", "/user/readReceipts", {readReceipts: "no"}, "B"); assert.strictEqual(r.status, 400);
+  r = await call("POST", "/user/readReceipts", {readReceipts: false}, "B"); assert.strictEqual(r.status, 200);
+  r = await call("POST", "/chats/send-chat", {chatId: chat("B"), ...msg}, "A"); const sentAt2 = r.body.timestamp;
+  await call("GET", chatQ("A"), null, "B");
+  assert.deepStrictEqual((await db.ref("receipts/A/B").get()).val(), {d: sentAt2, r: 1}, "read not shared");
+  await db.ref("receipts/B/A").set({d: 5, r: 5});
+  r = await call("GET", chatQ("A"), null, "B"); assert.deepStrictEqual(r.body.receipt, {d: 5, r: 0}, "theirs hidden too");
+  r = await call("POST", "/user/readReceipts", {readReceipts: true}, "B");
+  assert.strictEqual((await db.ref("users/B/userDetail/readReceiptsOff").get()).val(), null);
+  console.log("ok receipts");
+
   // Vibes: counted with a server increment, once per user
   await db.ref("posts/p1").set({chatId: chat("A"), timestamp: 5, content: "hi"});
   r = await call("PUT", "/vibes/p1", {}, "B"); assert.strictEqual(r.status, 200);
