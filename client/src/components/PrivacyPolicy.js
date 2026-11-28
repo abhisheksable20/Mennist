@@ -7,7 +7,7 @@ function PrivacyPolicy() {
         <div className="container py-5">
             <h1 className="mb-4 post-title">Privacy Policy</h1>
             <p className="post-title">
-                <strong>Last Updated:</strong> Nov 21, 2026
+                <strong>Last Updated:</strong> Nov 28, 2026
             </p>
 
             <p className="testing-notice my-4">
@@ -120,6 +120,22 @@ function PrivacyPolicy() {
                 are random and made in your own browser, so each person sees a different name.
             </p>
 
+            <h4 className="post-title pt-3">Delivered and Read</h4>
+            <p className="terms-para">
+                To show delivered and read ticks, we store one small record for each chat:
+                the time your messages last reached the other person's browser, and the time
+                they last opened the chat. If you turn read receipts off, we store that
+                setting, stop sharing when you read messages, and don't show you when others
+                read yours. Delivered ticks still work either way.
+            </p>
+
+            <h4 className="post-title pt-3">Blocking</h4>
+            <p className="terms-para">
+                When you block someone, we store which account you blocked and when. While the
+                block is on, neither of you can send the other messages, files, or coins.
+                The person you blocked isn't told; to them your chat just looks unavailable.
+            </p>
+
             <h4 className="post-title pt-3">Files</h4>
             <p className="terms-para">
                 Files are encrypted in your browser before upload and stored encrypted in
@@ -147,7 +163,8 @@ function PrivacyPolicy() {
                 a history of what you earned and spent, your current and longest Ritzz, items
                 you unlocked, daily counters (such as free chats and rematches used), coin
                 transfers between accounts and their status, people you blocked from sending
-                you coins, and your transfer settings. Coins have no money value and we don't
+                you coins, and your transfer settings. Blocking someone in chat also stops
+                coins between you. Coins have no money value and we don't
                 process payments, so we hold no payment or bank information.
             </p>
 
@@ -220,6 +237,8 @@ function PrivacyPolicy() {
             <h3 className="post-title pt-3">13. How Long We Keep Data</h3>
             <ul className="terms-para">
                 <li><strong>Account, posts, Echoes, Veil, coins, and Ritzz:</strong> until you delete them or your profile.</li>
+                <li><strong>Blocks:</strong> until you unblock the person or delete your profile.</li>
+                <li><strong>Delivered and read times:</strong> until the person who sent the messages deletes their profile.</li>
                 <li><strong>Text messages:</strong> until the recipient's browser receives them.</li>
                 <li><strong>Files:</strong> until downloaded, or 30 days at most (24 hours for unfinished uploads).</li>
                 <li><strong>Notifications:</strong> until you open the bell.</li>
@@ -239,6 +258,7 @@ function PrivacyPolicy() {
                 <li>your Echoes, their matches, and their place in matching;</li>
                 <li>your coins, coin history, Ritzz, and unlocked items;</li>
                 <li>chats and files waiting for you, and your notifications;</li>
+                <li>the people you blocked, the delivered and read times of messages you sent, and your read receipts setting;</li>
                 <li>the Mennist data stored in that browser.</li>
             </ul>
             <p className="terms-para">Some things are not removed:</p>

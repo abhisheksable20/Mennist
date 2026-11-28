@@ -7,7 +7,7 @@ function TermsAndConditions() {
         <div className="container py-5">
             <h1 className="mb-4 post-title">Terms and Conditions</h1>
             <p className="post-title">
-                <strong>Last Updated:</strong> Nov 21, 2026
+                <strong>Last Updated:</strong> Nov 28, 2026
             </p>
 
             <p className="testing-notice my-4">
@@ -100,6 +100,8 @@ function TermsAndConditions() {
                 <li>Messages and files are end-to-end encrypted. We can't read them, so we can't recover lost messages or check their contents. You are responsible for what you send.</li>
                 <li>You can start 3 new chats a day for free. After that, starting a chat with someone new costs 5 coins. If they don't reply within 48 hours, you get the coins back. Once a chat is open, it stays free for both people.</li>
                 <li>You can turn your chat off at any time. People can't message you while it's off.</li>
+                <li>You can block anyone from a chat. While they're blocked, neither of you can send the other messages, files, or coins, and they can't start a new chat with you. They aren't told. You can unblock them from the chat or from Blocked users.</li>
+                <li>Ticks show when your messages were delivered and read. If you turn read receipts off, others won't see when you've read their messages, and you won't see when they've read yours.</li>
                 <li>Files can be up to 1 GB, and only supported types are allowed: images, videos, audio, PDFs, Office documents, text, CSV, and ZIP. Files with macros or other risky content are blocked.</li>
                 <li><strong>Files are deleted from our servers once downloaded, or after 30 days if never downloaded.</strong> Save files you want to keep. A downloaded file can't be downloaded again from the chat.</li>
                 <li>Only open files from people you trust.</li>
